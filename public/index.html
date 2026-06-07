@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Crypto Arbitrage Terminal</title>
+    <style>
+        body { font-family: monospace; background: #121212; color: #00ff00; padding: 20px; }
+        .box { border: 1px solid #00ff00; padding: 20px; margin-bottom: 20px; background: #1a1a1a; }
+        input, button { background: #000; border: 1px solid #00ff00; color: #00ff00; padding: 10px; margin: 5px; }
+        button { cursor: pointer; font-weight: bold; }
+        button:hover { background: #00ff00; color: #000; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <h1>⚡ CRYPTO ARBITRAGE SCANNER</h1>
+    <hr style="border-color: #00ff00;">
+    <div id="payment-section" class="box">
+        <h3>Unlock Scanner via M-Pesa</h3>
+        <p>Fee: KES 100</p>
+        <input type="text" id="phone" placeholder="254712345678" />
+        <button onclick="requestMpesa()">Trigger STK Push</button>
+        <p id="pay-status" style="color: yellow;"></p>
+    </div>
+    <div id="scanner-section" class="box hidden">
+        <h3>🚀 Live Arbitrage Feeds</h3>
+        <button onclick="fetchData()">Scan Price Spread</button>
+        <pre id="output">Click scan to poll exchange feeds...</pre>
+    </div>
+    <script>
+        let currentInvoiceId = null;
+        async function requestMpesa() {
+            const phone = document.getElementById('phone').value;
+            document.getElementById('pay-status').innerText = "Sending STK push... Check phone PIN entry window.";
+            const res = await fetch('/api/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phoneNumber: phone, amount: 100 })
+            });
+            const data = await res.json();
+            if (data.success) {
+                currentInvoiceId = data.invoiceId;
+                setInterval(pollPaymentStatus, 3000);
+            }
+        }
+        async function pollPaymentStatus() {
+            if (!currentInvoiceId) return;
+            const res = await fetch(`/api/status/${currentInvoiceId}`);
+            const data = await res.json();
+            if (data.paid) {
+                document.getElementById('payment-section').style.display = 'none';
+                document.getElementById('scanner-section').classList.remove('hidden');
+                fetchData();
+            }
+        }
+        async function fetchData() {
+            const outputBlock = document.getElementById('output');
+            const res = await fetch(`/api/scanner?invoiceId=${currentInvoiceId}`);
+            const data = await res.json();
+            outputBlock.innerText = JSON.stringify(data, null, 4);
+        }
+    </script>
+</body>
+</html>
+
