@@ -13,7 +13,7 @@ let paidSessions = {};
 const intasend = new IntaSend({
   publishableKey: process.env.INTASEND_PUBLISHABLE_KEY,
   secretKey: process.env.INTASEND_SECRET_KEY,
-  isTestMode: true 
+  isTestMode: False 
 });
 
 // 1. TRIGGER MPESA STK PUSH
