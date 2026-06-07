@@ -1,65 +1,90 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Crypto Arbitrage Terminal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Arbitrage Scanner</title>
     <style>
-        body { font-family: monospace; background: #121212; color: #00ff00; padding: 20px; }
-        .box { border: 1px solid #00ff00; padding: 20px; margin-bottom: 20px; background: #1a1a1a; }
-        input, button { background: #000; border: 1px solid #00ff00; color: #00ff00; padding: 10px; margin: 5px; }
-        button { cursor: pointer; font-weight: bold; }
-        button:hover { background: #00ff00; color: #000; }
-        .hidden { display: none; }
+        body {
+            background-color: #121212;
+            color: #00ff00;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            border: 2px solid #00ff00;
+            padding: 30px;
+            background-color: #1a1a1a;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
+            border-radius: 5px;
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+        h1 { font-size: 1.5rem; margin-bottom: 20px; }
+        input {
+            width: 80%;
+            padding: 10px;
+            background: #000;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 1rem;
+        }
+        button {
+            background-color: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            width: 86%;
+        }
+        button:hover { background-color: #00cc00; }
+        #status { margin-top: 15px; color: #ffffff; font-size: 0.9rem; }
     </style>
 </head>
 <body>
+
+<div class="container">
     <h1>⚡ CRYPTO ARBITRAGE SCANNER</h1>
-    <hr style="border-color: #00ff00;">
-    <div id="payment-section" class="box">
-        <h3>Unlock Scanner via M-Pesa</h3>
-        <p>Fee: KES 100</p>
-        <input type="text" id="phone" placeholder="254712345678" />
-        <button onclick="requestMpesa()">Trigger STK Push</button>
-        <p id="pay-status" style="color: yellow;"></p>
-    </div>
-    <div id="scanner-section" class="box hidden">
-        <h3>🚀 Live Arbitrage Feeds</h3>
-        <button onclick="fetchData()">Scan Price Spread</button>
-        <pre id="output">Click scan to poll exchange feeds...</pre>
-    </div>
-    <script>
-        let currentInvoiceId = null;
-        async function requestMpesa() {
-            const phone = document.getElementById('phone').value;
-            document.getElementById('pay-status').innerText = "Sending STK push... Check phone PIN entry window.";
-            const res = await fetch('/api/checkout', {
+    <p>Unlock Scanner via M-Pesa<br>Fee: KES 100</p>
+    <input type="text" id="phone" value="+254728308602" placeholder="Phone Number">
+    <button onclick="triggerPayment()">Trigger STK Push</button>
+    <div id="status"></div>
+</div>
+
+<script>
+    async function triggerPayment() {
+        const phone = document.getElementById('phone').value;
+        const statusDiv = document.getElementById('status');
+        statusDiv.innerText = "Sending STK push... Check phone PIN window.";
+        
+        try {
+            const response = await fetch('/api/checkout', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ phoneNumber: phone, amount: 100 })
             });
-            const data = await res.json();
-            if (data.success) {
-                currentInvoiceId = data.invoiceId;
-                setInterval(pollPaymentStatus, 3000);
+            const data = await response.json();
+            if (response.ok) {
+                statusDiv.innerText = "STK Push sent successfully!";
+            } else {
+                statusDiv.innerText = "Error: " + (data.error || "Failed to trigger push");
             }
+        } catch (err) {
+            statusDiv.innerText = "Network error connecting to server.";
         }
-        async function pollPaymentStatus() {
-            if (!currentInvoiceId) return;
-            const res = await fetch(`/api/status/${currentInvoiceId}`);
-            const data = await res.json();
-            if (data.paid) {
-                document.getElementById('payment-section').style.display = 'none';
-                document.getElementById('scanner-section').classList.remove('hidden');
-                fetchData();
-            }
-        }
-        async function fetchData() {
-            const outputBlock = document.getElementById('output');
-            const res = await fetch(`/api/scanner?invoiceId=${currentInvoiceId}`);
-            const data = await res.json();
-            outputBlock.innerText = JSON.stringify(data, null, 4);
-        }
-    </script>
+    }
+</script>
+
 </body>
 </html>
 
