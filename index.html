@@ -1,0 +1,28 @@
+<script src="https://js.paystack.co/v1/inline.js"></script>
+
+<button id="pay-button">Pay with M-Pesa</button>
+
+<script>
+  // Script logic goes here (see step 2)
+</script>
+<script>
+  document.getElementById('pay-button').addEventListener('click', async () => {
+    const response = await fetch('/api/pay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: "user@example.com", amount: 100 })
+    });
+    const data = await response.json();
+
+    const handler = PaystackPop.setup({
+        key: 'pk_test_542b5eb14cd1d22263ac558a5c2aef9e9c323a07', // Get this from your Paystack dashboard
+        email: 'user@example.com',
+        amount: data.data.amount,
+        ref: data.data.reference,
+        callback: (response) => alert('Payment successful!'),
+        onClose: () => alert('Cancelled')
+    });
+    handler.openIframe();
+  });
+</script>
+
