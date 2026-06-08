@@ -1,28 +1,50 @@
-document.getElementById('pay-button').addEventListener('click', async () => {
-    const response = await fetch('/api/pay', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            email: "user@example.com", 
-            amount: 100 
-        })
-    });
-    
-    const result = await response.json(); 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pay with Paystack</title>
+    <script src="https://js.paystack.co/v2/inline.js"></script>
+</head>
+<body>
 
-    // Paystack response structure is: { status: true, data: { authorization_url: "...", reference: "..." } }
-    if (result.status) {
-        const handler = PaystackPop.setup({
-            key: 'pk_test_542b5eb14cd1d22263ac558a5c2aef9e9c323a07', // REPLACE WITH YOUR REAL PUBLIC KEY
-            email: 'user@example.com',
-            amount: 100 * 100, // Matches the amount sent to backend
-            ref: result.data.reference, 
-            callback: (res) => alert('Payment successful! Ref: ' + res.reference),
-            onClose: () => alert('Transaction cancelled')
+    <h1>Welcome to My Store</h1>
+    <button id="pay-button">Pay with M-Pesa / Card</button>
+
+    <script>
+        document.getElementById('pay-button').addEventListener('click', async () => {
+            // 2. Request transaction reference from your backend
+            const response = await fetch('/api/pay', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    email: "customer@example.com", 
+                    amount: 100 // Amount in your currency
+                })
+            });
+
+            const result = await response.json();
+
+            // 3. Initialize Paystack Popup with the data from your server
+            if (result.status) {
+                const popup = new Paystack();
+                popup.checkout({
+                    key: 'pk_live_your_actual_public_key', // REPLACE with your REAL Public Key
+                    email: 'customer@example.com',
+                    amount: 100 * 100, // Amount in lowest currency unit (e.g., 100 NGN = 10000 kobo)
+                    ref: result.data.reference, 
+                    onSuccess: (transaction) => {
+                        alert('Payment successful! Reference: ' + transaction.reference);
+                    },
+                    onCancel: () => {
+                        alert('Payment cancelled.');
+                    }
+                });
+            } else {
+                alert('Could not initialize payment: ' + result.message);
+            }
         });
-        handler.openIframe();
-    } else {
-        alert('Could not initialize payment');
-    }
-});
+    </script>
+</body>
+</html>
 
