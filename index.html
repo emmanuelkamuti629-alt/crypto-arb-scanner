@@ -1,0 +1,28 @@
+document.getElementById('pay-button').addEventListener('click', async () => {
+    const response = await fetch('/api/pay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            email: "user@example.com", 
+            amount: 100 
+        })
+    });
+    
+    const result = await response.json(); 
+
+    // Paystack response structure is: { status: true, data: { authorization_url: "...", reference: "..." } }
+    if (result.status) {
+        const handler = PaystackPop.setup({
+            key: 'pk_test_542b5eb14cd1d22263ac558a5c2aef9e9c323a07', // REPLACE WITH YOUR REAL PUBLIC KEY
+            email: 'user@example.com',
+            amount: 100 * 100, // Matches the amount sent to backend
+            ref: result.data.reference, 
+            callback: (res) => alert('Payment successful! Ref: ' + res.reference),
+            onClose: () => alert('Transaction cancelled')
+        });
+        handler.openIframe();
+    } else {
+        alert('Could not initialize payment');
+    }
+});
+
