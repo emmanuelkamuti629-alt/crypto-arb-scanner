@@ -1,29 +1,30 @@
 document.getElementById('pay-button').addEventListener('click', async () => {
-    // 1. Fetch from your backend
-    const response = await fetch('/api/pay', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: "user@example.com", amount: 100 })
-    });
-    
-    const result = await response.json();
-    
-    // DEBUG: This will show you exactly what the server sent
-    alert("Server Response: " + JSON.stringify(result));
-
-    if (result.status) {
-        const handler = PaystackPop.setup({
-            key: 'pk_live_e1a97839bc3dee4a9be7412ac4e5602fe1fec808', // REPLACE WITH REAL KEY
-            email: 'user@example.com',
-            // FORCE the amount here to 10000 (100 * 100) to bypass the error
-            amount: 100 * 100, 
-            ref: result.data.reference, 
-            callback: (res) => alert('Payment successful! Ref: ' + res.reference),
-            onClose: () => alert('Transaction cancelled')
+    try {
+        const response = await fetch('/api/pay', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: "user@example.com", amount: 100 })
         });
-        handler.openIframe();
-    } else {
-        alert('Could not initialize payment: ' + result.message);
+        
+        const result = await response.json();
+
+        // 1. Check if the server actually sent back a valid transaction
+        if (result.status && result.data && result.data.reference) {
+            
+            const handler = PaystackPop.setup({
+                key: 'pk_live_e1a97839bc3dee4a9be7412ac4e5602fe1fec808', // Ensure this is your CORRECT Public Key
+                email: 'user@example.com',
+                amount: 100 * 100, // Force the amount in Kobo
+                ref: result.data.reference, 
+                callback: (res) => alert('Payment successful! Ref: ' + res.reference),
+                onClose: () => alert('Transaction cancelled')
+            });
+            handler.openIframe();
+        } else {
+            alert('Initialization error: ' + JSON.stringify(result));
+        }
+    } catch (err) {
+        alert('Fetch error: ' + err.message);
     }
 });
 
