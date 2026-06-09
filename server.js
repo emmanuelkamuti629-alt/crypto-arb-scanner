@@ -1,35 +1,47 @@
 const express = require('express');
-const axios = require('axios');
-const app = express(); // Essential: Define app before using it
+const mongoose = require('mongoose');
+const http = require('http');
+const { Server } = require('socket.io');
+const cors = require('cors');
+require('dotenv').config();
+
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
 
 // Middleware
+app.use(cors());
 app.use(express.json());
-app.use(express.static('public')); // Serves your index.html
+app.use(express.static('public')); // This will serve your frontend files
 
-// Payment Route
-app.post('/api/pay', async (req, res) => {
-    try {
-        const { email, amount } = req.body;
-        
-        // Paystack expects amount in Kobo (e.g., 100 * 100 = 10000)
-        const response = await axios.post('https://api.paystack.co/transaction/initialize', {
-            email: email,
-            amount: amount * 100 
-        }, {
-            headers: { 
-                Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        res.json(response.data);
-    } catch (error) {
-        console.error("Paystack Error:", error.response?.data || error.message);
-        res.status(500).json({ error: "Initialization failed" });
-    }
+// Database Connection
+const dbURI = process.env.MONGODB_URI;
+mongoose.connect(dbURI)
+    .then(() => console.log('Successfully connected to MongoDB!'))
+    .catch((err) => console.error('Database connection error:', err));
+
+// Socket.io Real-time Chat Logic
+io.on('connection', (socket) => {
+    console.log('A user connected to the chat');
+
+    socket.on('chat message', (data) => {
+        // data should be { username: '...', message: '...' }
+        io.emit('chat message', data);
+    });
+
+    socket.on('disconnect', () => {
+        console.log('User disconnected');
+    });
 });
 
-// Start the server
+// Basic Routes
+app.get('/', (req, res) => {
+    res.send('ArbiMine Server is running!');
+});
+
+// Start Server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => {
+    console.log(`ArbiMine backend active on port ${PORT}`);
+});
 
