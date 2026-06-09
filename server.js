@@ -1,4 +1,3 @@
-console.log("ALL ENV VARS:", Object.keys(process.env));
 require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
@@ -9,15 +8,14 @@ const mongoose = require('mongoose');
 
 const app = express();
 
-// Enable CORS
 app.use(cors());
 app.use(express.json());
 
-// Ensure we have a Mongo URI
-const dbUrl = process.env.MONGO_URI;
+// Using the key 'MONGODB_URL' as confirmed in your environment variables
+const dbUrl = process.env.MONGODB_URL;
 
 if (!dbUrl) {
-    console.error("FATAL ERROR: MONGO_URI is not defined in environment variables.");
+    console.error("FATAL ERROR: MONGODB_URL is not defined in environment variables.");
     process.exit(1);
 }
 
@@ -34,10 +32,7 @@ app.use(session({
     store: MongoStore.create({ 
         mongoUrl: dbUrl 
     }),
-    cookie: { 
-        secure: process.env.NODE_ENV === 'production', // true if on Render
-        maxAge: 1000 * 60 * 60 * 24 
-    }
+    cookie: { maxAge: 1000 * 60 * 60 * 24 }
 }));
 
 // 3. API Route
