@@ -1,7 +1,7 @@
+require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const mongoose = require('mongoose');
-const nodemailer = require('nodemailer');
 const bcrypt = require('bcryptjs');
 const app = express();
 
@@ -10,35 +10,20 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-// Session configuration
+// Session setup
 app.use(session({
-    secret: 'your_secret_key', 
+    secret: process.env.SESSION_SECRET || 'fallback-secret-key',
     resave: false,
-    saveUninitialized: false,
-    cookie: { maxAge: 3600000 } // 1 hour session
+    saveUninitialized: false
 }));
 
-// MongoDB connection
-mongoose.connect('mongodb://localhost:27017/arbimine');
-
-// User Schema
-const UserSchema = new mongoose.Schema({
+// User Schema & Model
+const User = mongoose.model('User', new mongoose.Schema({
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    otp: String,
-    otpExpires: Date
-});
-const User = mongoose.model('User', UserSchema);
+    password: { type: String, required: true }
+}));
 
-// Email setup
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: { user: 'your-email@gmail.com', pass: 'your-app-password' }
-});
-
-// --- AUTH ROUTES ---
-
-// Registration
+// Authentication Routes
 app.post('/api/register', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -50,7 +35,6 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
-// Login
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
@@ -62,49 +46,19 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-// Password Reset Request
-app.post('/api/forgot-password', async (req, res) => {
-    const { email } = req.body;
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: 'Email not found' });
+// Server Startup with Render-friendly binding
+const PORT = process.env.PORT || 3000;
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    user.otp = otp;
-    user.otpExpires = Date.now() + 300000; // 5 minutes
-    await user.save();
-
-    await transporter.sendMail({
-        to: email,
-        subject: 'Password Reset OTP',
-        text: `Your OTP is ${otp}. It expires in 5 minutes.`
+mongoose.connect(process.env.MONGODB_URI)
+    .then(() => {
+        console.log("Connected to MongoDB Atlas");
+        // Binding to '0.0.0.0' allows external connections from the Render proxy
+        app.listen(PORT, '0.0.0.0', () => {
+            console.log(`ArbiMine server running on port ${PORT}`);
+        });
+    })
+    .catch((err) => {
+        console.error("Database connection failed:", err);
+        process.exit(1);
     });
-    res.json({ success: true });
-});
-
-// Verify OTP & Update Password
-app.post('/api/reset-password', async (req, res) => {
-    const { email, otp, newPassword } = req.body;
-    const user = await User.findOne({ email, otp, otpExpires: { $gt: Date.now() } });
-    
-    if (!user) return res.status(400).json({ message: 'Invalid or expired OTP' });
-
-    user.password = await bcrypt.hash(newPassword, 10);
-    user.otp = undefined;
-    user.otpExpires = undefined;
-    await user.save();
-    res.json({ success: true });
-});
-
-// --- PROTECTED ROUTES ---
-// Only allow access to files if user is logged in
-app.use((req, res, next) => {
-    const publicPaths = ['/', '/api/login', '/api/register', '/api/forgot-password', '/api/reset-password'];
-    if (req.session.user || publicPaths.includes(req.path) || req.path.endsWith('.css') || req.path.endsWith('.js')) {
-        next();
-    } else {
-        res.redirect('/');
-    }
-});
-
-app.listen(3000, () => console.log('ArbiMine server running on port 3000'));
 
