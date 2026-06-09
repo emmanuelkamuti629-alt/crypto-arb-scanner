@@ -24,7 +24,8 @@ app.use(express.static(path.join(__dirname, 'public'), {
   }
 }));
 
-// MongoDB connection
+// MongoDB connectionconsole.log('MONGODB_URI exists:', !!process.env.MONGODB_URI);
+mongoose.connect(process.env.MONGODB_URI)
 mongoose.connect(MONGO_URI)
  .then(() => console.log('Connected to MongoDB Atlas'))
  .catch(err => console.error('MongoDB connection error:', err));
