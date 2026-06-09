@@ -1,17 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>body { background-color: #1A1A1A; color: white; padding-bottom: 80px; }</style>
+    <style>body { background-color: #0F172A; color: white; }</style>
 </head>
-<body class="p-6">
-    <h1 class="text-3xl font-bold text-[#FFD700] text-center mb-8">ArbiMine</h1>
-    <div class="fixed bottom-0 left-0 w-full bg-[#FFD700] p-3 flex justify-around text-black font-bold text-xs z-50">
-        <a href="index.html" class="flex flex-col items-center">🏠 Home</a>
-        <a href="pro.html" class="flex flex-col items-center">★ Go PRO</a>
-        <a href="chat.html" class="flex flex-col items-center">💬 Chat Room</a>
-        <a href="profile.html" class="flex flex-col items-center">👤 Profile</a>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="bg-[#1E293B] p-8 rounded-2xl w-full max-w-md shadow-2xl">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-[#FFD700]">ARBIMINE</h1>
+            <p class="text-gray-400">FIND. ANALYZE. PROFIT.</p>
+        </div>
+
+        <form id="authForm" class="space-y-4">
+            <input type="email" id="email" placeholder="Email" class="w-full p-3 rounded-lg bg-[#0F172A] border border-gray-600" required>
+            <input type="password" id="password" placeholder="Password" class="w-full p-3 rounded-lg bg-[#0F172A] border border-gray-600" required>
+            <button type="submit" class="w-full bg-[#FFD700] text-black font-bold py-3 rounded-lg">LOGIN</button>
+        </form>
+
+        <div class="mt-6 text-center text-sm space-y-2">
+            <button onclick="showCreate()" class="text-[#FFD700]">Create Account</button>
+            <br>
+            <button onclick="showForgot()" class="text-gray-400">Forgot Password?</button>
+        </div>
     </div>
 </body>
 </html>
