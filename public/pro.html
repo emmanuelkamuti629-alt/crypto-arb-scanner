@@ -2,19 +2,54 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>body { background-color: #1A1A1A; color: white; padding-bottom: 80px; }</style>
+    <style>
+        body { background-color: #1A1A1A; color: white; padding-bottom: 80px; }
+        .gold-text { color: #FFD700; }
+    </style>
 </head>
 <body class="p-6">
-    <h1 class="text-2xl font-bold text-[#FFD700] text-center mb-6">PRO MEMBERSHIP</h1>
-    
-    <!-- Navigation Block -->
+
+    <!-- Header -->
+    <h1 class="text-2xl font-bold text-center mb-6">🚀 UPGRADE TO PRO 🚀</h1>
+    <p class="text-center text-sm mb-6">Get your PRO Membership Today!</p>
+    <ul class="text-xs space-y-2 mb-8 text-gray-300">
+        <li>💰 Unlock >2% Profit Opportunities</li>
+        <li>✨ Advanced Filtering, Profit/Trade Calculation</li>
+        <li>💻 Browser App Access</li>
+        <li>👥 Instant Access to Referral Program</li>
+    </ul>
+
+    <!-- Subscription Cards -->
+    <div class="grid grid-cols-2 gap-2 mb-8">
+        <div class="bg-[#FFD700] text-black p-4 rounded-lg text-center">
+            <p class="font-bold">1 week</p>
+            <p class="text-xl font-bold">Ksh 100</p>
+        </div>
+        <div class="bg-white text-black p-4 rounded-lg text-center">
+            <p class="font-bold">1 month</p>
+            <p class="text-xl font-bold">Ksh 350</p>
+        </div>
+    </div>
+
+    <!-- M-Pesa Input -->
+    <div class="mb-4">
+        <input type="tel" placeholder="Enter M-Pesa Number" class="w-full p-3 rounded-lg bg-[#262626] text-white border border-gray-600 focus:outline-none focus:border-[#FFD700]">
+    </div>
+
+    <!-- Payment Button -->
+    <button class="w-full bg-[#FFD700] text-black font-bold py-3 rounded-lg mb-4 hover:opacity-90">
+        PAY NOW
+    </button>
+
+    <!-- Bottom Navigation -->
     <div class="fixed bottom-0 left-0 w-full bg-[#FFD700] p-3 flex justify-around text-black font-bold text-xs z-50">
         <a href="index.html" class="flex flex-col items-center">🏠 Home</a>
-        <a href="profit.html" class="flex flex-col items-center">📈 Profit</a>
-        <a href="pro.html" class="flex flex-col items-center">⭐ Go PRO</a>
-        <a href="chat.html" class="flex flex-col items-center">💬 Chat</a>
+        <a href="pro.html" class="flex flex-col items-center">★ Go PRO</a>
+        <a href="chat.html" class="flex flex-col items-center">💬 Chat Room</a>
     </div>
+
 </body>
 </html>
 

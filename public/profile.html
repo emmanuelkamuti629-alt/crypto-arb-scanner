@@ -2,20 +2,64 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>body { background-color: #1A1A1A; color: white; padding-bottom: 80px; }</style>
+    <style>
+        body { background-color: #1A1A1A; color: white; padding-bottom: 100px; }
+        .gold-text { color: #FFD700; }
+    </style>
 </head>
 <body class="p-6">
-    <h1 class="text-2xl font-bold text-[#FFD700] text-center mb-6">USER PROFILE</h1>
-    
-    <!-- Navigation Block (Updated with Profile link) -->
+
+    <div class="text-center mb-8">
+        <div class="text-5xl mb-2">👤</div>
+        <h1 class="text-2xl font-bold gold-text">PROFILE</h1>
+    </div>
+
+    <div class="space-y-6 mb-10">
+        <div>
+            <p class="text-gray-400 text-sm">NAME:</p>
+            <p id="user-name" class="text-lg">Loading...</p>
+            <div class="h-[1px] bg-gray-600 mt-1"></div>
+        </div>
+        <div>
+            <p class="text-gray-400 text-sm">EMAIL:</p>
+            <p id="user-email" class="text-lg">Loading...</p>
+            <div class="h-[1px] bg-gray-600 mt-1"></div>
+        </div>
+        <div>
+            <p class="text-gray-400 text-sm">MEMBER SINCE:</p>
+            <p id="member-since" class="text-lg">Loading...</p>
+            <div class="h-[1px] bg-gray-600 mt-1"></div>
+        </div>
+        <div>
+            <p class="text-gray-400 text-sm">ACCOUNT ID:</p>
+            <p id="account-id" class="text-lg">Loading...</p>
+            <div class="h-[1px] bg-gray-600 mt-1"></div>
+        </div>
+    </div>
+
+    <div class="space-y-4">
+        <button class="w-full bg-green-700 py-3 rounded font-bold">REFER & EARN</button>
+        <button class="w-full bg-[#FFD700] text-black py-3 rounded font-bold">LOGOUT</button>
+        <button class="w-full bg-red-600 py-3 rounded font-bold">DELETE ACCOUNT</button>
+    </div>
+
     <div class="fixed bottom-0 left-0 w-full bg-[#FFD700] p-3 flex justify-around text-black font-bold text-xs z-50">
         <a href="index.html" class="flex flex-col items-center">🏠 Home</a>
-        <a href="profit.html" class="flex flex-col items-center">📈 Profit</a>
-        <a href="pro.html" class="flex flex-col items-center">⭐ Go PRO</a>
-        <a href="chat.html" class="flex flex-col items-center">💬 Chat</a>
+        <a href="pro.html" class="flex flex-col items-center">★ Go PRO</a>
+        <a href="chat.html" class="flex flex-col items-center">💬 Chat Room</a>
         <a href="profile.html" class="flex flex-col items-center">👤 Profile</a>
     </div>
+
+    <script>
+        // Placeholder for future database integration
+        // In your backend, you would send this data to the frontend
+        document.getElementById('user-name').innerText = "Emmanuel Kamuti";
+        document.getElementById('user-email').innerText = "emmanuelkamuti629@gmail.com";
+        document.getElementById('member-since').innerText = "10/1/2026";
+        document.getElementById('account-id').innerText = "52194";
+    </script>
 </body>
 </html>
 

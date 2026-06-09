@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #1A1A1A; color: white; padding-bottom: 120px; padding-top: 60px; }
+        .gold-bg { background-color: #FFD700; }
+        .msg-bubble { background-color: #DAA520; color: black; border-radius: 12px; }
+    </style>
+</head>
+<body class="p-4">
+
+    <div class="fixed top-0 left-0 w-full bg-[#FFD700] p-4 flex items-center text-black font-bold z-50">
+        <span class="mr-4">←</span> 🚀 ArbiHunt
+    </div>
+
+    <div id="chat-messages" class="flex flex-col gap-4">
+        </div>
+
+    <div class="fixed bottom-[65px] left-0 w-full p-2 bg-[#1A1A1A]">
+        <div class="flex gap-2">
+            <input type="text" id="msg-input" placeholder="Message" class="flex-grow p-3 rounded-full bg-[#262626] text-white border border-gray-600 focus:outline-none">
+            <button onclick="sendMessage()" class="bg-[#FFD700] text-black px-6 rounded-full font-bold">➤</button>
+        </div>
+    </div>
+
+    <div class="fixed bottom-0 left-0 w-full bg-[#FFD700] p-3 flex justify-around text-black font-bold text-xs z-50">
+        <a href="index.html" class="flex flex-col items-center">🏠 Home</a>
+        <a href="pro.html" class="flex flex-col items-center">★ Go PRO</a>
+        <a href="chat.html" class="flex flex-col items-center">💬 Chat Room</a>
+        <a href="profile.html" class="flex flex-col items-center">👤 Profile</a>
+    </div>
+
+    <script>
+        function sendMessage() {
+            const input = document.getElementById('msg-input');
+            const chat = document.getElementById('chat-messages');
+            if (input.value.trim() !== "") {
+                const msg = document.createElement('div');
+                msg.className = 'msg-bubble p-4 ml-auto w-3/4';
+                msg.innerText = input.value;
+                chat.appendChild(msg);
+                input.value = "";
+            }
+        }
+    </script>
+</body>
+</html>
+
