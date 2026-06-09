@@ -11,7 +11,15 @@ const bcrypt = require('bcryptjs');
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+  etag: false,
+  lastModified: false,
+  setHeaders: (res, path) => {
+    if (path.endsWith('.html')) {
+      res.set('Cache-Control', 'no-store');
+    }
+  }
+}));
 
 const dbUrl = process.env.MONGODB_URL;
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY; // Add this to Render env
