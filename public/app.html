@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ARBIMINE</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+    body { background: #f5f7fa; color: #1a1a1a; }
+   .hidden { display: none!important; }
+
+    /* Login Screen */
+    #loginScreen {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+   .login-box {
+      background: white; padding: 40px; border-radius: 12px; width: 90%; max-width: 400px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    }
+   .login-box h1 { text-align: center; margin-bottom: 30px; color: #667eea; font-size: 28px; }
+   .login-box input {
+      width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd;
+      border-radius: 6px; font-size: 16px;
+    }
+   .login-box button {
+      width: 100%; padding: 12px; background: #667eea; color: white; border: none;
+      border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: 600;
+    }
+   .login-box button:hover { background: #5568d3; }
+   .toggle-auth { text-align: center; margin-top: 15px; color: #667eea; cursor: pointer; }
+
+    /* App Layout */
+    #appScreen { min-height: 100vh; padding-bottom: 70px; }
+   .header {
+      background: #ffcc00; padding: 15px 20px; display: flex; justify-content: space-between;
+      align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+   .header.logo { font-size: 20px; font-weight: 700; color: #1a1a1a; }
+   .header.balance { font-size: 14px; color: #1a1a1a; }
+   .header.balance span { font-weight: 700; font-size: 16px; }
+
+    /* Pages */
+   .page { padding: 20px; }
+   .card {
+      background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+   .card h3 { margin-bottom: 10px; color: #667eea; }
+   .arb-item {
+      display: flex; justify-content: space-between; padding: 12px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+   .arb-item:last-child { border-bottom: none; }
+   .arb-pair { font-weight: 600; }
+   .arb-profit { color: #10b981; font-weight: 700; }
+   .btn {
+      width: 100%; padding: 14px; background: #667eea; color: white; border: none;
+      border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 10px;
+    }
+   .btn:hover { background: #5568d3; }
+    input, select {
+      width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd;
+      border-radius: 6px; font-size: 16px;
+    }
+
+    /* Bottom Nav */
+   .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0; background: white;
+      display: flex; justify-content: space-around; padding: 10px 0;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    }
+   .nav-item {
+      display: flex; flex-direction: column; align-items: center; cursor: pointer;
+      color: #999; font-size: 12px; padding: 5px 15px;
+    }
+   .nav-item.active { color: #667eea; }
+   .nav-item svg { width: 24px; height: 24px; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <!-- Login Screen -->
+  <div id="loginScreen">
+    <div class="login-box">
+      <h1>ARBIMINE</h1>
+      <div id="loginForm">
+        <input type="text" id="loginUsername" placeholder="Username" />
+        <input type="password" id="loginPassword" placeholder="Password" />
+        <button onclick="handleLogin()">Login</button>
+        <div class="toggle-auth" onclick="toggleAuth()">No account? Register</div>
+      </div>
+      <div id="registerForm" class="hidden">
+        <input type="text" id="regUsername" placeholder="Username" />
+        <input type="password" id="regPassword" placeholder="Password" />
+        <button onclick="handleRegister()">Register</button>
+        <div class="toggle-auth" onclick="toggleAuth()">Have account? Login</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- App Screen -->
+  <div id="appScreen" class="hidden">
+    <div class="header">
+      <div class="logo">ARBIMINE</div>
+      <div class="balance">Balance: <span id="userBalance">$0.00</span></div>
+    </div>
+
+    <!-- Home Page -->
+    <div id="homePage" class="page">
+      <div class="card">
+        <h3>Available Balance</h3>
+        <div style="font-size: 32px; font-weight: 700; color: #10b981;" id="balanceDisplay">$0.00</div>
+        <button class="btn" onclick="showPage('depositPage')">Deposit via M-Pesa</button>
+      </div>
+      <div class="card">
+        <h3>Top Arbitrage Opportunities</h3>
+        <div class="arb-item">
+          <span class="arb-pair">BTC/USDT</span>
+          <span class="arb-profit">+2.34%</span>
+        </div>
+        <div class="arb-item">
+          <span class="arb-pair">ETH/USDT</span>
+          <span class="arb-profit">+1.89%</span>
+        </div>
+        <div class="arb-item">
+          <span class="arb-pair">BNB/USDT</span>
+          <span class="arb-profit">+1.45%</span>
+        </div>
+        <div class="arb-item">
+          <span class="arb-pair">SOL/USDT</span>
+          <span class="arb-profit">+2.01%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Deposit Page -->
+    <div id="depositPage" class="page hidden">
+      <div class="card">
+        <h3>Deposit via M-Pesa</h3>
+        <input type="number" id="depositAmount" placeholder="Amount (USD)" />
+        <input type="tel" id="depositPhone" placeholder="M-Pesa Phone (254...)" />
+        <button class="btn" onclick="handleDeposit()">Deposit Now</button>
+      </div>
+    </div>
+
+    <!-- Profile Page -->
+    <div id="profilePage" class="page hidden">
+      <div class="card">
+        <h3>Profile</h3>
+        <p><strong>Username:</strong> <span id="profileUsername">-</span></p>
+        <p style="margin-top: 10px;"><strong>Total Balance:</strong> <span id="profileBalance">$0.00</span></p>
+        <button class="btn" onclick="handleLogout()" style="background: #ef4444; margin-top: 20px;">Logout</button>
+      </div>
+    </div>
+
+    <!-- Support Page -->
+    <div id="supportPage" class="page hidden">
+      <div class="card">
+        <h3>Support</h3>
+        <p>Need help? Contact us:</p>
+        <p style="margin-top: 10px;"><strong>Email:</strong> support@arbimine.com</p>
+        <p><strong>Telegram:</strong> @ArbiMineSupport</p>
+        <p style="margin-top: 15px; color: #666; font-size: 14px;">We respond within 24 hours.</p>
+      </div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <div class="bottom-nav">
+      <div class="nav-item active" onclick="showPage('homePage', this)">
+        <svg fill="currentColor" viewBox="0 0 20 20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/></svg>
+        Home
+      </div>
+      <div class="nav-item" onclick="showPage('depositPage', this)">
+        <svg fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"/></svg>
+        Deposit
+      </div>
+      <div class="nav-item" onclick="showPage('profilePage', this)">
+        <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/></svg>
+        Profile
+      </div>
+      <div class="nav-item" onclick="showPage('supportPage', this)">
+        <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
+        Support
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let token = localStorage.getItem('token');
+    let currentUser = null;
+
+    // Check if logged in on load
+    if (token) {
+      loadProfile();
+    }
+
+    function toggleAuth() {
+      document.getElementById('loginForm').classList.toggle('hidden');
+      document.getElementById('registerForm').classList.toggle('hidden');
+    }
+
+    async function handleLogin() {
+      const username = document.getElementById('loginUsername').value;
+      const password = document.getElementById('loginPassword').value;
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          token = data.token;
+          localStorage.setItem('token', token);
+          currentUser = data.username;
+          showApp();
+          loadProfile();
+        } else {
+          alert(data.error || 'Login failed');
+        }
+      } catch (err) {
+        alert('Connection error. Please try again.');
+      }
+    }
+
+    async function handleRegister() {
+      const username = document.getElementById('regUsername').value;
+      const password = document.getElementById('regPassword').value;
+
+      try {
+        const res = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          token = data.token;
+          localStorage.setItem('token', token);
+          currentUser = data.username;
+          showApp();
+          loadProfile();
+        } else {
+          alert(data.error || 'Registration failed');
+        }
+      } catch (err) {
+        alert('Connection error. Please try again.');
+      }
+    }
+
+    function showApp() {
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('appScreen').classList.remove('hidden');
+    }
+
+    async function loadProfile() {
+      try {
+        const res = await fetch('/api/profile', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          document.getElementById('userBalance').textContent = '$' + data.balance.toFixed(2);
+          document.getElementById('balanceDisplay').textContent = '$' + data.balance.toFixed(2);
+          document.getElementById('profileUsername').textContent = data.username;
+          document.getElementById('profileBalance').textContent = '$' + data.balance.toFixed(2);
+          showApp();
+        } else {
+          handleLogout();
+        }
+      } catch (err) {
+        console.error('Failed to load profile');
+      }
+    }
+
+    async function handleDeposit() {
+      const amount = document.getElementById('depositAmount').value;
+      const phone = document.getElementById('depositPhone').value;
+
+      try {
+        const res = await fetch('/api/deposit', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({ amount, phone })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          alert('Deposit successful! New balance: $' + data.newBalance.toFixed(2));
+          loadProfile();
+          showPage('homePage', document.querySelectorAll('.nav-item')[0]);
+        } else {
+          alert(data.error || 'Deposit failed');
+        }
+      } catch (err) {
+        alert('Connection error. Please try again.');
+      }
+    }
+
+    function handleLogout() {
+      localStorage.removeItem('token');
+      token = null;
+      currentUser = null;
+      document.getElementById('appScreen').classList.add('hidden');
+      document.getElementById('loginScreen').classList.remove('hidden');
+    }
+
+    function showPage(pageId, navElement) {
+      document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+      document.getElementById(pageId).classList.remove('hidden');
+
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      if (navElement) navElement.classList.add('active');
+    }
+  </script>
+</body>
+</html>
