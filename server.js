@@ -1,3 +1,4 @@
+console.log("ALL ENV VARS:", Object.keys(process.env));
 require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
