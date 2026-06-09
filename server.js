@@ -1,5 +1,4 @@
-# Paste the entire code above, Ctrl+O, Enter, 
-# Ctrl+Xconst express = require('express');
+const express = require('express');
 const mongoose = require('mongoose'); const bcrypt 
 = require('bcrypt'); const jwt = 
 require('jsonwebtoken'); const path = 
