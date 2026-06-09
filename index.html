@@ -1,34 +1,126 @@
-// Inside your fetch call in index.html
-body: JSON.stringify({ 
-    email: "user@example.com", 
-    amount: 100 // Ensure this is a number, not a string
-})
-
-document.getElementById('pay-button').addEventListener('click', async () => {
-    const response = await fetch('/api/pay', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            email: "user@example.com", 
-            amount: 100 
-        })
-    });
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Arb Scanner</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+        input, button { display: block; width: 100%; margin: 10px 0; padding: 12px; font-size: 16px; }
+        button { background: #28a745; color: white; border: none; cursor: pointer; }
+        button:hover { background: #218838; }
+        #result { margin-top: 20px; padding: 10px; background: #f8f9fa; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <h1>Crypto Arb Scanner</h1>
     
-    const result = await response.json(); 
+    <div id="auth">
+        <h2>Register / Login</h2>
+        <input id="username" placeholder="Username">
+        <input id="password" type="password" placeholder="Password">
+        <button onclick="register()">Register</button>
+        <button onclick="login()">Login</button>
+    </div>
 
-    // Paystack response structure is: { status: true, data: { authorization_url: "...", reference: "..." } }
-    if (result.status) {
-        const handler = PaystackPop.setup({
-            key: 'pk_live_your_actual_key_here', // REPLACE WITH YOUR REAL PUBLIC KEY
-            email: 'user@example.com',
-            amount: 100 * 100, // Matches the amount sent to backend
-            ref: result.data.reference, 
-            callback: (res) => alert('Payment successful! Ref: ' + res.reference),
-            onClose: () => alert('Transaction cancelled')
-        });
-        handler.openIframe();
-    } else {
-        alert('Could not initialize payment');
-    }
-});
+    <div id="dashboard" class="hidden">
+        <h2>Welcome, <span id="userDisplay"></span></h2>
+        <p>Balance: $<span id="balance">0</span></p>
+        <p>Total Earnings: $<span id="earnings">0</span></p>
+        <p>Total Losses: $<span id="losses">0</span></p>
+        
+        <h3>Deposit</h3>
+        <input id="depositAmount" type="number" placeholder="Amount">
+        <button onclick="deposit()">Deposit</button>
+        <button onclick="logout()">Logout</button>
+    </div>
 
+    <div id="result"></div>
+
+    <script>
+        let token = localStorage.getItem('token');
+
+        if (token) showDashboard();
+
+        async function register() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const res = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await res.json();
+            if (data.token) {
+                localStorage.setItem('token', data.token);
+                token = data.token;
+                showDashboard();
+            } else {
+                document.getElementById('result').innerText = data.error;
+            }
+        }
+
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await res.json();
+            if (data.token) {
+                localStorage.setItem('token', data.token);
+                token = data.token;
+                showDashboard();
+            } else {
+                document.getElementById('result').innerText = data.error;
+            }
+        }
+
+        async function deposit() {
+            const amount = parseFloat(document.getElementById('depositAmount').value);
+            const res = await fetch('/api/deposit', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({ amount })
+            });
+            const data = await res.json();
+            if (data.newBalance !== undefined) {
+                document.getElementById('balance').innerText = data.newBalance;
+                document.getElementById('result').innerText = 'Deposit successful';
+            } else {
+                document.getElementById('result').innerText = data.error;
+            }
+        }
+
+        async function showDashboard() {
+            const res = await fetch('/api/user', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const data = await res.json();
+            if (data.username) {
+                document.getElementById('auth').classList.add('hidden');
+                document.getElementById('dashboard').classList.remove('hidden');
+                document.getElementById('userDisplay').innerText = data.username;
+                document.getElementById('balance').innerText = data.balance;
+                document.getElementById('earnings').innerText = data.totalEarnings;
+                document.getElementById('losses').innerText = data.totalLosses;
+            } else {
+                logout();
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            token = null;
+            document.getElementById('auth').classList.remove('hidden');
+            document.getElementById('dashboard').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
