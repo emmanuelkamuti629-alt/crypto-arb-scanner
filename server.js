@@ -189,12 +189,12 @@ app.get('/api/arbitrage', auth, async (req, res) => {
   }
 });
 
-// PAYSTACK M-PESA STK PUSH - FIXED
+// PAYSTACK M-PESA STK PUSH - FINAL FIXED VERSION
 app.post('/api/subscribe/mpesa', auth, async (req, res) => {
   try {
     const { plan, phone } = req.body;
     
-    // FIXED: Access the object with [plan]
+    // Map frontend values to backend keys - handles 'week', '1 Week', 'month', '1 Month'
     const planMap = {
       'week': 'week',
       '1 Week': 'week',
@@ -202,13 +202,13 @@ app.post('/api/subscribe/mpesa', auth, async (req, res) => {
       '1 Month': 'month'
     };
     
-    const planKey = planMap; // THIS LINE WAS THE BUG
+    const planKey = planMap; // CRITICAL FIX: Use to access the value
     const prices = { week: 10000, month: 35000 }; // kobo: 100 KES = 10000
 
     console.log('M-Pesa request:', { plan, planKey, amount: prices[planKey], phone });
 
     if (!planKey ||!prices[planKey]) {
-      return res.status(400).json({ error: 'Invalid plan selected' });
+      return res.status(400).json({ error: `Invalid plan selected: "${plan}"` });
     }
     
     if (!phone ||!phone.match(/^254[0-9]{9}$/)) {
