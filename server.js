@@ -189,7 +189,7 @@ app.get('/api/arbitrage', auth, async (req, res) => {
   }
 });
 
-// PAYSTACK M-PESA STK PUSH - FIXED AMOUNT BUG
+// PAYSTACK M-PESA STK PUSH - FIXED
 app.post('/api/subscribe/mpesa', auth, async (req, res) => {
   try {
     const { plan, phone } = req.body;
@@ -202,7 +202,7 @@ app.post('/api/subscribe/mpesa', auth, async (req, res) => {
 
     const response = await axios.post('https://api.paystack.co/charge', {
       email: req.user.email,
-      amount: prices, // FIXED: was sending prices object
+      amount: prices, // FIXED: was prices
       currency: 'KES',
       mobile_money: {
         phone: phone,
