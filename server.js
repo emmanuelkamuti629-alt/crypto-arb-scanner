@@ -12,7 +12,8 @@ const io = new Server(server);
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public')); // This will serve your frontend files
+// Serves your 'public' folder (where index.html, pro.html, etc. live)
+app.use(express.static('public')); 
 
 // Database Connection
 const dbURI = process.env.MONGODB_URI;
@@ -20,12 +21,13 @@ mongoose.connect(dbURI)
     .then(() => console.log('Successfully connected to MongoDB!'))
     .catch((err) => console.error('Database connection error:', err));
 
-// Socket.io Real-time Chat Logic
+// Chat Logic
 io.on('connection', (socket) => {
     console.log('A user connected to the chat');
 
+    // Listen for new messages
     socket.on('chat message', (data) => {
-        // data should be { username: '...', message: '...' }
+        // data format: { username: "Name", message: "Hello!" }
         io.emit('chat message', data);
     });
 
@@ -34,9 +36,9 @@ io.on('connection', (socket) => {
     });
 });
 
-// Basic Routes
+// Routes
 app.get('/', (req, res) => {
-    res.send('ArbiMine Server is running!');
+    res.sendFile(__dirname + '/public/index.html');
 });
 
 // Start Server
