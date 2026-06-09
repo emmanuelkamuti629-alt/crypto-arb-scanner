@@ -1,0 +1,31 @@
+<script src="https://js.paystack.co/v1/inline.js"></script>
+
+<script>
+    let selectedPlan = 'week'; // Default
+
+    function selectPlan(plan) {
+        selectedPlan = plan;
+        // ... (Keep your existing color-switching code here)
+    }
+
+    function payWithPaystack() {
+        const amount = selectedPlan === 'week' ? 10000 : 35000; // Paystack uses cents (100 KES = 10000 cents)
+        const email = "user@example.com"; // Get this from your logged-in session
+
+        const handler = PaystackPop.setup({
+            key: 'YOUR_PAYSTACK_PUBLIC_KEY', // Replace with your public key
+            email: email,
+            amount: amount,
+            currency: 'KES',
+            callback: function(response) {
+                alert('Payment complete! Reference: ' + response.reference);
+                // Send response.reference to your server to verify the payment
+            },
+            onClose: function() {
+                alert('Transaction cancelled.');
+            }
+        });
+        handler.openIframe();
+    }
+</script>
+
