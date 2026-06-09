@@ -2,34 +2,24 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ArbiMine - Home</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #1A1A1A; color: white; }
-        .gold-text { color: #FFD700; }
-        .nav-btn { background-color: #2C2C2C; border: 1px solid #444; }
+        body { background-color: #1A1A1A; color: white; padding-bottom: 80px; }
+        .gold-bg { background-color: #FFD700; color: black; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; font-size: 10px; font-weight: bold; }
     </style>
 </head>
 <body class="p-6">
 
-    <h1 class="text-3xl font-bold gold-text text-center mb-2">ArbiMine</h1>
-    <p class="text-center text-gray-400 mb-8">Your crypto arbitrage scanner is now live.</p>
+    <!-- Header and Content remain here -->
+    <h1 class="text-3xl font-bold text-[#FFD700] text-center mb-8">ArbiMine</h1>
 
-    <div class="grid gap-4">
-        <a href="dashboard.html" class="nav-btn p-4 rounded-lg text-center font-bold hover:border-[#FFD700] transition">
-            📊 Scanner Dashboard
-        </a>
-        <a href="pro.html" class="nav-btn p-4 rounded-lg text-center font-bold hover:border-[#FFD700] transition">
-            🚀 Go Pro Membership
-        </a>
-        <a href="chat.html" class="nav-btn p-4 rounded-lg text-center font-bold hover:border-[#FFD700] transition">
-            💬 Community Chat
-        </a>
-    </div>
-
-    <div class="mt-12 text-center text-xs text-gray-500">
-        <p>&copy; 2026 ArbiMine</p>
+    <!-- Bottom Navigation Bar (Fixed at the bottom) -->
+    <div class="fixed bottom-0 left-0 w-full bg-[#FFD700] p-3 flex justify-around text-black">
+        <a href="index.html" class="nav-item">🏠 Home</a>
+        <a href="pro.html" class="nav-item">⭐ Go PRO</a>
+        <a href="chat.html" class="nav-item">💬 Chat Room</a>
+        <a href="profile.html" class="nav-item">👤 Profile</a>
     </div>
 
 </body>

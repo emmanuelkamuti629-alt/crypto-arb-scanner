@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Verify Payment</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#1A1A1A] text-white p-6">
+    <h1 class="text-xl font-bold text-[#FFD700] mb-4">Complete Payment</h1>
+    <form id="paymentForm" class="space-y-4">
+        <input type="text" id="username" placeholder="Your Username" class="w-full p-3 bg-[#2C2C2C] rounded">
+        <input type="text" id="txCode" placeholder="M-Pesa Transaction Code" class="w-full p-3 bg-[#2C2C2C] rounded">
+        <button type="submit" class="w-full bg-[#FFD700] text-black font-bold py-3 rounded">SUBMIT FOR VERIFICATION</button>
+    </form>
+
+    <script>
+        document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                username: document.getElementById('username').value,
+                txCode: document.getElementById('txCode').value
+            };
+            const response = await fetch('/api/verify-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            alert('Payment submitted for verification!');
+        });
+    </script>
+</body>
+</html>
+

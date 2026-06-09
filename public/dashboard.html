@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scanner Dashboard - ArbiMine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #1A1A1A; color: white; }
+        .gold-text { color: #FFD700; }
+        .card-bg { background-color: #2C2C2C; }
+    </style>
+</head>
+<body class="p-6">
+
+    <!-- Header -->
+    <h1 class="text-2xl font-bold gold-text mb-6 text-center">LIVE ARBITRAGE SCANNER</h1>
+
+    <!-- Scanner Feed -->
+    <div id="data-feed" class="space-y-4">
+        <!-- Example Entry -->
+        <div class="card-bg p-4 rounded-lg border-l-4 border-[#FFD700]">
+            <div class="flex justify-between items-center">
+                <span class="font-bold">BTC/USDT</span>
+                <span class="gold-text font-bold">+1.25%</span>
+            </div>
+            <p class="text-xs text-gray-400 mt-1">Binance → Bybit</p>
+        </div>
+
+        <!-- Example Entry -->
+        <div class="card-bg p-4 rounded-lg border-l-4 border-green-500">
+            <div class="flex justify-between items-center">
+                <span class="font-bold">ETH/USDT</span>
+                <span class="text-green-500 font-bold">+0.89%</span>
+            </div>
+            <p class="text-xs text-gray-400 mt-1">KuCoin → Binance</p>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="mt-8">
+        <button class="w-full bg-[#FFD700] text-black font-bold py-3 rounded-lg">START SCANNING</button>
+    </div>
+
+</body>
+</html>
+
