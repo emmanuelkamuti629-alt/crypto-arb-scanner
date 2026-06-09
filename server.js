@@ -1,12 +1,14 @@
 const express = require('express');
-const mongoose = require('mongoose'); const bcrypt 
-= require('bcrypt'); const jwt = 
-require('jsonwebtoken'); const path = 
-require('path'); require('dotenv').config(); git 
-add server.js const app = express(); 
-app.use(express.json()); git commit -m "Serve 
-index.html and add static files"
-git push// === ENV DEBUG === 
+const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const path = require('path');
+require('dotenv').config();
+
+const app = express();
+app.use(express.json());
+
+// === ENV DEBUG === 
 console.log('=== ENV DEBUG ===');
 console.log('MONGODB_URI exists:', !!process.env.MONGODB_URI);
 console.log('First 30 chars:', process.env.MONGODB_URI?.substring(0, 30));
@@ -104,7 +106,7 @@ app.get('/health', (req, res) => {
 app.use(express.static(__dirname));
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html')); // serves index.html
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // === START SERVER ===
