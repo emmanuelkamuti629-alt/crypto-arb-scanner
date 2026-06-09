@@ -1,148 +1,102 @@
 const express = require('express');
-const path = require('path');
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-
+const path = require('path');
 const app = express();
-const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'change_this_secret';
-const MONGO_URI = process.env.MONGO_URI;
 
-// Middleware
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.static(__dirname));
 
-// Disable caching for HTML files to prevent stale JS
-app.use(express.static(path.join(__dirname, 'public'), {
-  etag: false,
-  lastModified: false,
-  setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.html')) {
-      res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
-    }
-  }
-}));
+const JWT_SECRET = 'your-super-secret-jwt-key-change-this';
 
-// MongoDB connectionconsole.log('MONGODB_URI exists:', !!process.env.MONGODB_URI);
+// Debug: Check if env var exists
+console.log('=== ENV DEBUG ===');
+console.log('MONGODB_URI exists:', !!process.env.MONGODB_URI);
+console.log('First 30 chars:', process.env.MONGODB_URI?.substring(0, 30));
+console.log('================');
+
+// MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)
-mongoose.connect(MONGO_URI)
- .then(() => console.log('Connected to MongoDB Atlas'))
- .catch(err => console.error('MongoDB connection error:', err));
+  .then(() => console.log('MongoDB connected'))
+  .catch(err => console.log('MongoDB connection error:', err.message));
 
 // User Schema
 const userSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
+  username: { type: String, unique: true },
+  password: String,
   balance: { type: Number, default: 0 },
-  createdAt: { type: Date, default: Date.now }
+  totalEarnings: { type: Number, default: 0 },
+  totalLosses: { type: Number, default: 0 }
 });
-
 const User = mongoose.model('User', userSchema);
 
 // Auth middleware
 const auth = async (req, res, next) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) return res.status(401).json({ error: 'No token provided' });
-
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    if (!token) return res.status(401).json({ error: 'No token' });
     const decoded = jwt.verify(token, JWT_SECRET);
-    req.userId = decoded.userId;
+    const user = await User.findById(decoded.id);
+    if (!user) return res.status(401).json({ error: 'User not found' });
+    req.user = user;
     next();
-  } catch (err) {
+  } catch (e) {
     res.status(401).json({ error: 'Invalid token' });
   }
 };
 
 // Routes
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'app.html'));
+  res.sendFile(path.join(__dirname, 'app.html'));
 });
 
-// Register
 app.post('/api/register', async (req, res) => {
   try {
     const { username, password } = req.body;
-    if (!username ||!password) {
-      return res.status(400).json({ error: 'Username and password required' });
-    }
-
-    const existingUser = await User.findOne({ username });
-    if (existingUser) {
-      return res.status(400).json({ error: 'Username already exists' });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ username, password: hashedPassword });
+    const hashed = await bcrypt.hash(password, 10);
+    const user = new User({ username, password: hashed });
     await user.save();
-
-    const token = jwt.sign({ userId: user._id }, JWT_SECRET);
-    res.json({ token, username: user.username });
+    const token = jwt.sign({ id: user._id }, JWT_SECRET);
+    res.json({ token });
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    res.status(400).json({ error: 'Username taken' });
   }
 });
 
-// Login
 app.post('/api/login', async (req, res) => {
   try {
     const { username, password } = req.body;
-    if (!username ||!password) {
-      return res.status(400).json({ error: 'Username and password required' });
-    }
-
     const user = await User.findOne({ username });
-    if (!user) {
+    if (!user || !await bcrypt.compare(password, user.password)) {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
-
-    const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) {
-      return res.status(400).json({ error: 'Invalid credentials' });
-    }
-
-    const token = jwt.sign({ userId: user._id }, JWT_SECRET);
-    res.json({ token, username: user.username });
+    const token = jwt.sign({ id: user._id }, JWT_SECRET);
+    res.json({ token });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-// Get profile
-app.get('/api/profile', auth, async (req, res) => {
-  try {
-    const user = await User.findById(req.userId).select('-password');
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    res.json({ username: user.username, balance: user.balance });
-  } catch (err) {
-    res.status(500).json({ error: 'Server error' });
-  }
+app.get('/api/user', auth, async (req, res) => {
+  res.json({
+    username: req.user.username,
+    balance: req.user.balance,
+    totalEarnings: req.user.totalEarnings,
+    totalLosses: req.user.totalLosses
+  });
 });
 
-// M-Pesa deposit simulation
 app.post('/api/deposit', auth, async (req, res) => {
   try {
-    const { amount, phone } = req.body;
-    if (!amount ||!phone) {
-      return res.status(400).json({ error: 'Amount and phone required' });
-    }
-
-    const user = await User.findById(req.userId);
-    if (!user) return res.status(404).json({ error: 'User not found' });
-
-    user.balance += Number(amount);
-    await user.save();
-
-    res.json({
-      message: 'Deposit successful',
-      newBalance: user.balance
-    });
+    const { amount } = req.body;
+    req.user.balance += Number(amount);
+    await req.user.save();
+    res.json({ newBalance: req.user.balance });
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: 'Deposit failed' });
   }
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server live on ${PORT}`);
-});
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server live on ${PORT}`));
