@@ -189,25 +189,29 @@ app.get('/api/arbitrage', auth, async (req, res) => {
   }
 });
 
-// PAYSTACK M-PESA STK PUSH
+// PAYSTACK M-PESA STK PUSH - ACCEPTS ANY NUMBER
 app.post('/api/subscribe/mpesa', auth, async (req, res) => {
   try {
-    const { plan } = req.body;
+    const { plan, phone } = req.body;
     const prices = { week: 10000, month: 35000 }; // kobo: 100 KES = 10000
 
     if (!prices) return res.status(400).json({ error: 'Invalid plan' });
+    if (!phone ||!phone.match(/^254[0-9]{9}$/)) {
+      return res.status(400).json({ error: 'Invalid phone. Use 2547XXXXXXXX' });
+    }
 
     const response = await axios.post('https://api.paystack.co/charge', {
       email: req.user.email,
       amount: prices,
       currency: 'KES',
       mobile_money: {
-        phone: req.user.phone,
+        phone: phone,
         provider: 'mpesa'
       },
       metadata: {
         userId: req.user._id.toString(),
-        plan: plan
+        plan: plan,
+        paymentPhone: phone
       }
     }, {
       headers: {
@@ -223,15 +227,22 @@ app.post('/api/subscribe/mpesa', auth, async (req, res) => {
       await req.user.save();
       res.json({
         success: true,
-        message: data.display_text || 'M-Pesa prompt sent to your phone',
+        message: data.display_text || `STK Push sent to ${phone}`,
         reference: data.reference
       });
+    } else if (data.status === 'success') {
+      const days = plan === 'week'? 7 : 30;
+      req.user.isPro = true;
+      req.user.proExpiry = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+      req.user.pendingRef = null;
+      await req.user.save();
+      res.json({ success: true, message: 'Payment completed. PRO activated.' });
     } else {
-      res.status(400).json({ error: 'Failed to initiate M-Pesa' });
+      res.status(400).json({ error: data.message || 'Failed to initiate M-Pesa' });
     }
   } catch (err) {
     console.log('Paystack error:', err.response?.data || err.message);
-    res.status(500).json({ error: 'Payment failed' });
+    res.status(500).json({ error: err.response?.data?.message || 'Payment failed. Check Paystack keys.' });
   }
 });
 
