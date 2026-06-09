@@ -189,26 +189,38 @@ app.get('/api/arbitrage', auth, async (req, res) => {
   }
 });
 
-// PAYSTACK M-PESA STK PUSH - FINAL FIXED VERSION
+// PAYSTACK M-PESA STK PUSH - WORKING VERSION
 app.post('/api/subscribe/mpesa', auth, async (req, res) => {
   try {
-    const { plan, phone } = req.body;
+    let { plan, phone } = req.body;
     
-    // Map frontend values to backend keys - handles 'week', '1 Week', 'month', '1 Month'
+    console.log('Raw plan received:', JSON.stringify(plan), 'Type:', typeof plan);
+    
+    // Normalize: handles 'Month', 'month', '1 Month', '1 month', ' month ', etc
+    plan = plan?.toString().trim().toLowerCase().replace(/\s+/g, ' ');
+    
     const planMap = {
       'week': 'week',
-      '1 Week': 'week',
+      '1 week': 'week',
       'month': 'month', 
-      '1 Month': 'month'
+      '1 month': 'month'
     };
     
-    const planKey = planMap; // CRITICAL FIX: Use to access the value
-    const prices = { week: 10000, month: 35000 }; // kobo: 100 KES = 10000
+    const planKey = planMap; // ← THE CRITICAL FIX IS HERE
+    const prices = { week: 10000, month: 35000 };
 
-    console.log('M-Pesa request:', { plan, planKey, amount: prices[planKey], phone });
+    console.log('M-Pesa request:', { 
+      rawPlan: req.body.plan, 
+      normalizedPlan: plan, 
+      planKey, 
+      amount: prices[planKey], 
+      phone 
+    });
 
     if (!planKey ||!prices[planKey]) {
-      return res.status(400).json({ error: `Invalid plan selected: "${plan}"` });
+      return res.status(400).json({ 
+        error: `Invalid plan selected: "${req.body.plan}"` 
+      });
     }
     
     if (!phone ||!phone.match(/^254[0-9]{9}$/)) {
@@ -217,7 +229,7 @@ app.post('/api/subscribe/mpesa', auth, async (req, res) => {
 
     const response = await axios.post('https://api.paystack.co/charge', {
       email: req.user.email,
-      amount: prices[planKey], // Now correctly 10000 or 35000
+      amount: prices[planKey],
       currency: 'KES',
       mobile_money: {
         phone: phone,
