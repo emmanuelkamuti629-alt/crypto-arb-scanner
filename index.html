@@ -3,61 +3,180 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crypto Arb Scanner</title>
+    <title>ArbiMine</title>
+    <script src="https://js.paystack.co/v1/inline.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
-        input, button { display: block; width: 100%; margin: 10px 0; padding: 12px; font-size: 16px; }
-        button { background: #28a745; color: white; border: none; cursor: pointer; }
-        button:hover { background: #218838; }
-        #result { margin-top: 20px; padding: 10px; background: #f8f9fa; }
-        .hidden { display: none; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #0f0f0f; color: #fff; padding-bottom: 70px; }
+      .header { background: #ffc107; color: #000; padding: 16px; text-align: center; font-weight: 700; font-size: 22px; position: sticky; top: 0; z-index: 100; }
+      .container { max-width: 600px; margin: 0 auto; padding: 12px; }
+      .card { background: #1a1a1a; border-radius: 12px; padding: 16px; margin: 12px 0; border: 1px solid #2a2a2a; }
+      .arb-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+      .arb-left { flex: 1; }
+      .pair { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+      .exchanges { font-size: 11px; color: #888; }
+      .exchanges span { background: #2a2a2a; padding: 2px 6px; border-radius: 4px; margin-right: 4px; }
+      .profit { color: #4caf50; font-size: 24px; font-weight: 700; }
+      .profit.high { color: #ff9800; }
+      .liquidity { font-size: 11px; color: #666; margin-top: 4px; }
+      .blur { filter: blur(10px); pointer-events: none; user-select: none; }
+      .pro-banner { background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%); color: #000; padding: 20px; border-radius: 12px; text-align: center; margin: 16px 0; cursor: pointer; }
+      .pro-banner h3 { font-size: 16px; margin-bottom: 8px; }
+      .btn { background: #ffc107; color: #000; border: none; padding: 14px; width: 100%; border-radius: 8px; font-weight: 600; cursor: pointer; margin: 8px 0; font-size: 15px; }
+      .btn:hover { background: #ffca28; }
+      .btn:active { transform: scale(0.98); }
+      .btn-dark { background: #2a2a2a; color: #fff; }
+      .btn-dark:hover { background: #333; }
+        input { width: 100%; padding: 14px; margin: 8px 0; border-radius: 8px; border: 1px solid #2a2a2a; background: #0f0f0f; color: #fff; font-size: 15px; }
+        input:focus { outline: none; border-color: #ffc107; }
+      .hidden { display: none; }
+      .pricing { display: flex; gap: 12px; margin: 20px 0; }
+      .plan { flex: 1; background: #0f0f0f; padding: 20px 12px; border-radius: 12px; text-align: center; cursor: pointer; border: 2px solid #2a2a2a; transition: all 0.2s; }
+      .plan:hover { border-color: #ffc107; }
+      .plan.active { border-color: #ffc107; background: #ffc107; color: #000; }
+      .plan.duration { font-size: 14px; margin-bottom: 8px; }
+      .plan.price { font-size: 24px; font-weight: 700; }
+      .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #1a1a1a; border-top: 1px solid #2a2a2a; display: flex; justify-content: space-around; padding: 12px 0; z-index: 100; }
+      .nav-item { color: #888; text-align: center; font-size: 11px; cursor: pointer; flex: 1; }
+      .nav-item.active { color: #ffc107; }
+      .nav-item svg { width: 24px; height: 24px; margin-bottom: 4px; }
+      .error { color: #f44336; font-size: 13px; margin-top: 8px; }
+      .success { color: #4caf50; font-size: 13px; margin-top: 8px; }
+      .badge { background: #4caf50; color: #000; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+      .stats { display: flex; gap: 12px; margin: 12px 0; }
+      .stat { flex: 1; background: #0f0f0f; padding: 12px; border-radius: 8px; text-align: center; }
+      .stat-label { font-size: 11px; color: #888; }
+      .stat-value { font-size: 18px; font-weight: 700; margin-top: 4px; }
+      .loader { border: 3px solid #2a2a2a; border-top: 3px solid #ffc107; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
+       @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-    <h1>Crypto Arb Scanner</h1>
-    
-    <div id="auth">
-        <h2>Register / Login</h2>
-        <input id="username" placeholder="Username">
-        <input id="password" type="password" placeholder="Password">
-        <button onclick="register()">Register</button>
-        <button onclick="login()">Login</button>
+    <div class="header">🚀 ArbiMine</div>
+
+    <div class="container" id="auth">
+        <div class="card">
+            <h2 style="margin-bottom: 16px;">Welcome to ArbiMine</h2>
+            <input id="username" placeholder="Username">
+            <input id="email" type="email" placeholder="Email">
+            <input id="password" type="password" placeholder="Password">
+            <button class="btn" onclick="register()">Create Account</button>
+            <button class="btn btn-dark" onclick="login()">Login</button>
+            <div id="authError" class="error"></div>
+        </div>
     </div>
 
-    <div id="dashboard" class="hidden">
-        <h2>Welcome, <span id="userDisplay"></span></h2>
-        <p>Balance: $<span id="balance">0</span></p>
-        <p>Total Earnings: $<span id="earnings">0</span></p>
-        <p>Total Losses: $<span id="losses">0</span></p>
-        
-        <h3>Deposit</h3>
-        <input id="depositAmount" type="number" placeholder="Amount">
-        <button onclick="deposit()">Deposit</button>
-        <button onclick="logout()">Logout</button>
+    <div class="container hidden" id="app">
+        <div id="userBadge" class="card" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-size: 14px; color: #888;">Logged in as</div>
+                    <div style="font-weight: 600;" id="userDisplay"></div>
+                </div>
+                <span class="badge" id="proBadge" style="display: none;">PRO</span>
+            </div>
+        </div>
+
+        <div id="statsBar" class="stats">
+            <div class="stat">
+                <div class="stat-label">Opportunities</div>
+                <div class="stat-value" id="arbCount">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Best Profit</div>
+                <div class="stat-value" id="bestProfit">0%</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Last Scan</div>
+                <div class="stat-value" id="lastScan">--</div>
+            </div>
+        </div>
+
+        <div id="freeArbs"></div>
+
+        <div class="pro-banner" id="proBanner" onclick="showPricing()">
+            <h3>🚀 Unlock PRO Opportunities</h3>
+            <div style="font-size: 13px; opacity: 0.9;">See arbitrage above 2% profit</div>
+            <button class="btn" style="margin-top: 12px; background: #000; color: #ffc107;">⭐ GO PRO</button>
+        </div>
+
+        <div id="proArbs" class="blur"></div>
+        <div id="loader" class="loader"></div>
     </div>
 
-    <div id="result"></div>
+    <div class="container hidden" id="pricing">
+        <div class="card">
+            <h2 style="margin-bottom: 8px;">🚀 UPGRADE TO PRO</h2>
+            <p style="font-size: 13px; color: #888; margin-bottom: 16px;">Unlock arbitrage opportunities above 2% profit</p>
+
+            <div class="pricing">
+                <div class="plan" data-plan="week" onclick="selectPlan('week')">
+                    <div class="duration">1 Week</div>
+                    <div class="price">Ksh 100</div>
+                </div>
+                <div class="plan active" data-plan="month" onclick="selectPlan('month')">
+                    <div class="duration">1 Month</div>
+                    <div class="price">Ksh 350</div>
+                </div>
+            </div>
+
+            <button class="btn" onclick="subscribe()">CONTINUE TO PAYMENT</button>
+            <button class="btn btn-dark" onclick="showApp()">BACK</button>
+            <div id="subError" class="error"></div>
+            <div id="subSuccess" class="success"></div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="showApp()">
+            <div>🏠</div>
+            <div>Home</div>
+        </div>
+        <div class="nav-item" onclick="showPricing()">
+            <div>⭐</div>
+            <div>Pro</div>
+        </div>
+        <div class="nav-item" onclick="logout()">
+            <div>👤</div>
+            <div>Profile</div>
+        </div>
+    </div>
 
     <script>
         let token = localStorage.getItem('token');
+        let selectedPlan = 'month';
+        let userData = null;
+        let arbsData = [];
 
-        if (token) showDashboard();
+        // Check URL for payment callback
+        const urlParams = new URLSearchParams(window.location.search);
+        const ref = urlParams.get('reference');
+        if (ref && token) verifyPayment(ref);
+
+        if (token) loadApp();
 
         async function register() {
             const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
+
+            if (!username ||!email ||!password) {
+                document.getElementById('authError').innerText = 'All fields required';
+                return;
+            }
+
             const res = await fetch('/api/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
+                body: JSON.stringify({ username, email, password })
             });
             const data = await res.json();
             if (data.token) {
                 localStorage.setItem('token', data.token);
                 token = data.token;
-                showDashboard();
+                loadApp();
             } else {
-                document.getElementById('result').innerText = data.error;
+                document.getElementById('authError').innerText = data.error;
             }
         }
 
@@ -73,53 +192,130 @@
             if (data.token) {
                 localStorage.setItem('token', data.token);
                 token = data.token;
-                showDashboard();
+                loadApp();
             } else {
-                document.getElementById('result').innerText = data.error;
+                document.getElementById('authError').innerText = data.error;
             }
         }
 
-        async function deposit() {
-            const amount = parseFloat(document.getElementById('depositAmount').value);
-            const res = await fetch('/api/deposit', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + token
-                },
-                body: JSON.stringify({ amount })
-            });
-            const data = await res.json();
-            if (data.newBalance !== undefined) {
-                document.getElementById('balance').innerText = data.newBalance;
-                document.getElementById('result').innerText = 'Deposit successful';
-            } else {
-                document.getElementById('result').innerText = data.error;
-            }
-        }
-
-        async function showDashboard() {
+        async function loadApp() {
             const res = await fetch('/api/user', {
                 headers: { 'Authorization': 'Bearer ' + token }
             });
+            userData = await res.json();
+            if (!userData.username) return logout();
+
+            document.getElementById('auth').classList.add('hidden');
+            document.getElementById('app').classList.remove('hidden');
+            document.getElementById('userBadge').style.display = 'block';
+            document.getElementById('userDisplay').innerText = userData.username;
+
+            if (userData.isPro) {
+                document.getElementById('proBadge').style.display = 'inline-block';
+                document.getElementById('proBanner').classList.add('hidden');
+                document.getElementById('proArbs').classList.remove('blur');
+            }
+
+            loadArbs();
+            setInterval(loadArbs, 20000); // Refresh every 20s
+        }
+
+        async function loadArbs() {
+            document.getElementById('loader').style.display = 'block';
+            const res = await fetch('/api/arbitrage', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
             const data = await res.json();
-            if (data.username) {
-                document.getElementById('auth').classList.add('hidden');
-                document.getElementById('dashboard').classList.remove('hidden');
-                document.getElementById('userDisplay').innerText = data.username;
-                document.getElementById('balance').innerText = data.balance;
-                document.getElementById('earnings').innerText = data.totalEarnings;
-                document.getElementById('losses').innerText = data.totalLosses;
+            arbsData = data.arbs;
+            document.getElementById('loader').style.display = 'none';
+
+            // Update stats
+            document.getElementById('arbCount').innerText = arbsData.length;
+            document.getElementById('bestProfit').innerText = arbsData.length > 0? arbsData[0].profit + '%' : '0%';
+            document.getElementById('lastScan').innerText = new Date(data.lastScan).toLocaleTimeString();
+
+            const freeArbs = arbsData.filter(a => a.profit < 2);
+            const proArbs = arbsData.filter(a => a.profit >= 2);
+
+            const renderArb = (arb) => `
+                <div class="card">
+                    <div class="arb-item">
+                        <div class="arb-left">
+                            <div class="pair">${arb.pair}</div>
+                            <div class="exchanges">
+                                <span>BUY ${arb.buy}</span>
+                                <span>SELL ${arb.sell}</span>
+                            </div>
+                            <div class="liquidity">$${arb.buyPrice.toFixed(2)} → $${arb.sellPrice.toFixed(2)}</div>
+                        </div>
+                        <div class="profit ${arb.profit >= 2? 'high' : ''}">${arb.profit}%</div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('freeArbs').innerHTML = freeArbs.map(renderArb).join('');
+            document.getElementById('proArbs').innerHTML = proArbs.map(renderArb).join('');
+        }
+
+        function showPricing() {
+            document.getElementById('app').classList.add('hidden');
+            document.getElementById('pricing').classList.remove('hidden');
+        }
+
+        function showApp() {
+            document.getElementById('pricing').classList.add('hidden');
+            document.getElementById('app').classList.remove('hidden');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.querySelectorAll('.nav-item')[0].classList.add('active');
+        }
+
+        function selectPlan(plan) {
+            selectedPlan = plan;
+            document.querySelectorAll('.plan').forEach(p => p.classList.remove('active'));
+            document.querySelector(`[data-plan="${plan}"]`).classList.add('active');
+        }
+
+        async function subscribe() {
+            document.getElementById('subError').innerText = '';
+            document.getElementById('subSuccess').innerText = '';
+
+            const res = await fetch('/api/subscribe/initialize', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({ plan: selectedPlan })
+            });
+            const data = await res.json();
+
+            if (data.authorization_url) {
+                window.location.href = data.authorization_url;
             } else {
-                logout();
+                document.getElementById('subError').innerText = data.error || 'Failed to start payment';
+            }
+        }
+
+        async function verifyPayment(reference) {
+            const res = await fetch('/api/subscribe/verify', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({ reference })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert('Payment successful! PRO activated.');
+                window.location.href = '/';
             }
         }
 
         function logout() {
             localStorage.removeItem('token');
             token = null;
-            document.getElementById('auth').classList.remove('hidden');
-            document.getElementById('dashboard').classList.add('hidden');
+            window.location.href = '/';
         }
     </script>
 </body>
