@@ -193,16 +193,31 @@ app.get('/api/arbitrage', auth, async (req, res) => {
 app.post('/api/subscribe/mpesa', auth, async (req, res) => {
   try {
     const { plan, phone } = req.body;
+    
+    // FIXED: Access the object with [plan]
+    const planMap = {
+      'week': 'week',
+      '1 Week': 'week',
+      'month': 'month', 
+      '1 Month': 'month'
+    };
+    
+    const planKey = planMap; // THIS LINE WAS THE BUG
     const prices = { week: 10000, month: 35000 }; // kobo: 100 KES = 10000
 
-    if (!prices) return res.status(400).json({ error: 'Invalid plan' });
+    console.log('M-Pesa request:', { plan, planKey, amount: prices[planKey], phone });
+
+    if (!planKey ||!prices[planKey]) {
+      return res.status(400).json({ error: 'Invalid plan selected' });
+    }
+    
     if (!phone ||!phone.match(/^254[0-9]{9}$/)) {
       return res.status(400).json({ error: 'Invalid phone. Use 2547XXXXXXXX' });
     }
 
     const response = await axios.post('https://api.paystack.co/charge', {
       email: req.user.email,
-      amount: prices, // FIXED: was prices
+      amount: prices[planKey], // Now correctly 10000 or 35000
       currency: 'KES',
       mobile_money: {
         phone: phone,
@@ -210,7 +225,7 @@ app.post('/api/subscribe/mpesa', auth, async (req, res) => {
       },
       metadata: {
         userId: req.user._id.toString(),
-        plan: plan,
+        plan: planKey,
         paymentPhone: phone
       }
     }, {
@@ -231,7 +246,7 @@ app.post('/api/subscribe/mpesa', auth, async (req, res) => {
         reference: data.reference
       });
     } else if (data.status === 'success') {
-      const days = plan === 'week'? 7 : 30;
+      const days = planKey === 'week'? 7 : 30;
       req.user.isPro = true;
       req.user.proExpiry = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
       req.user.pendingRef = null;
