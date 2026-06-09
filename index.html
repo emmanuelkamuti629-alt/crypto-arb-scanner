@@ -7,36 +7,37 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #0f0f0f; color: #fff; padding-bottom: 70px; }
-     .header { background: #ffc107; color: #000; padding: 16px; text-align: center; font-weight: 700; font-size: 22px; position: sticky; top: 0; z-index: 100; }
-     .container { max-width: 600px; margin: 0 auto; padding: 12px; }
-     .card { background: #1a1a1a; border-radius: 12px; padding: 16px; margin: 12px 0; border: 1px solid #2a2a2a; }
-     .arb-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-     .arb-left { flex: 1; }
-     .pair { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
-     .exchanges { font-size: 11px; color: #888; }
-     .exchanges span { background: #2a2a2a; padding: 2px 6px; border-radius: 4px; margin-right: 4px; }
-     .profit { color: #4caf50; font-size: 24px; font-weight: 700; }
-     .profit.high { color: #ff9800; }
-     .blur { filter: blur(10px); pointer-events: none; user-select: none; }
-     .pro-banner { background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%); color: #000; padding: 20px; border-radius: 12px; text-align: center; margin: 16px 0; cursor: pointer; }
-     .btn { background: #ffc107; color: #000; border: none; padding: 14px; width: 100%; border-radius: 8px; font-weight: 600; cursor: pointer; margin: 8px 0; font-size: 15px; }
-     .btn-dark { background: #2a2a2a; color: #fff; }
+    .header { background: #ffc107; color: #000; padding: 16px; text-align: center; font-weight: 700; font-size: 22px; position: sticky; top: 0; z-index: 100; }
+    .container { max-width: 600px; margin: 0 auto; padding: 12px; }
+    .card { background: #1a1a1a; border-radius: 12px; padding: 16px; margin: 12px 0; border: 1px solid #2a2a2a; }
+    .arb-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .arb-left { flex: 1; }
+    .pair { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+    .exchanges { font-size: 11px; color: #888; }
+    .exchanges span { background: #2a2a2a; padding: 2px 6px; border-radius: 4px; margin-right: 4px; }
+    .profit { color: #4caf50; font-size: 24px; font-weight: 700; }
+    .profit.high { color: #ff9800; }
+    .blur { filter: blur(10px); pointer-events: none; user-select: none; }
+    .pro-banner { background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%); color: #000; padding: 20px; border-radius: 12px; text-align: center; margin: 16px 0; cursor: pointer; }
+    .btn { background: #ffc107; color: #000; border: none; padding: 14px; width: 100%; border-radius: 8px; font-weight: 600; cursor: pointer; margin: 8px 0; font-size: 15px; }
+    .btn:disabled { background: #555; cursor: not-allowed; }
+    .btn-dark { background: #2a2a2a; color: #fff; }
         input { width: 100%; padding: 14px; margin: 8px 0; border-radius: 8px; border: 1px solid #2a2a2a; background: #0f0f0f; color: #fff; font-size: 15px; }
-     .hidden { display: none; }
-     .pricing { display: flex; gap: 12px; margin: 20px 0; }
-     .plan { flex: 1; background: #0f0f0f; padding: 20px 12px; border-radius: 12px; text-align: center; cursor: pointer; border: 2px solid #2a2a2a; }
-     .plan.active { border-color: #ffc107; background: #ffc107; color: #000; }
-     .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #1a1a1a; border-top: 1px solid #2a2a2a; display: flex; justify-content: space-around; padding: 12px 0; z-index: 100; }
-     .nav-item { color: #888; text-align: center; font-size: 11px; cursor: pointer; flex: 1; }
-     .nav-item.active { color: #ffc107; }
-     .error { color: #f44336; font-size: 13px; margin-top: 8px; }
-     .success { color: #4caf50; font-size: 13px; margin-top: 8px; }
-     .badge { background: #4caf50; color: #000; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
-     .stats { display: flex; gap: 12px; margin: 12px 0; }
-     .stat { flex: 1; background: #0f0f0f; padding: 12px; border-radius: 8px; text-align: center; }
-     .stat-label { font-size: 11px; color: #888; }
-     .stat-value { font-size: 18px; font-weight: 700; margin-top: 4px; }
-     .loader { border: 3px solid #2a2a2a; border-top: 3px solid #ffc107; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
+    .hidden { display: none; }
+    .pricing { display: flex; gap: 12px; margin: 20px 0; }
+    .plan { flex: 1; background: #0f0f0f; padding: 20px 12px; border-radius: 12px; text-align: center; cursor: pointer; border: 2px solid #2a2a2a; }
+    .plan.active { border-color: #ffc107; background: #ffc107; color: #000; }
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #1a1a1a; border-top: 1px solid #2a2a2a; display: flex; justify-content: space-around; padding: 12px 0; z-index: 100; }
+    .nav-item { color: #888; text-align: center; font-size: 11px; cursor: pointer; flex: 1; }
+    .nav-item.active { color: #ffc107; }
+    .error { color: #f44336; font-size: 13px; margin-top: 8px; }
+    .success { color: #4caf50; font-size: 13px; margin-top: 8px; }
+    .badge { background: #4caf50; color: #000; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+    .stats { display: flex; gap: 12px; margin: 12px 0; }
+    .stat { flex: 1; background: #0f0f0f; padding: 12px; border-radius: 8px; text-align: center; }
+    .stat-label { font-size: 11px; color: #888; }
+    .stat-value { font-size: 18px; font-weight: 700; margin-top: 4px; }
+    .loader { border: 3px solid #2a2a2a; border-top: 3px solid #ffc107; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
@@ -116,7 +117,7 @@
                 Enter your M-Pesa PIN on your phone to complete
             </div>
 
-            <button class="btn" onclick="subscribeMpesa()">SEND M-PESA PROMPT</button>
+            <button class="btn" id="payBtn" onclick="subscribeMpesa()">SEND M-PESA PROMPT</button>
             <button class="btn btn-dark" onclick="showApp()">BACK</button>
             <div id="subError" class="error"></div>
             <div id="subSuccess" class="success"></div>
@@ -147,13 +148,17 @@
         if (token) loadApp();
 
         async function register() {
-            const username = document.getElementById('username').value;
-            const email = document.getElementById('email').value;
-            const phone = document.getElementById('phone').value;
+            const username = document.getElementById('username').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const phone = document.getElementById('phone').value.trim();
             const password = document.getElementById('password').value;
 
             if (!username ||!email ||!phone ||!password) {
                 document.getElementById('authError').innerText = 'All fields required';
+                return;
+            }
+            if (!phone.match(/^254[0-9]{9}$/)) {
+                document.getElementById('authError').innerText = 'Phone format: 2547XXXXXXXX';
                 return;
             }
 
@@ -173,7 +178,7 @@
         }
 
         async function login() {
-            const username = document.getElementById('username').value;
+            const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
             const res = await fetch('/api/login', {
                 method: 'POST',
@@ -273,6 +278,7 @@
         async function subscribeMpesa() {
             document.getElementById('subError').innerText = '';
             document.getElementById('subSuccess').innerText = 'Sending M-Pesa prompt...';
+            document.getElementById('payBtn').disabled = true;
 
             const res = await fetch('/api/subscribe/mpesa', {
                 method: 'POST',
@@ -290,6 +296,7 @@
             } else {
                 document.getElementById('subError').innerText = data.error || 'Failed to send prompt';
                 document.getElementById('subSuccess').innerText = '';
+                document.getElementById('payBtn').disabled = false;
             }
         }
 
@@ -308,10 +315,14 @@
                     clearInterval(interval);
                     document.getElementById('subError').innerText = 'Payment cancelled or timed out';
                     document.getElementById('subSuccess').innerText = '';
+                    document.getElementById('payBtn').disabled = false;
                 }
             }, 3000);
 
-            setTimeout(() => clearInterval(interval), 120000);
+            setTimeout(() => {
+                clearInterval(interval);
+                document.getElementById('payBtn').disabled = false;
+            }, 120000);
         }
 
         function logout() {
