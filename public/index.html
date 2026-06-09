@@ -3,25 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { background-color: #1A1A1A; color: white; padding-bottom: 80px; }
-        .gold-bg { background-color: #FFD700; color: black; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; font-size: 10px; font-weight: bold; }
-    </style>
+    <style>body { background-color: #1A1A1A; color: white; padding-bottom: 80px; }</style>
 </head>
 <body class="p-6">
-
-    <!-- Header and Content remain here -->
     <h1 class="text-3xl font-bold text-[#FFD700] text-center mb-8">ArbiMine</h1>
-
-    <!-- Bottom Navigation Bar (Fixed at the bottom) -->
-    <div class="fixed bottom-0 left-0 w-full bg-[#FFD700] p-3 flex justify-around text-black">
-        <a href="index.html" class="nav-item">🏠 Home</a>
-        <a href="pro.html" class="nav-item">⭐ Go PRO</a>
-        <a href="chat.html" class="nav-item">💬 Chat Room</a>
-        <a href="profile.html" class="nav-item">👤 Profile</a>
+    <div class="grid gap-4">
+        <a href="dashboard.html" class="p-4 bg-[#2C2C2C] rounded-lg text-center font-bold">📊 Scanner Dashboard</a>
+        <a href="pro.html" class="p-4 bg-[#2C2C2C] rounded-lg text-center font-bold">🚀 Go Pro Membership</a>
+        <a href="chat.html" class="p-4 bg-[#2C2C2C] rounded-lg text-center font-bold">💬 Community Chat</a>
     </div>
 
+    <div class="fixed bottom-0 left-0 w-full bg-[#FFD700] p-3 flex justify-around text-black font-bold text-xs">
+        <a href="index.html" class="flex flex-col items-center">🏠 Home</a>
+        <a href="profit.html" class="flex flex-col items-center">📈 Profit</a>
+        <a href="pro.html" class="flex flex-col items-center">⭐ Go PRO</a>
+        <a href="chat.html" class="flex flex-col items-center">💬 Chat</a>
+    </div>
 </body>
 </html>
 
