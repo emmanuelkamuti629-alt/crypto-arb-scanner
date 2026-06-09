@@ -4,50 +4,39 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ArbiMine</title>
-    <script src="https://js.paystack.co/v1/inline.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #0f0f0f; color: #fff; padding-bottom: 70px; }
-      .header { background: #ffc107; color: #000; padding: 16px; text-align: center; font-weight: 700; font-size: 22px; position: sticky; top: 0; z-index: 100; }
-      .container { max-width: 600px; margin: 0 auto; padding: 12px; }
-      .card { background: #1a1a1a; border-radius: 12px; padding: 16px; margin: 12px 0; border: 1px solid #2a2a2a; }
-      .arb-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-      .arb-left { flex: 1; }
-      .pair { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
-      .exchanges { font-size: 11px; color: #888; }
-      .exchanges span { background: #2a2a2a; padding: 2px 6px; border-radius: 4px; margin-right: 4px; }
-      .profit { color: #4caf50; font-size: 24px; font-weight: 700; }
-      .profit.high { color: #ff9800; }
-      .liquidity { font-size: 11px; color: #666; margin-top: 4px; }
-      .blur { filter: blur(10px); pointer-events: none; user-select: none; }
-      .pro-banner { background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%); color: #000; padding: 20px; border-radius: 12px; text-align: center; margin: 16px 0; cursor: pointer; }
-      .pro-banner h3 { font-size: 16px; margin-bottom: 8px; }
-      .btn { background: #ffc107; color: #000; border: none; padding: 14px; width: 100%; border-radius: 8px; font-weight: 600; cursor: pointer; margin: 8px 0; font-size: 15px; }
-      .btn:hover { background: #ffca28; }
-      .btn:active { transform: scale(0.98); }
-      .btn-dark { background: #2a2a2a; color: #fff; }
-      .btn-dark:hover { background: #333; }
+     .header { background: #ffc107; color: #000; padding: 16px; text-align: center; font-weight: 700; font-size: 22px; position: sticky; top: 0; z-index: 100; }
+     .container { max-width: 600px; margin: 0 auto; padding: 12px; }
+     .card { background: #1a1a1a; border-radius: 12px; padding: 16px; margin: 12px 0; border: 1px solid #2a2a2a; }
+     .arb-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+     .arb-left { flex: 1; }
+     .pair { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+     .exchanges { font-size: 11px; color: #888; }
+     .exchanges span { background: #2a2a2a; padding: 2px 6px; border-radius: 4px; margin-right: 4px; }
+     .profit { color: #4caf50; font-size: 24px; font-weight: 700; }
+     .profit.high { color: #ff9800; }
+     .blur { filter: blur(10px); pointer-events: none; user-select: none; }
+     .pro-banner { background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%); color: #000; padding: 20px; border-radius: 12px; text-align: center; margin: 16px 0; cursor: pointer; }
+     .btn { background: #ffc107; color: #000; border: none; padding: 14px; width: 100%; border-radius: 8px; font-weight: 600; cursor: pointer; margin: 8px 0; font-size: 15px; }
+     .btn-dark { background: #2a2a2a; color: #fff; }
         input { width: 100%; padding: 14px; margin: 8px 0; border-radius: 8px; border: 1px solid #2a2a2a; background: #0f0f0f; color: #fff; font-size: 15px; }
-        input:focus { outline: none; border-color: #ffc107; }
-      .hidden { display: none; }
-      .pricing { display: flex; gap: 12px; margin: 20px 0; }
-      .plan { flex: 1; background: #0f0f0f; padding: 20px 12px; border-radius: 12px; text-align: center; cursor: pointer; border: 2px solid #2a2a2a; transition: all 0.2s; }
-      .plan:hover { border-color: #ffc107; }
-      .plan.active { border-color: #ffc107; background: #ffc107; color: #000; }
-      .plan.duration { font-size: 14px; margin-bottom: 8px; }
-      .plan.price { font-size: 24px; font-weight: 700; }
-      .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #1a1a1a; border-top: 1px solid #2a2a2a; display: flex; justify-content: space-around; padding: 12px 0; z-index: 100; }
-      .nav-item { color: #888; text-align: center; font-size: 11px; cursor: pointer; flex: 1; }
-      .nav-item.active { color: #ffc107; }
-      .nav-item svg { width: 24px; height: 24px; margin-bottom: 4px; }
-      .error { color: #f44336; font-size: 13px; margin-top: 8px; }
-      .success { color: #4caf50; font-size: 13px; margin-top: 8px; }
-      .badge { background: #4caf50; color: #000; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
-      .stats { display: flex; gap: 12px; margin: 12px 0; }
-      .stat { flex: 1; background: #0f0f0f; padding: 12px; border-radius: 8px; text-align: center; }
-      .stat-label { font-size: 11px; color: #888; }
-      .stat-value { font-size: 18px; font-weight: 700; margin-top: 4px; }
-      .loader { border: 3px solid #2a2a2a; border-top: 3px solid #ffc107; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
+     .hidden { display: none; }
+     .pricing { display: flex; gap: 12px; margin: 20px 0; }
+     .plan { flex: 1; background: #0f0f0f; padding: 20px 12px; border-radius: 12px; text-align: center; cursor: pointer; border: 2px solid #2a2a2a; }
+     .plan.active { border-color: #ffc107; background: #ffc107; color: #000; }
+     .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #1a1a1a; border-top: 1px solid #2a2a2a; display: flex; justify-content: space-around; padding: 12px 0; z-index: 100; }
+     .nav-item { color: #888; text-align: center; font-size: 11px; cursor: pointer; flex: 1; }
+     .nav-item.active { color: #ffc107; }
+     .error { color: #f44336; font-size: 13px; margin-top: 8px; }
+     .success { color: #4caf50; font-size: 13px; margin-top: 8px; }
+     .badge { background: #4caf50; color: #000; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+     .stats { display: flex; gap: 12px; margin: 12px 0; }
+     .stat { flex: 1; background: #0f0f0f; padding: 12px; border-radius: 8px; text-align: center; }
+     .stat-label { font-size: 11px; color: #888; }
+     .stat-value { font-size: 18px; font-weight: 700; margin-top: 4px; }
+     .loader { border: 3px solid #2a2a2a; border-top: 3px solid #ffc107; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
@@ -59,6 +48,7 @@
             <h2 style="margin-bottom: 16px;">Welcome to ArbiMine</h2>
             <input id="username" placeholder="Username">
             <input id="email" type="email" placeholder="Email">
+            <input id="phone" type="tel" placeholder="M-Pesa: 2547XXXXXXXX">
             <input id="password" type="password" placeholder="Password">
             <button class="btn" onclick="register()">Create Account</button>
             <button class="btn btn-dark" onclick="login()">Login</button>
@@ -67,17 +57,18 @@
     </div>
 
     <div class="container hidden" id="app">
-        <div id="userBadge" class="card" style="display: none;">
+        <div class="card" id="userBadge" style="display: none;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <div style="font-size: 14px; color: #888;">Logged in as</div>
                     <div style="font-weight: 600;" id="userDisplay"></div>
+                    <div style="font-size: 11px; color: #666;" id="userPhone"></div>
                 </div>
                 <span class="badge" id="proBadge" style="display: none;">PRO</span>
             </div>
         </div>
 
-        <div id="statsBar" class="stats">
+        <div class="stats">
             <div class="stat">
                 <div class="stat-label">Opportunities</div>
                 <div class="stat-value" id="arbCount">0</div>
@@ -107,7 +98,7 @@
     <div class="container hidden" id="pricing">
         <div class="card">
             <h2 style="margin-bottom: 8px;">🚀 UPGRADE TO PRO</h2>
-            <p style="font-size: 13px; color: #888; margin-bottom: 16px;">Unlock arbitrage opportunities above 2% profit</p>
+            <p style="font-size: 13px; color: #888; margin-bottom: 16px;">M-Pesa STK Push to your registered number</p>
 
             <div class="pricing">
                 <div class="plan" data-plan="week" onclick="selectPlan('week')">
@@ -120,7 +111,12 @@
                 </div>
             </div>
 
-            <button class="btn" onclick="subscribe()">CONTINUE TO PAYMENT</button>
+            <div style="background: #0f0f0f; padding: 12px; border-radius: 8px; font-size: 13px; color: #888; margin: 16px 0;">
+                M-Pesa prompt will be sent to: <b id="userPhoneDisplay"></b><br>
+                Enter your M-Pesa PIN on your phone to complete
+            </div>
+
+            <button class="btn" onclick="subscribeMpesa()">SEND M-PESA PROMPT</button>
             <button class="btn btn-dark" onclick="showApp()">BACK</button>
             <div id="subError" class="error"></div>
             <div id="subSuccess" class="success"></div>
@@ -138,7 +134,7 @@
         </div>
         <div class="nav-item" onclick="logout()">
             <div>👤</div>
-            <div>Profile</div>
+            <div>Logout</div>
         </div>
     </div>
 
@@ -148,19 +144,15 @@
         let userData = null;
         let arbsData = [];
 
-        // Check URL for payment callback
-        const urlParams = new URLSearchParams(window.location.search);
-        const ref = urlParams.get('reference');
-        if (ref && token) verifyPayment(ref);
-
         if (token) loadApp();
 
         async function register() {
             const username = document.getElementById('username').value;
             const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
             const password = document.getElementById('password').value;
 
-            if (!username ||!email ||!password) {
+            if (!username ||!email ||!phone ||!password) {
                 document.getElementById('authError').innerText = 'All fields required';
                 return;
             }
@@ -168,7 +160,7 @@
             const res = await fetch('/api/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, email, password })
+                body: JSON.stringify({ username, email, phone, password })
             });
             const data = await res.json();
             if (data.token) {
@@ -209,6 +201,7 @@
             document.getElementById('app').classList.remove('hidden');
             document.getElementById('userBadge').style.display = 'block';
             document.getElementById('userDisplay').innerText = userData.username;
+            document.getElementById('userPhone').innerText = userData.phone;
 
             if (userData.isPro) {
                 document.getElementById('proBadge').style.display = 'inline-block';
@@ -217,7 +210,7 @@
             }
 
             loadArbs();
-            setInterval(loadArbs, 20000); // Refresh every 20s
+            setInterval(loadArbs, 20000);
         }
 
         async function loadArbs() {
@@ -229,8 +222,7 @@
             arbsData = data.arbs;
             document.getElementById('loader').style.display = 'none';
 
-            // Update stats
-            document.getElementById('arbCount').innerText = arbsData.length;
+            document.getElementById('arbCount').innerText = data.totalFound || 0;
             document.getElementById('bestProfit').innerText = arbsData.length > 0? arbsData[0].profit + '%' : '0%';
             document.getElementById('lastScan').innerText = new Date(data.lastScan).toLocaleTimeString();
 
@@ -253,13 +245,16 @@
                 </div>
             `;
 
-            document.getElementById('freeArbs').innerHTML = freeArbs.map(renderArb).join('');
+            document.getElementById('freeArbs').innerHTML = freeArbs.map(renderArb).join('') || '<div class="card" style="text-align:center;color:#666;">No <2% opportunities</div>';
             document.getElementById('proArbs').innerHTML = proArbs.map(renderArb).join('');
         }
 
         function showPricing() {
             document.getElementById('app').classList.add('hidden');
             document.getElementById('pricing').classList.remove('hidden');
+            document.getElementById('userPhoneDisplay').innerText = userData.phone;
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.querySelectorAll('.nav-item')[1].classList.add('active');
         }
 
         function showApp() {
@@ -275,11 +270,11 @@
             document.querySelector(`[data-plan="${plan}"]`).classList.add('active');
         }
 
-        async function subscribe() {
+        async function subscribeMpesa() {
             document.getElementById('subError').innerText = '';
-            document.getElementById('subSuccess').innerText = '';
+            document.getElementById('subSuccess').innerText = 'Sending M-Pesa prompt...';
 
-            const res = await fetch('/api/subscribe/initialize', {
+            const res = await fetch('/api/subscribe/mpesa', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -289,27 +284,34 @@
             });
             const data = await res.json();
 
-            if (data.authorization_url) {
-                window.location.href = data.authorization_url;
+            if (data.success) {
+                document.getElementById('subSuccess').innerText = data.message;
+                pollPaymentStatus();
             } else {
-                document.getElementById('subError').innerText = data.error || 'Failed to start payment';
+                document.getElementById('subError').innerText = data.error || 'Failed to send prompt';
+                document.getElementById('subSuccess').innerText = '';
             }
         }
 
-        async function verifyPayment(reference) {
-            const res = await fetch('/api/subscribe/verify', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + token
-                },
-                body: JSON.stringify({ reference })
-            });
-            const data = await res.json();
-            if (data.success) {
-                alert('Payment successful! PRO activated.');
-                window.location.href = '/';
-            }
+        async function pollPaymentStatus() {
+            const interval = setInterval(async () => {
+                const res = await fetch('/api/subscribe/status', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await res.json();
+
+                if (data.isPro) {
+                    clearInterval(interval);
+                    document.getElementById('subSuccess').innerText = 'Payment successful! PRO activated.';
+                    setTimeout(() => location.reload(), 2000);
+                } else if (!data.pending) {
+                    clearInterval(interval);
+                    document.getElementById('subError').innerText = 'Payment cancelled or timed out';
+                    document.getElementById('subSuccess').innerText = '';
+                }
+            }, 3000);
+
+            setTimeout(() => clearInterval(interval), 120000);
         }
 
         function logout() {

@@ -10,7 +10,7 @@ const app = express();
 app.use(express.json());
 app.use(express.static(__dirname));
 
-// === MONGODB SETUP ===
+// === MONGODB ===
 mongoose.connect(process.env.MONGODB_URI)
 .then(() => console.log('MongoDB connected'))
 .catch(err => console.log('MongoDB error:', err));
@@ -18,10 +18,11 @@ mongoose.connect(process.env.MONGODB_URI)
 const userSchema = new mongoose.Schema({
   username: { type: String, unique: true, required: true },
   password: { type: String, required: true },
-  balance: { type: Number, default: 0 },
+  email: { type: String, required: true },
+  phone: { type: String, required: true },
   isPro: { type: Boolean, default: false },
   proExpiry: { type: Date, default: null },
-  mpesaNumber: { type: String, default: null },
+  pendingRef: { type: String, default: null },
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -48,27 +49,16 @@ async function fetchExchangePrices() {
     const prices = { MEXC: {}, Bitget: {}, BitMart: {}, Gateio: {} };
 
     if (mexc.status === 'fulfilled') {
-      mexc.value.data.forEach(t => {
-        prices.MEXC[t.symbol] = parseFloat(t.price);
-      });
+      mexc.value.data.forEach(t => prices.MEXC[t.symbol] = parseFloat(t.price));
     }
-
     if (bitget.status === 'fulfilled') {
-      bitget.value.data.data.forEach(t => {
-        prices.Bitget[t.symbol] = parseFloat(t.last);
-      });
+      bitget.value.data.data.forEach(t => prices.Bitget[t.symbol] = parseFloat(t.last));
     }
-
     if (bitmart.status === 'fulfilled') {
-      bitmart.value.data.data.tickers.forEach(t => {
-        prices.BitMart[t.symbol.replace('_', '')] = parseFloat(t.last_price);
-      });
+      bitmart.value.data.data.tickers.forEach(t => prices.BitMart[t.symbol.replace('_', '')] = parseFloat(t.last_price));
     }
-
     if (gateio.status === 'fulfilled') {
-      gateio.value.data.forEach(t => {
-        prices.Gateio[t.currency_pair.replace('_', '')] = parseFloat(t.last);
-      });
+      gateio.value.data.forEach(t => prices.Gateio[t.currency_pair.replace('_', '')] = parseFloat(t.last));
     }
 
     return prices;
@@ -107,8 +97,7 @@ async function scanArbitrage() {
           sell: sell.ex,
           profit: parseFloat(profit.toFixed(2)),
           buyPrice: buy.price,
-          sellPrice: sell.price,
-          timestamp: Date.now()
+          sellPrice: sell.price
         });
       }
     }
@@ -116,11 +105,10 @@ async function scanArbitrage() {
 
   opportunities.sort((a, b) => b.profit - a.profit);
   arbCache = { data: opportunities, lastFetch: Date.now() };
-  console.log(`Found ${opportunities.length} arbitrage opportunities`);
   return opportunities;
 }
 
-// === AUTH MIDDLEWARE ===
+// === AUTH ===
 const auth = async (req, res, next) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
@@ -130,8 +118,7 @@ const auth = async (req, res, next) => {
     const user = await User.findById(decoded.id);
     if (!user) return res.status(401).json({ error: 'User not found' });
 
-    // Auto-expire PRO
-    if (user.isPro && user.proExpiry && user.proExpiry < new Date()) {
+    if (user.isPro && user.proExpiry < new Date()) {
       user.isPro = false;
       user.proExpiry = null;
       await user.save();
@@ -144,18 +131,19 @@ const auth = async (req, res, next) => {
   }
 };
 
-// === API ROUTES ===
+// === ROUTES ===
 app.post('/api/register', async (req, res) => {
   try {
-    const { username, password } = req.body;
-    if (!username ||!password) return res.status(400).json({ error: 'Username and password required' });
+    const { username, password, email, phone } = req.body;
+    if (!username ||!password ||!email ||!phone) return res.status(400).json({ error: 'All fields required' });
+    if (!phone.match(/^254[0-9]{9}$/)) return res.status(400).json({ error: 'Phone: 2547XXXXXXXX' });
 
     const hashed = await bcrypt.hash(password, 10);
-    const user = await User.create({ username, password: hashed });
+    const user = await User.create({ username, password: hashed, email, phone });
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'secret123');
     res.json({ token });
   } catch (err) {
-    if (err.code === 11000) return res.status(400).json({ error: 'Username taken' });
+    if (err.code === 11000) return res.status(400).json({ error: 'Username/email taken' });
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -179,7 +167,8 @@ app.post('/api/login', async (req, res) => {
 app.get('/api/user', auth, async (req, res) => {
   res.json({
     username: req.user.username,
-    balance: req.user.balance,
+    email: req.user.email,
+    phone: req.user.phone,
     isPro: req.user.isPro,
     proExpiry: req.user.proExpiry
   });
@@ -189,7 +178,6 @@ app.get('/api/arbitrage', auth, async (req, res) => {
   try {
     const allArbs = await scanArbitrage();
     const arbs = req.user.isPro? allArbs : allArbs.filter(arb => arb.profit < 2.0);
-
     res.json({
       arbs,
       isPro: req.user.isPro,
@@ -201,52 +189,96 @@ app.get('/api/arbitrage', auth, async (req, res) => {
   }
 });
 
-// M-Pesa subscription - 100 weekly / 350 monthly
-app.post('/api/subscribe', auth, async (req, res) => {
+// PAYSTACK M-PESA STK PUSH
+app.post('/api/subscribe/mpesa', auth, async (req, res) => {
   try {
-    const { plan, mpesaNumber } = req.body;
-
-    const prices = { week: 100, month: 350 };
-    const days = { week: 7, month: 30 };
+    const { plan } = req.body;
+    const prices = { week: 10000, month: 35000 }; // kobo: 100 KES = 10000
 
     if (!prices) return res.status(400).json({ error: 'Invalid plan' });
-    if (!mpesaNumber ||!mpesaNumber.match(/^254[0-9]{9}$/)) {
-      return res.status(400).json({ error: 'Invalid M-Pesa number. Use 254XXXXXXXXX' });
-    }
 
-    // TODO: Replace with real Daraja STK Push
-    // For now, instant activation for testing
-    req.user.isPro = true;
-    req.user.proExpiry = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
-    req.user.mpesaNumber = mpesaNumber;
-    await req.user.save();
-
-    res.json({
-      success: true,
-      message: `PRO activated for ${plan}`,
-      expiry: req.user.proExpiry
+    const response = await axios.post('https://api.paystack.co/charge', {
+      email: req.user.email,
+      amount: prices,
+      currency: 'KES',
+      mobile_money: {
+        phone: req.user.phone,
+        provider: 'mpesa'
+      },
+      metadata: {
+        userId: req.user._id.toString(),
+        plan: plan
+      }
+    }, {
+      headers: {
+        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        'Content-Type': 'application/json'
+      }
     });
+
+    const data = response.data.data;
+
+    if (data.status === 'pay_offline') {
+      req.user.pendingRef = data.reference;
+      await req.user.save();
+      res.json({
+        success: true,
+        message: data.display_text || 'M-Pesa prompt sent to your phone',
+        reference: data.reference
+      });
+    } else {
+      res.status(400).json({ error: 'Failed to initiate M-Pesa' });
+    }
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    console.log('Paystack error:', err.response?.data || err.message);
+    res.status(500).json({ error: 'Payment failed' });
   }
 });
 
-app.get('/health', (req, res) => {
+// PAYSTACK WEBHOOK
+app.post('/api/paystack/webhook', async (req, res) => {
+  try {
+    const event = req.body;
+    if (event.event === 'charge.success') {
+      const { reference, metadata, status } = event.data;
+      if (status === 'success') {
+        const user = await User.findById(metadata.userId);
+        if (user && user.pendingRef === reference) {
+          const days = metadata.plan === 'week'? 7 : 30;
+          user.isPro = true;
+          user.proExpiry = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+          user.pendingRef = null;
+          await user.save();
+          console.log(`PRO activated: ${user.username}`);
+        }
+      }
+    }
+    res.sendStatus(200);
+  } catch (err) {
+    console.log('Webhook error:', err);
+    res.sendStatus(500);
+  }
+});
+
+// Check payment status
+app.get('/api/subscribe/status', auth, async (req, res) => {
   res.json({
-    status: 'Server running',
-    mongo:!!mongoose.connection.readyState,
-    lastArbScan: arbCache.lastFetch
+    isPro: req.user.isPro,
+    proExpiry: req.user.proExpiry,
+    pending:!!req.user.pendingRef
   });
 });
 
-// === SERVE FRONTEND ===
+app.get('/health', (req, res) => {
+  res.json({ status: 'Server running', mongo:!!mongoose.connection.readyState, lastScan: arbCache.lastFetch });
+});
+
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`ArbiMine server live on ${PORT}`);
-  // Initial scan on startup
+  console.log(`ArbiMine live on ${PORT}`);
   scanArbitrage();
 });
