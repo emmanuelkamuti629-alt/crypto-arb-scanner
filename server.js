@@ -8,35 +8,43 @@ const mongoose = require('mongoose');
 
 const app = express();
 
-// 1. Enable CORS for your dashboard
-app.use(cors({
-    origin: '*', // Allows requests from your dashboard
-    methods: ['GET', 'POST']
-}));
-
+// Enable CORS
+app.use(cors());
 app.use(express.json());
 
-// 2. Database Connection
-mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log("Connected to MongoDB Atlas"))
-    .catch(err => console.error("MongoDB error:", err));
+// Ensure we have a Mongo URI
+const dbUrl = process.env.MONGO_URI;
 
-// 3. Session Configuration
+if (!dbUrl) {
+    console.error("FATAL ERROR: MONGO_URI is not defined in environment variables.");
+    process.exit(1);
+}
+
+// 1. Database Connection
+mongoose.connect(dbUrl)
+    .then(() => console.log("Connected to MongoDB Atlas"))
+    .catch(err => console.error("MongoDB connection error:", err));
+
+// 2. Session Configuration
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'secret123',
+    secret: process.env.SESSION_SECRET || 'fallback_secret_key',
     resave: false,
     saveUninitialized: false,
-    store: MongoStore.create({ mongoUrl: process.env.MONGO_URI }),
-    cookie: { maxAge: 1000 * 60 * 60 * 24 }
+    store: MongoStore.create({ 
+        mongoUrl: dbUrl 
+    }),
+    cookie: { 
+        secure: process.env.NODE_ENV === 'production', // true if on Render
+        maxAge: 1000 * 60 * 60 * 24 
+    }
 }));
 
-// 4. API Route
+// 3. API Route
 app.get('/api/get-arbitrage-data', async (req, res) => {
     try {
         const response = await axios.get('https://api.coingecko.com/api/v3/coins/bitcoin/tickers', {
             headers: { 'x-cg-demo-api-key': process.env.COINGECKO_API_KEY }
         });
-        // Send only the tickers array to the frontend
         res.json(response.data.tickers); 
     } catch (err) {
         console.error("API Fetch Error:", err.message);
