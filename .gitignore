@@ -143,3 +143,6 @@ vite.config.ts.timestamp-*
 .vite/
 .env
 .env
+env
+.env
+node_modules/
