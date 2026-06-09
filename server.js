@@ -12,38 +12,42 @@ const io = new Server(server);
 // Middleware
 app.use(cors());
 app.use(express.json());
-// Serves your 'public' folder (where index.html, pro.html, etc. live)
-app.use(express.static('public')); 
+app.use(express.static('public')); // Serves everything in your 'public' folder
 
-// Database Connection
-const dbURI = process.env.MONGODB_URI;
-mongoose.connect(dbURI)
-    .then(() => console.log('Successfully connected to MongoDB!'))
-    .catch((err) => console.error('Database connection error:', err));
+// Database Connection & Model
+mongoose.connect(process.env.MONGODB_URI)
+    .then(() => console.log('MongoDB Connected'))
+    .catch(err => console.error('DB Error:', err));
 
-// Chat Logic
-io.on('connection', (socket) => {
-    console.log('A user connected to the chat');
+const PaymentSchema = new mongoose.Schema({ 
+    username: String, 
+    txCode: String, 
+    status: { type: String, default: 'pending' } 
+});
+const Payment = mongoose.model('Payment', PaymentSchema);
 
-    // Listen for new messages
-    socket.on('chat message', (data) => {
-        // data format: { username: "Name", message: "Hello!" }
-        io.emit('chat message', data);
-    });
-
-    socket.on('disconnect', () => {
-        console.log('User disconnected');
-    });
+// API Route: Handle Payment Verification
+app.post('/api/verify-payment', async (req, res) => {
+    try {
+        const payment = new Payment(req.body);
+        await payment.save();
+        res.status(200).json({ message: 'Request received' });
+    } catch (err) {
+        res.status(500).json({ error: 'Database error' });
+    }
 });
 
-// Routes
-app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/public/index.html');
+// Socket.io: Real-time Chat
+io.on('connection', (socket) => {
+    console.log('User connected to chat');
+    socket.on('chat message', (data) => {
+        io.emit('chat message', data); // Broadcasts to everyone
+    });
 });
 
 // Start Server
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`ArbiMine backend active on port ${PORT}`);
+    console.log(`ArbiMine is running on port ${PORT}`);
 });
 
