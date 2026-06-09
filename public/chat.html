@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArbiMine Chat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #1A1A1A; color: white; }
+        .chat-container { height: 80vh; }
+        .gold-bg { background-color: #FFD700; color: black; }
+    </style>
+</head>
+<body class="p-4">
+
+    <h2 class="text-center font-bold text-lg mb-4 text-[#FFD700]">COMMUNITY CHAT</h2>
+
+    <div id="messages" class="chat-container overflow-y-auto mb-4 border border-gray-700 rounded p-4 bg-[#2C2C2C]">
+        </div>
+
+    <div class="flex gap-2">
+        <input id="username" type="text" placeholder="Name" class="w-1/4 p-2 bg-[#2C2C2C] border border-gray-600 rounded">
+        <input id="input" type="text" placeholder="Message..." class="flex-grow p-2 bg-[#2C2C2C] border border-gray-600 rounded">
+        <button onclick="sendMessage()" class="gold-bg font-bold px-4 rounded">SEND</button>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const messagesDiv = document.getElementById('messages');
+        const input = document.getElementById('input');
+        const usernameInput = document.getElementById('username');
+
+        function sendMessage() {
+            if (input.value && usernameInput.value) {
+                socket.emit('chat message', { 
+                    username: usernameInput.value, 
+                    message: input.value 
+                });
+                input.value = '';
+            }
+        }
+
+        socket.on('chat message', (data) => {
+            const div = document.createElement('div');
+            div.className = 'mb-2';
+            div.innerHTML = `<span class="font-bold text-[#FFD700]">${data.username}:</span> ${data.message}`;
+            messagesDiv.appendChild(div);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        });
+    </script>
+</body>
+</html>
+
