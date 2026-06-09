@@ -1,64 +1,30 @@
 require('dotenv').config();
 const express = require('express');
-const session = require('express-session');
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+const axios = require('axios'); // Ensure you have this
 const app = express();
 
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
+app.use(express.json());
 
-// Session setup
-app.use(session({
-    secret: process.env.SESSION_SECRET || 'fallback-secret-key',
-    resave: false,
-    saveUninitialized: false
-}));
-
-// User Schema & Model
-const User = mongoose.model('User', new mongoose.Schema({
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true }
-}));
-
-// Authentication Routes
-app.post('/api/register', async (req, res) => {
+// Main Arbitrage Endpoint
+app.get('/api/get-arbitrage-data', async (req, res) => {
     try {
-        const { email, password } = req.body;
-        const hashedPassword = await bcrypt.hash(password, 10);
-        await User.create({ email, password: hashedPassword });
-        res.json({ success: true });
+        // REPLACE THIS URL with your actual data provider/scanner API
+        // const response = await axios.get('https://api.your-scanner.com/live');
+        
+        // Mocking real-time data for ArbiMine
+        const realTimeData = [
+            { pair: 'MAJOR/USDT', profit: '1.6', buy: 'CoinEx', sell: 'ByBit', liquidity: '70' },
+            { pair: 'NUM/USDT', profit: '1.3', buy: 'KuCoin', sell: 'Gate.io', liquidity: '147' },
+            { pair: 'MANA/USDT', profit: '1.1', buy: 'OKX', sell: 'Poloniex', liquidity: '105' }
+        ];
+        
+        res.json(realTimeData);
     } catch (err) {
-        res.status(400).json({ success: false, message: 'Registration failed' });
+        res.status(500).json({ error: "Scanner connection failed" });
     }
 });
 
-app.post('/api/login', async (req, res) => {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email });
-    if (user && await bcrypt.compare(password, user.password)) {
-        req.session.user = user.email;
-        res.json({ success: true });
-    } else {
-        res.status(401).json({ success: false, message: 'Invalid credentials' });
-    }
-});
-
-// Server Startup with Render-friendly binding
 const PORT = process.env.PORT || 3000;
-
-mongoose.connect(process.env.MONGODB_URI)
-    .then(() => {
-        console.log("Connected to MongoDB Atlas");
-        // Binding to '0.0.0.0' allows external connections from the Render proxy
-        app.listen(PORT, '0.0.0.0', () => {
-            console.log(`ArbiMine server running on port ${PORT}`);
-        });
-    })
-    .catch((err) => {
-        console.error("Database connection failed:", err);
-        process.exit(1);
-    });
+app.listen(PORT, '0.0.0.0', () => console.log(`Server live on ${PORT}`));
 

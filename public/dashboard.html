@@ -3,45 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scanner Dashboard - ArbiMine</title>
+    <title>ARBIMINE Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { background-color: #1A1A1A; color: white; }
-        .gold-text { color: #FFD700; }
-        .card-bg { background-color: #2C2C2C; }
-    </style>
+    <style>body { background-color: #0F172A; color: white; }</style>
 </head>
-<body class="p-6">
+<body class="p-4">
 
-    <!-- Header -->
-    <h1 class="text-2xl font-bold gold-text mb-6 text-center">LIVE ARBITRAGE SCANNER</h1>
-
-    <!-- Scanner Feed -->
-    <div id="data-feed" class="space-y-4">
-        <!-- Example Entry -->
-        <div class="card-bg p-4 rounded-lg border-l-4 border-[#FFD700]">
-            <div class="flex justify-between items-center">
-                <span class="font-bold">BTC/USDT</span>
-                <span class="gold-text font-bold">+1.25%</span>
-            </div>
-            <p class="text-xs text-gray-400 mt-1">Binance → Bybit</p>
-        </div>
-
-        <!-- Example Entry -->
-        <div class="card-bg p-4 rounded-lg border-l-4 border-green-500">
-            <div class="flex justify-between items-center">
-                <span class="font-bold">ETH/USDT</span>
-                <span class="text-green-500 font-bold">+0.89%</span>
-            </div>
-            <p class="text-xs text-gray-400 mt-1">KuCoin → Binance</p>
-        </div>
+    <div class="flex justify-between items-center mb-6 border-b border-gray-700 pb-4">
+        <h1 class="text-2xl font-bold text-[#FFD700]">ARBIMINE</h1>
+        <button onclick="fetchScannerData()" class="text-white text-xl">↻</button>
     </div>
 
-    <!-- Controls -->
-    <div class="mt-8">
-        <button class="w-full bg-[#FFD700] text-black font-bold py-3 rounded-lg">START SCANNING</button>
+    <div class="bg-[#FFD700] p-4 rounded-xl text-black font-bold text-center mb-6">
+        🚀 Upgrade to PRO to Discover Opportunities Above 2% 🚀
+        <button class="block w-full bg-black text-[#FFD700] py-2 mt-2 rounded-lg">GO PRO</button>
     </div>
 
+    <div id="resultsContainer" class="space-y-3">
+        </div>
+
+    <script>
+        async function fetchScannerData() {
+            const container = document.getElementById('resultsContainer');
+            container.innerHTML = '<p class="text-center text-gray-400">Scanning market...</p>';
+            
+            try {
+                const res = await fetch('/api/get-arbitrage-data');
+                const data = await res.json();
+                
+                container.innerHTML = data.map(item => `
+                    <div class="bg-[#1E293B] p-4 rounded-xl border border-gray-700 flex justify-between items-center">
+                        <div>
+                            <div class="flex gap-2 mb-1">
+                                <span class="bg-black text-[#FFD700] px-2 py-0.5 rounded text-[10px] font-bold">BUY ${item.buy}</span>
+                                <span class="bg-black text-[#FFD700] px-2 py-0.5 rounded text-[10px] font-bold">SELL ${item.sell}</span>
+                            </div>
+                            <h3 class="text-white font-bold">${item.pair}</h3>
+                            <p class="text-gray-400 text-xs">Liquidity: $${item.liquidity}</p>
+                        </div>
+                        <span class="text-[#10B981] font-bold text-xl">${item.profit}%</span>
+                    </div>
+                `).join('');
+            } catch (err) {
+                container.innerHTML = '<p class="text-center text-red-500">Failed to connect to scanner.</p>';
+            }
+        }
+
+        // Auto-refresh every 10 seconds
+        setInterval(fetchScannerData, 10000);
+        fetchScannerData();
+    </script>
 </body>
 </html>
 
