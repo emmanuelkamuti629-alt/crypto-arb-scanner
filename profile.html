@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #1A1A1A; color: white; padding-bottom: 80px; }
+        .gold-bg { background-color: #FFD700; color: black; }
+        .card { background-color: #2C2C2C; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; font-size: 10px; font-weight: bold; color: black; }
+    </style>
+</head>
+<body class="p-6">
+    <h2 class="text-xl font-bold text-[#FFD700] mb-6 text-center">PROFIT TRACKER</h2>
+
+    <!-- Profit Summary Cards -->
+    <div class="grid gap-4">
+        <div class="card p-4 rounded-lg flex justify-between">
+            <span>Total Arbitrage Found</span>
+            <span class="text-[#FFD700] font-bold">14</span>
+        </div>
+        <div class="card p-4 rounded-lg flex justify-between">
+            <span>Avg. Profit Margin</span>
+            <span class="text-green-500 font-bold">1.2%</span>
+        </div>
+    </div>
+
+    <!-- Persistent Bottom Nav -->
+    <div class="fixed bottom-0 left-0 w-full bg-[#FFD700] p-3 flex justify-around">
+        <a href="index.html" class="nav-item">🏠 Home</a>
+        <a href="profit.html" class="nav-item">📈 Profit</a>
+        <a href="pro.html" class="nav-item">⭐ Go PRO</a>
+        <a href="chat.html" class="nav-item">💬 Chat</a>
+    </div>
+</body>
+</html>
+
