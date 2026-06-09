@@ -1,58 +1,344 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARBIMINE Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>body { background-color: #0F172A; color: white; }</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ARBIMINE</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+   .screen { display: none; }
+   .screen.active { display: block; }
+   .plan-btn.selected { outline: 3px solid #eab308; }
+  </style>
 </head>
-<body class="p-4">
+<body class="bg-slate-900 text-white">
 
-    <div class="flex justify-between items-center mb-6 border-b border-gray-700 pb-4">
-        <h1 class="text-2xl font-bold text-[#FFD700]">ARBIMINE</h1>
-        <button onclick="fetchScannerData()" class="text-white text-xl">↻</button>
+  <!-- LOGIN SCREEN -->
+  <div id="loginScreen" class="screen active min-h-screen flex items-center justify-center p-4">
+    <div class="bg-slate-800 p-8 rounded-lg w-full max-w-sm">
+      <h1 class="text-3xl font-bold text-yellow-500 text-center mb-6">ARBIMINE</h1>
+      <input id="nameInput" type="text" placeholder="Name (for new accounts)" class="w-full p-3 mb-4 bg-slate-700 rounded text-white hidden">
+      <input id="email" type="email" placeholder="Email" class="w-full p-3 mb-4 bg-slate-700 rounded text-white">
+      <input id="password" type="password" placeholder="Password" class="w-full p-3 mb-4 bg-slate-700 rounded text-white">
+      <button id="loginBtn" class="w-full bg-yellow-500 text-black font-bold p-3 rounded mb-2">LOGIN</button>
+      <button id="toggleRegister" class="w-full text-yellow-500 text-sm">Create Account</button>
+      <p id="loginError" class="text-red-500 text-sm mt-2 text-center"></p>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="appScreen" class="screen min-h-screen flex flex-col">
+    <!-- HOME SCREEN -->
+    <div id="homeScreen" class="screen active flex-1 flex flex-col">
+      <header class="bg-yellow-500 text-black p-4 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-rocket"></i>
+          <span class="font-bold text-xl">ARBIMINE</span>
+        </div>
+        <i class="fa-solid fa-question-circle"></i>
+      </header>
+
+      <div class="bg-black p-2">
+        <button class="bg-slate-800 text-white px-4 py-2 rounded-full text-sm w-full">
+          <i class="fa-solid fa-link"></i> EXCHANGE SIGNUP LINKS
+        </button>
+      </div>
+
+      <div class="p-4">
+        <button onclick="showScreen('goProScreen')" class="bg-yellow-500 text-black font-bold p-3 rounded-lg w-full mb-2">
+          🚀 Upgrade to PRO to Discover Profit Opportunities Above 2% 🚀
+        </button>
+        <button onclick="showScreen('goProScreen')" class="bg-yellow-500 text-black font-bold p-3 rounded-lg w-full">
+          <i class="fa-solid fa-star"></i> GO PRO
+        </button>
+      </div>
+
+      <main id="arbContainer" class="flex-1 p-4 space-y-3 overflow-y-auto pb-20">
+        <p class="text-gray-400 text-center">Loading...</p>
+      </main>
     </div>
 
-    <div class="bg-[#FFD700] p-4 rounded-xl text-black font-bold text-center mb-6">
-        🚀 Upgrade to PRO to Discover Opportunities Above 2% 🚀
-        <button class="block w-full bg-black text-[#FFD700] py-2 mt-2 rounded-lg">GO PRO</button>
-    </div>
+    <!-- GO PRO SCREEN -->
+    <div id="goProScreen" class="screen flex-1 flex flex-col">
+      <header class="bg-yellow-500 text-black p-4 flex items-center gap-4">
+        <i onclick="showScreen('homeScreen')" class="fa-solid fa-arrow-left text-xl cursor-pointer"></i>
+        <span class="font-bold text-xl">ARBIMINE</span>
+      </header>
 
-    <div id="resultsContainer" class="space-y-3">
+      <div class="flex-1 p-4 text-center">
+        <h2 class="text-2xl font-bold text-yellow-500 mb-2">🚀 UPGRADE TO PRO 🚀</h2>
+        <p class="mb-4">Get your PRO Membership Today!</p>
+        <div class="text-left text-sm space-y-1 mb-6 text-yellow-500">
+          <p>💰 Unlock >2% Profit Opportunities</p>
+          <p>✨ Advanced Filtering, Profit/Trade Calculation</p>
+          <p>💻 Browser App Access on arbimine.com</p>
+          <p>🤖 View Coin Contracts</p>
+          <p>👥 Instant Access to Referral Program</p>
         </div>
 
-    <script>
-        async function fetchScannerData() {
-            const container = document.getElementById('resultsContainer');
-            container.innerHTML = '<p class="text-center text-gray-400">Scanning market...</p>';
-            
-            try {
-                const res = await fetch('/api/get-arbitrage-data');
-                const data = await res.json();
-                
-                container.innerHTML = data.map(item => `
-                    <div class="bg-[#1E293B] p-4 rounded-xl border border-gray-700 flex justify-between items-center">
-                        <div>
-                            <div class="flex gap-2 mb-1">
-                                <span class="bg-black text-[#FFD700] px-2 py-0.5 rounded text-[10px] font-bold">BUY ${item.buy}</span>
-                                <span class="bg-black text-[#FFD700] px-2 py-0.5 rounded text-[10px] font-bold">SELL ${item.sell}</span>
-                            </div>
-                            <h3 class="text-white font-bold">${item.pair}</h3>
-                            <p class="text-gray-400 text-xs">Liquidity: $${item.liquidity}</p>
-                        </div>
-                        <span class="text-[#10B981] font-bold text-xl">${item.profit}%</span>
-                    </div>
-                `).join('');
-            } catch (err) {
-                container.innerHTML = '<p class="text-center text-red-500">Failed to connect to scanner.</p>';
-            }
-        }
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <button onclick="selectPlan('weekly')" class="plan-btn selected bg-yellow-500 text-black p-4 rounded-lg">
+            <div class="text-2xl font-bold">1</div>
+            <div>week</div>
+            <div class="font-bold mt-2">Ksh 100.00</div>
+          </button>
+          <button onclick="selectPlan('monthly')" class="plan-btn bg-white text-black p-4 rounded-lg">
+            <div class="text-2xl font-bold">1</div>
+            <div>month</div>
+            <div class="font-bold mt-2">Ksh 350.00</div>
+          </button>
+        </div>
 
-        // Auto-refresh every 10 seconds
-        setInterval(fetchScannerData, 10000);
-        fetchScannerData();
-    </script>
+        <p class="text-xs mb-4">Recurring billing. Cancel anytime.</p>
+        
+        <input id="mpesaPhone" type="tel" placeholder="Enter M-Pesa Number: 2547..." class="w-full p-3 mb-4 bg-slate-700 rounded text-white">
+        <button id="payBtn" class="w-full bg-yellow-500 text-black font-bold p-3 rounded-lg mb-2">PAY WITH M-PESA</button>
+        <p id="payStatus" class="text-sm text-green-500"></p>
+      </div>
+    </div>
+
+    <!-- PROFILE SCREEN -->
+    <div id="profileScreen" class="screen flex-1 flex flex-col">
+      <header class="bg-yellow-500 text-black p-4 flex items-center gap-4">
+        <i onclick="showScreen('homeScreen')" class="fa-solid fa-arrow-left text-xl cursor-pointer"></i>
+        <span class="font-bold text-xl">ARBIMINE</span>
+      </header>
+
+      <div class="flex-1 p-4">
+        <div class="text-center mb-6">
+          <i class="fa-solid fa-user text-4xl text-yellow-500 mb-2"></i>
+          <h2 class="text-2xl font-bold text-yellow-500">PROFILE</h2>
+        </div>
+
+        <div class="space-y-4 mb-6">
+          <div class="flex justify-between border-b border-gray-700 pb-2">
+            <span>NAME:</span>
+            <span id="profileName" class="text-yellow-500"></span>
+          </div>
+          <div class="flex justify-between border-b border-gray-700 pb-2">
+            <span>EMAIL:</span>
+            <span id="profileEmail" class="text-yellow-500"></span>
+          </div>
+          <div class="flex justify-between border-b border-gray-700 pb-2">
+            <span>MEMBER SINCE:</span>
+            <span id="profileDate" class="text-yellow-500"></span>
+          </div>
+          <div class="flex justify-between border-b border-gray-700 pb-2">
+            <span>ACCOUNT ID:</span>
+            <span id="profileId" class="text-yellow-500"></span>
+          </div>
+          <div class="flex justify-between border-b border-gray-700 pb-2">
+            <span>PLAN:</span>
+            <span id="profilePlan" class="text-yellow-500">FREE</span>
+          </div>
+        </div>
+
+        <button class="w-full bg-green-600 text-white font-bold p-3 rounded-lg mb-2">
+          <i class="fa-solid fa-dollar-sign"></i> REFER & EARN
+        </button>
+        <button id="logoutBtn" class="w-full bg-yellow-500 text-black font-bold p-3 rounded-lg mb-2">
+          <i class="fa-solid fa-right-from-bracket"></i> LOGOUT
+        </button>
+        <button class="w-full bg-red-600 text-white font-bold p-3 rounded-lg">
+          <i class="fa-solid fa-trash"></i> DELETE ACCOUNT
+        </button>
+      </div>
+    </div>
+
+    <!-- OPPORTUNITY DETAIL SCREEN -->
+    <div id="opportunityScreen" class="screen flex-1 flex flex-col">
+      <header class="bg-yellow-500 text-black p-4 flex items-center gap-4">
+        <i onclick="showScreen('homeScreen')" class="fa-solid fa-arrow-left text-xl cursor-pointer"></i>
+        <span class="font-bold text-xl">ARBIMINE</span>
+      </header>
+      <div id="opportunityDetail" class="flex-1 p-4 pb-20 overflow-y-auto"></div>
+    </div>
+
+    <!-- BOTTOM NAV -->
+    <nav class="fixed bottom-0 w-full bg-yellow-500 text-black flex justify-around p-2">
+      <button onclick="showScreen('homeScreen')" class="flex flex-col items-center text-xs font-bold">
+        <i class="fa-solid fa-home text-lg"></i>Home
+      </button>
+      <button onclick="showScreen('goProScreen')" class="flex flex-col items-center text-xs font-bold">
+        <i class="fa-solid fa-star text-lg"></i>Go PRO
+      </button>
+      <button class="flex flex-col items-center text-xs font-bold">
+        <i class="fa-solid fa-comment text-lg"></i>Chat Room
+      </button>
+      <button onclick="showScreen('profileScreen')" class="flex flex-col items-center text-xs font-bold">
+        <i class="fa-solid fa-user text-lg"></i>Profile
+      </button>
+    </nav>
+  </div>
+
+  <script>
+    let currentUser = null;
+    let selectedPlan = 'weekly';
+    let isRegistering = false;
+
+    function showScreen(screenId) {
+      document.querySelectorAll('#appScreen .screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(screenId).classList.add('active');
+      if (screenId === 'homeScreen') loadArbitrageData();
+      if (screenId === 'profileScreen') loadProfile();
+    }
+
+    function showApp() {
+      document.getElementById('loginScreen').classList.remove('active');
+      document.getElementById('appScreen').classList.add('active');
+      showScreen('homeScreen');
+    }
+
+    // Check auth on load
+    fetch('/api/me').then(res => {
+      if (res.ok) {
+        res.json().then(user => {
+          currentUser = user;
+          showApp();
+        });
+      }
+    });
+
+    // Toggle register mode
+    document.getElementById('toggleRegister').addEventListener('click', () => {
+      isRegistering = !isRegistering;
+      document.getElementById('nameInput').classList.toggle('hidden', !isRegistering);
+      document.getElementById('loginBtn').textContent = isRegistering ? 'CREATE ACCOUNT' : 'LOGIN';
+      document.getElementById('toggleRegister').textContent = isRegistering ? 'Back to Login' : 'Create Account';
+      document.getElementById('loginError').textContent = '';
+    });
+
+    // Login/Register
+    document.getElementById('loginBtn').addEventListener('click', async () => {
+      const name = document.getElementById('nameInput').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const endpoint = isRegistering ? '/api/register' : '/api/login';
+      const body = isRegistering ? { name, email, password } : { email, password };
+
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        currentUser = await fetch('/api/me').then(r => r.json());
+        showApp();
+      } else {
+        document.getElementById('loginError').textContent = data.error || 'Failed';
+      }
+    });
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await fetch('/api/logout', { method: 'POST' });
+      location.reload();
+    });
+
+    // Select plan
+    function selectPlan(plan) {
+      selectedPlan = plan;
+      document.querySelectorAll('.plan-btn').forEach(btn => btn.classList.remove('selected', 'bg-yellow-500'));
+      event.target.closest('.plan-btn').classList.add('selected', 'bg-yellow-500');
+    }
+
+    // Paystack M-Pesa
+    document.getElementById('payBtn').addEventListener('click', async () => {
+      const phone = document.getElementById('mpesaPhone').value;
+      if (!phone.startsWith('254')) {
+        document.getElementById('payStatus').textContent = 'Use format 2547XXXXXXXX';
+        return;
+      }
+      
+      document.getElementById('payStatus').textContent = 'Sending STK push...';
+      const res = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: selectedPlan, phone })
+      });
+      const data = await res.json();
+      document.getElementById('payStatus').textContent = data.message || data.error;
+    });
+
+    // Load profile
+    async function loadProfile() {
+      if (!currentUser) return;
+      document.getElementById('profileName').textContent = currentUser.name;
+      document.getElementById('profileEmail').textContent = currentUser.email;
+      document.getElementById('profileDate').textContent = new Date(currentUser.createdAt).toLocaleDateString();
+      document.getElementById('profileId').textContent = currentUser.accountId;
+      document.getElementById('profilePlan').textContent = currentUser.subscription.plan.toUpperCase();
+    }
+
+    // Load Arbitrage Data
+    async function loadArbitrageData() {
+      const container = document.getElementById('arbContainer');
+      container.innerHTML = '<p class="text-center text-gray-400">Scanning...</p>';
+
+      try {
+        const response = await fetch('/api/get-arbitrage-data');
+        if (!response.ok) throw new Error('HTTP Error');
+        const data = await response.json();
+
+        container.innerHTML = data.map(arb => `
+          <div onclick="showOpportunity(${arb.id})" class="bg-slate-800 p-4 rounded-lg cursor-pointer">
+            <div class="flex justify-between items-start">
+              <div>
+                <div class="flex gap-2 mb-1">
+                  <span class="bg-black px-2 py-1 rounded text-xs">BUY ${arb.buyExchange}</span>
+                  <span class="bg-black px-2 py-1 rounded text-xs">SELL ${arb.sellExchange}</span>
+                </div>
+                <h3 class="font-bold text-lg">${arb.pair}</h3>
+                <p class="text-xs text-gray-400">Liquidity: $${arb.liquidity}</p>
+                <p class="text-xs text-yellow-500">Last Verified 23 seconds ago</p>
+              </div>
+              <div class="text-green-500 font-bold text-xl">${arb.spread}%</div>
+            </div>
+          </div>
+        `).join('');
+        window.arbData = data;
+      } catch (err) {
+        container.innerHTML = `<p class="text-red-500 text-center">Failed to load data</p>`;
+      }
+    }
+
+    // Show opportunity detail
+    function showOpportunity(id) {
+      const arb = window.arbData.find(a => a.id === id);
+      if (!arb) return;
+      
+      document.getElementById('opportunityDetail').innerHTML = `
+        <div class="text-center mb-4">
+          <div class="text-4xl font-bold text-yellow-500">${arb.spread}% SPREAD</div>
+          <div class="text-xl">${arb.pair}</div>
+          <p class="text-xs">Liquidity: $${arb.liquidity} | Profit: [UPGRADE TO PRO]</p>
+        </div>
+        
+        <div class="bg-slate-800 p-4 rounded-lg mb-4">
+          <div class="flex justify-between mb-2">
+            <span>1. Buy at<br><b>${arb.buyExchange}</b></span>
+            <span class="text-right">Lowest Ask: $${arb.buyPrice}<br>Volume: $17,473</span>
+          </div>
+          <button class="w-full bg-yellow-500 text-black font-bold p-2 rounded">CHECK ON ${arb.buyExchange.toUpperCase()}</button>
+        </div>
+
+        <div class="bg-slate-800 p-4 rounded-lg mb-4">
+          <div class="flex justify-between mb-2">
+            <span>2. Sell on<br><b>${arb.sellExchange}</b></span>
+            <span class="text-right">Highest Bid: $${arb.sellPrice}<br>Volume: $62,774</span>
+          </div>
+          <button class="w-full bg-yellow-500 text-black font-bold p-2 rounded">CHECK ON ${arb.sellExchange.toUpperCase()}</button>
+        </div>
+
+        <div class="bg-yellow-900/30 p-3 rounded-lg text-sm">
+          <i class="fa-solid fa-triangle-exclamation"></i> Double check coin's contract and name on both exchanges before initiating the trade.
+        </div>
+      `;
+      showScreen('opportunityScreen');
+    }
+  </script>
 </body>
 </html>
-
