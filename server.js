@@ -1,30 +1,49 @@
 require('dotenv').config();
 const express = require('express');
-const axios = require('axios'); // Ensure you have this
+const axios = require('axios');
+const cors = require('cors');
+const session = require('express-session');
+const MongoStore = require('connect-mongo');
+const mongoose = require('mongoose');
+
 const app = express();
 
-app.use(express.static('public'));
+// 1. Enable CORS for your dashboard
+app.use(cors({
+    origin: '*', // Allows requests from your dashboard
+    methods: ['GET', 'POST']
+}));
+
 app.use(express.json());
 
-// Main Arbitrage Endpoint
+// 2. Database Connection
+mongoose.connect(process.env.MONGO_URI)
+    .then(() => console.log("Connected to MongoDB Atlas"))
+    .catch(err => console.error("MongoDB error:", err));
+
+// 3. Session Configuration
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'secret123',
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({ mongoUrl: process.env.MONGO_URI }),
+    cookie: { maxAge: 1000 * 60 * 60 * 24 }
+}));
+
+// 4. API Route
 app.get('/api/get-arbitrage-data', async (req, res) => {
     try {
-        // REPLACE THIS URL with your actual data provider/scanner API
-        // const response = await axios.get('https://api.your-scanner.com/live');
-        
-        // Mocking real-time data for ArbiMine
-        const realTimeData = [
-            { pair: 'MAJOR/USDT', profit: '1.6', buy: 'CoinEx', sell: 'ByBit', liquidity: '70' },
-            { pair: 'NUM/USDT', profit: '1.3', buy: 'KuCoin', sell: 'Gate.io', liquidity: '147' },
-            { pair: 'MANA/USDT', profit: '1.1', buy: 'OKX', sell: 'Poloniex', liquidity: '105' }
-        ];
-        
-        res.json(realTimeData);
+        const response = await axios.get('https://api.coingecko.com/api/v3/coins/bitcoin/tickers', {
+            headers: { 'x-cg-demo-api-key': process.env.COINGECKO_API_KEY }
+        });
+        // Send only the tickers array to the frontend
+        res.json(response.data.tickers); 
     } catch (err) {
-        res.status(500).json({ error: "Scanner connection failed" });
+        console.error("API Fetch Error:", err.message);
+        res.status(500).json({ error: "Failed to fetch data" });
     }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => console.log(`Server live on ${PORT}`));
+app.listen(PORT, () => console.log(`Server live on ${PORT}`));
 
