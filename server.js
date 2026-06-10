@@ -33,7 +33,7 @@ const EXCHANGES = {
   htx: 'https://api.huobi.pro/market/tickers'
 };
 
-const MIN_PROFIT = 0.5; // Scan from 0.5% up - low % arbs are often tradable
+const MIN_PROFIT = 0.2; // CHANGED: was 20.0, now 0.2%
 const MAX_PROFIT = 100.0;
 const MAX_CHECKS = 50;
 const statusCache = {};
@@ -172,13 +172,11 @@ async function checkWithdrawDeposit(exchange, symbol) {
         }));
       }
     }
-    // LBank, Bybit, HTX: No public deposit/withdraw API
   } catch (e) {}
   statusCache[cacheKey] = { data: result, time: Date.now() };
   return result;
 }
 
-// Get max tradable amount from order book before 1% slippage
 async function getMaxTradeable(exchange, symbol, side, price) {
   try {
     let url = '';
@@ -204,7 +202,7 @@ async function getMaxTradeable(exchange, symbol, side, price) {
     if (!orders ||!orders.length) return 0;
 
     let totalUsdt = 0;
-    const maxSlippage = 0.01; // 1% slippage cap
+    const maxSlippage = 0.01;
 
     for (const order of orders) {
       const orderPrice = parseFloat(order[0]);
@@ -214,7 +212,7 @@ async function getMaxTradeable(exchange, symbol, side, price) {
 
       if (slippage > maxSlippage) break;
       totalUsdt += orderUsdt;
-      if (totalUsdt > 50000) break; // Cap at $50k to save API time
+      if (totalUsdt > 50000) break;
     }
     return Math.floor(totalUsdt);
   } catch (e) {
@@ -359,7 +357,7 @@ app.get('/api/arbs', async (req, res) => {
 
       if ((buyStatus.canWithdraw!== false) && (sellStatus.canDeposit!== false)) {
         verified.push({
-         ...opp,
+        ...opp,
           buy_withdraw_ok: buyStatus.canWithdraw,
           sell_deposit_ok: sellStatus.canDeposit,
           buy_networks: buyStatus.networks,
