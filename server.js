@@ -390,6 +390,6 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 ArbiMine running on port ${PORT}`);
+   app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 ArbiMine running on http://0.0.0.0:${PORT}`);
 });
