@@ -1,67 +1,80 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARBIMINE - Login</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>body { background-color: #0F172A; color: white; }</style>
+    <title>ARBIMINE</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { background: #0f172a; font-family: Arial; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .box { background: #1e293b; padding: 30px; border-radius: 10px; width: 300px; }
+        h1 { color: #facc15; text-align: center; margin: 0 0 10px; }
+        p { text-align: center; color: #94a3b8; margin: 0 0 20px; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: none; border-radius: 5px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #facc15; border: none; border-radius: 5px; font-weight: bold; margin-top: 10px; }
+        .toggle { text-align: center; color: #facc15; margin-top: 15px; cursor: pointer; }
+        .hidden { display: none; }
+    </style>
 </head>
-<body class="flex items-center justify-center min-h-screen p-6">
+<body>
+    <div class="box">
+        <h1>ARBIMINE</h1>
+        <p>FIND. ANALYZE. PROFIT.</p>
+        
+        <!-- LOGIN FORM -->
+        <div id="loginForm">
+            <input id="loginUser" placeholder="Username">
+            <input id="loginPass" type="password" placeholder="Password">
+            <button onclick="login()">LOGIN</button>
+            <div class="toggle" onclick="showSignup()">Create Account</div>
+        </div>
 
-    <div class="w-full max-w-sm bg-[#1E293B] p-8 rounded-2xl shadow-xl">
-        <h1 class="text-3xl font-bold text-center text-[#FFD700] mb-2">ARBIMINE</h1>
-        <p class="text-center text-gray-400 mb-8">FIND. ANALYZE. PROFIT.</p>
-
-        <form id="authForm" class="space-y-4">
-            <input type="email" id="email" placeholder="Email" required 
-                class="w-full p-3 rounded-lg bg-[#0F172A] border border-gray-600 focus:border-[#FFD700] outline-none">
-            
-            <input type="password" id="password" placeholder="Password" required 
-                class="w-full p-3 rounded-lg bg-[#0F172A] border border-gray-600 focus:border-[#FFD700] outline-none">
-            
-            <button type="submit" id="mainButton" 
-                class="w-full bg-[#FFD700] text-black font-bold py-3 rounded-lg">LOGIN</button>
-        </form>
-
-        <div class="mt-6 text-center">
-            <button onclick="toggleMode()" id="toggleBtn" class="text-[#FFD700] text-sm">Create Account</button>
+        <!-- SIGNUP FORM -->
+        <div id="signupForm" class="hidden">
+            <input id="signUser" placeholder="Username">
+            <input id="signEmail" placeholder="Email">
+            <input id="signMpesa" placeholder="M-Pesa Number">
+            <input id="signPass" type="password" placeholder="Password">
+            <button onclick="signup()">CREATE ACCOUNT</button>
+            <div class="toggle" onclick="showLogin()">Back to Login</div>
         </div>
     </div>
 
-    <script>
-        let isLogin = true;
-
-        function toggleMode() {
-            isLogin = !isLogin;
-            document.getElementById('mainButton').innerText = isLogin ? 'LOGIN' : 'CREATE ACCOUNT';
-            document.getElementById('toggleBtn').innerText = isLogin ? 'Create Account' : 'Back to Login';
-        }
-
-        document.getElementById('authForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const endpoint = isLogin ? '/api/login' : '/api/register';
-
-            try {
-                const res = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
-                });
-
-                const data = await res.json();
-                if (data.success) {
-                    window.location.href = '/dashboard.html'; 
-                } else {
-                    alert(data.message || 'Authentication failed');
-                }
-            } catch (err) {
-                alert('Connection error. Please try again.');
-            }
-        });
-    </script>
+<script>
+function showSignup() {
+    document.getElementById('loginForm').classList.add('hidden');
+    document.getElementById('signupForm').classList.remove('hidden');
+}
+function showLogin() {
+    document.getElementById('signupForm').classList.add('hidden');
+    document.getElementById('loginForm').classList.remove('hidden');
+}
+async function signup() {
+    const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            username: document.getElementById('signUser').value,
+            email: document.getElementById('signEmail').value,
+            mpesa: document.getElementById('signMpesa').value,
+            password: document.getElementById('signPass').value
+        })
+    });
+    const data = await res.json();
+    if(data.success) location.reload();
+    else alert(data.error || 'Signup failed');
+}
+async function login() {
+    const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            username: document.getElementById('loginUser').value,
+            password: document.getElementById('loginPass').value
+        })
+    });
+    const data = await res.json();
+    if(data.success) location.reload();
+    else alert(data.error || 'Login failed');
+}
+</script>
 </body>
 </html>
-
