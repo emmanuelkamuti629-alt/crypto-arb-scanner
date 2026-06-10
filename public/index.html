@@ -4,76 +4,149 @@
     <title>ARBIMINE</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        body { background: #0f172a; font-family: Arial; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        body { background: #0f172a; font-family: Arial; color: white; margin: 0; }
+        .center { display: flex; justify-content: center; align-items: center; height: 100vh; }
         .box { background: #1e293b; padding: 30px; border-radius: 10px; width: 300px; }
         h1 { color: #facc15; text-align: center; margin: 0 0 10px; }
         p { text-align: center; color: #94a3b8; margin: 0 0 20px; }
         input { width: 100%; padding: 12px; margin: 8px 0; border: none; border-radius: 5px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #facc15; border: none; border-radius: 5px; font-weight: bold; margin-top: 10px; }
+        button { width: 100%; padding: 12px; background: #facc15; border: none; border-radius: 5px; font-weight: bold; margin-top: 10px; cursor: pointer; }
         .toggle { text-align: center; color: #facc15; margin-top: 15px; cursor: pointer; }
         .hidden { display: none; }
+        .dashboard { padding: 20px; }
+        .header { background: #1e293b; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .logout { background: #dc2626; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer; }
+        .content { padding: 20px; text-align: center; }
+        .arb { background: #1e293b; margin: 10px 0; padding: 15px; border-radius: 8px; }
     </style>
 </head>
 <body>
-    <div class="box">
-        <h1>ARBIMINE</h1>
-        <p>FIND. ANALYZE. PROFIT.</p>
-        
-        <!-- LOGIN FORM -->
-        <div id="loginForm">
-            <input id="loginUser" placeholder="Username">
-            <input id="loginPass" type="password" placeholder="Password">
-            <button onclick="login()">LOGIN</button>
-            <div class="toggle" onclick="showSignup()">Create Account</div>
-        </div>
+    <!-- AUTH SCREENS -->
+    <div id="auth" class="center">
+        <div class="box">
+            <h1>ARBIMINE</h1>
+            <p>FIND. ANALYZE. PROFIT.</p>
+            
+            <!-- LOGIN FORM -->
+            <div id="loginForm">
+                <input id="loginUser" placeholder="Username">
+                <input id="loginPass" type="password" placeholder="Password">
+                <button onclick="login()">LOGIN</button>
+                <div class="toggle" onclick="showSignup()">Create Account</div>
+            </div>
 
-        <!-- SIGNUP FORM -->
-        <div id="signupForm" class="hidden">
-            <input id="signUser" placeholder="Username">
-            <input id="signEmail" placeholder="Email">
-            <input id="signMpesa" placeholder="M-Pesa Number">
-            <input id="signPass" type="password" placeholder="Password">
-            <button onclick="signup()">CREATE ACCOUNT</button>
-            <div class="toggle" onclick="showLogin()">Back to Login</div>
+            <!-- SIGNUP FORM -->
+            <div id="signupForm" class="hidden">
+                <input id="signUser" placeholder="Username">
+                <input id="signEmail" placeholder="Email">
+                <input id="signMpesa" placeholder="M-Pesa Number">
+                <input id="signPass" type="password" placeholder="Password">
+                <button onclick="signup()">CREATE ACCOUNT</button>
+                <div class="toggle" onclick="showLogin()">Back to Login</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dashboard" class="hidden">
+        <div class="header">
+            <h1 style="margin: 0; font-size: 20px;">ARBIMINE</h1>
+            <div>
+                <span id="welcomeUser"></span>
+                <button class="logout" onclick="logout()">LOGOUT</button>
+            </div>
+        </div>
+        <div class="content">
+            <h2>Live Arbitrage Opportunities</h2>
+            <div id="arbs">
+                <div class="arb">BTC/USDT: Binance 62,400 → KuCoin 62,580 | +0.29%</div>
+                <div class="arb">ETH/USDT: Coinbase 3,420 → Bybit 3,435 | +0.44%</div>
+                <div class="arb">SOL/USDT: Kraken 145.20 → OKX 145.85 | +0.45%</div>
+            </div>
         </div>
     </div>
 
 <script>
+let currentUser = localStorage.getItem('arbimine_user');
+
+if(currentUser) {
+    showDashboard(currentUser);
+}
+
 function showSignup() {
     document.getElementById('loginForm').classList.add('hidden');
     document.getElementById('signupForm').classList.remove('hidden');
 }
+
 function showLogin() {
     document.getElementById('signupForm').classList.add('hidden');
     document.getElementById('loginForm').classList.remove('hidden');
 }
+
 async function signup() {
+    const username = document.getElementById('signUser').value;
+    const password = document.getElementById('signPass').value;
+    
     const res = await fetch('/api/register', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
-            username: document.getElementById('signUser').value,
+            username: username,
             email: document.getElementById('signEmail').value,
             mpesa: document.getElementById('signMpesa').value,
-            password: document.getElementById('signPass').value
+            password: password
         })
     });
     const data = await res.json();
-    if(data.success) location.reload();
-    else alert(data.error || 'Signup failed');
+    
+    if(data.success) {
+        // Auto-login after signup
+        const loginRes = await fetch('/api/login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ username, password })
+        });
+        const loginData = await loginRes.json();
+        if(loginData.success) {
+            localStorage.setItem('arbimine_user', username);
+            showDashboard(username);
+        } else {
+            alert('Account created but auto-login failed. Please login.');
+            showLogin();
+        }
+    } else {
+        alert(data.error || 'Signup failed');
+    }
 }
+
 async function login() {
+    const username = document.getElementById('loginUser').value;
+    const password = document.getElementById('loginPass').value;
+    
     const res = await fetch('/api/login', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-            username: document.getElementById('loginUser').value,
-            password: document.getElementById('loginPass').value
-        })
+        body: JSON.stringify({ username, password })
     });
     const data = await res.json();
-    if(data.success) location.reload();
-    else alert(data.error || 'Login failed');
+    
+    if(data.success) {
+        localStorage.setItem('arbimine_user', username);
+        showDashboard(username);
+    } else {
+        alert(data.error || 'Login failed');
+    }
+}
+
+function showDashboard(username) {
+    document.getElementById('auth').classList.add('hidden');
+    document.getElementById('dashboard').classList.remove('hidden');
+    document.getElementById('welcomeUser').textContent = `Hi, ${username} `;
+}
+
+function logout() {
+    localStorage.removeItem('arbimine_user');
+    location.reload();
 }
 </script>
 </body>
