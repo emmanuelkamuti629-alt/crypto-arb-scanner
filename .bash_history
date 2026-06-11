@@ -1,56 +1,3 @@
-</script>
-
-</body>
-</html>
-
-EOF
-
-git add public/index.html
-git commit -m "feat: reset and update scanner layout"
-git push origin main
-# Ensure all files are staged
-git add .
-# Commit any recent changes (or the "no changes" message if you're already synced)
-git commit -m "Final project synchronization and cleanup"
-# Push your local main branch to your remote origin
-git push -u origin main
-nano app.js
-nano moniter.py
-python monitor.py
-rm monitor.py
-nano moniter.py
-rm monitor.py
-nano monitor.py
-nano app.js
-git add app.js
-git commit -m "Update app.js with root route and dynamic port"
-git push origin main
-nano server.js
-rm server.js
-nano server.js
-git add server.js
-git commit -m "Update full server.js with MongoDB and root route"
-git push origin main
-require('dotenv').config();
-nano server.js
-~/crypto_arb_scanner
-~/crypto_arbitrage_scanner
-ls
-# Enter the project folder
-cd crypto-arb-scanner
-# Create the folder structure for your new modules
-mkdir -p models routes controllers public
-# Install the necessary real-time and management tools
-npm install socket.io express-session mongoose cors dotenv
-nano models/chat.js
-nano server.js
-rm server.js
-nano server.js
-node server.js
-nano .env
-node server.js
-mkdir -p public
-nano public/index.html
 # Add all new files to the staging area
 git add .
 # Save the changes with a message
@@ -498,3 +445,56 @@ git push
 curl https://crypto-arb-scanner-q6x2.onrender.com/api/scan
 app.get('/api/scan', async (req, res) => {
 })
+pkg update && pkg upgrade -y
+pkg install nodejs git -y
+ls
+nano server.js
+node server.js
+git init
+git add .
+rm -rf crypto-arb-scanner/.git
+git rm -r --cached crypto-arb-scanner
+git add .
+git commit -m "ArbiMine v1 ready for Render"
+git add server.js
+git commit -m "Add Render port support"
+rm -rf crypto-arb-scanner
+git add .
+git commit -m "Remove unused scanner folder"
+git push
+rm public/index.html
+nano public/index.html
+git add public/index.html
+git commit -m "Add working signup form"
+git push
+npm install mongoose
+git add package.json package-lock.json
+git commit -m "Add mongoose"
+rm server.js
+nano server.js
+git add server.js
+git commit -m "Add MongoDB for persistent users"
+git push
+ping -c 2 github.com
+git push
+rm server.js
+nano server.js
+git add server.js
+git commit -m "Add MongoDB logging"
+git push
+rm public/index.html
+nano public/index.html
+git add public/index.html
+git commit -m "Add full dashboard with auto-login"
+git push
+rm public/index.html
+nano public/index.html
+git add public/index.html
+git commit -m "Move X close button inside expanded detail"
+git push
+rm servet.js
+rm server.js
+nano server.js
+git add server.js
+git commit -m "Add max buy/sell from order book depth"
+git push
