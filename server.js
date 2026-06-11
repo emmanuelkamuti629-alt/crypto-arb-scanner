@@ -6,92 +6,121 @@ const mongoose = require('mongoose');
 require('dotenv').config();
 
 const app = express();
+
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
+
 app.use(express.static(path.join(__dirname, 'public')));
 
-// =========================
+// ==========================
 // MONGODB
-// =========================
+// ==========================
 
 mongoose.connect(process.env.MONGODB_URI)
+
 .then(() => {
+
   console.log('✅ MongoDB Connected');
+
 })
+
 .catch(err => {
+
   console.log('❌ MongoDB Error:', err.message);
+
 });
 
-// =========================
+// ==========================
 // USER MODEL
-// =========================
+// ==========================
 
 const userSchema = new mongoose.Schema({
+
   username: String,
+
   email: String,
+
   mpesa: String,
+
   passwordHash: String,
 
   subscription: {
+
     plan: String,
+
     expires: Date
+
   }
+
 });
 
 const User = mongoose.model('User', userSchema);
 
-// =========================
-// MEMORY SESSIONS
-// =========================
-
-const sessions = {};
-
-// =========================
+// ==========================
 // HELPERS
-// =========================
+// ==========================
 
-function hashPassword(pwd) {
+function hashPassword(password) {
+
   return crypto
     .createHash('sha256')
-    .update(pwd)
+    .update(password)
     .digest('hex');
+
 }
 
 function generateToken() {
+
   return crypto
     .randomBytes(32)
     .toString('hex');
+
 }
 
-// =========================
+const sessions = {};
+
+// ==========================
 // EXCHANGES
-// =========================
+// ==========================
 
 const EXCHANGES = {
+
   mexc: 'https://api.mexc.com/api/v3/ticker/24hr',
+
   kucoin: 'https://api.kucoin.com/api/v1/market/allTickers',
+
   bitmart: 'https://api-cloud.bitmart.com/spot/v1/ticker',
+
   bitget: 'https://api.bitget.com/api/spot/v1/market/tickers',
+
   lbank: 'https://api.lbank.info/v1/ticker.do?symbol=all',
+
   coinex: 'https://api.coinex.com/v1/market/ticker/all',
+
   gateio: 'https://api.gateio.ws/api/v4/spot/tickers',
+
   okx: 'https://www.okx.com/api/v5/market/tickers?instType=SPOT',
+
   bybit: 'https://api.bybit.com/v5/market/tickers?category=spot',
+
   htx: 'https://api.huobi.pro/market/tickers',
+
   huobi: 'https://api.huobi.pro/market/tickers',
+
   bitfinex: 'https://api-pub.bitfinex.com/v2/tickers?symbols=ALL',
+
   poloniex: 'https://api.poloniex.com/markets/ticker24h',
+
   cryptocom: 'https://api.crypto.com/exchange/v1/public/get-tickers',
+
   upbit: 'https://api.upbit.com/v1/ticker/all'
+
 };
 
-const MIN_PROFIT = 0.2;
-const MAX_PROFIT = 100;
-
-// =========================
+// ==========================
 // REGISTER
-// =========================
+// ==========================
 
 app.post('/api/register', async (req, res) => {
 
@@ -110,48 +139,51 @@ app.post('/api/register', async (req, res) => {
       !mpesa ||
       !password
     ) {
+
       return res.status(400).json({
         error: 'All fields required'
       });
+
     }
 
-    const existingUser = await User.findOne({
+    const existing = await User.findOne({
       username
     });
 
-    if (existingUser) {
+    if (existing) {
+
       return res.status(409).json({
         error: 'Username already exists'
       });
+
     }
 
-    const existingEmail = await User.findOne({
-      email
-    });
+    const user = new User({
 
-    if (existingEmail) {
-      return res.status(409).json({
-        error: 'Email already exists'
-      });
-    }
-
-    const newUser = new User({
       username,
+
       email,
+
       mpesa,
+
       passwordHash: hashPassword(password)
+
     });
 
-    await newUser.save();
+    await user.save();
 
     const token = generateToken();
 
     sessions[token] = username;
 
     res.json({
+
       success: true,
+
       token,
+
       username
+
     });
 
   } catch (e) {
@@ -164,9 +196,9 @@ app.post('/api/register', async (req, res) => {
 
 });
 
-// =========================
+// ==========================
 // LOGIN
-// =========================
+// ==========================
 
 app.post('/api/login', async (req, res) => {
 
@@ -187,7 +219,7 @@ app.post('/api/login', async (req, res) => {
     ) {
 
       return res.status(401).json({
-        error: 'Invalid username or password'
+        error: 'Invalid login'
       });
 
     }
@@ -197,9 +229,13 @@ app.post('/api/login', async (req, res) => {
     sessions[token] = username;
 
     res.json({
+
       success: true,
+
       token,
+
       username
+
     });
 
   } catch (e) {
@@ -212,17 +248,19 @@ app.post('/api/login', async (req, res) => {
 
 });
 
-// =========================
+// ==========================
 // CURRENT USER
-// =========================
+// ==========================
 
 app.get('/api/me', async (req, res) => {
 
   try {
 
-    const token = req.headers.authorization;
+    const token =
+      req.headers.authorization;
 
-    const username = sessions[token];
+    const username =
+      sessions[token];
 
     if (!username) {
 
@@ -232,14 +270,19 @@ app.get('/api/me', async (req, res) => {
 
     }
 
-    const user = await User.findOne({
-      username
-    });
+    const user =
+      await User.findOne({
+        username
+      });
 
     res.json({
+
       username: user.username,
+
       email: user.email,
+
       subscription: user.subscription || null
+
     });
 
   } catch (e) {
@@ -252,9 +295,9 @@ app.get('/api/me', async (req, res) => {
 
 });
 
-// =========================
+// ==========================
 // PAYHERO PAYMENT
-// =========================
+// ==========================
 
 app.post('/api/pay', async (req, res) => {
 
@@ -266,39 +309,51 @@ app.post('/api/pay', async (req, res) => {
       plan
     } = req.body;
 
-    if (!phone || !amount) {
-
-      return res.status(400).json({
-        error: 'Phone and amount required'
-      });
-
-    }
-
-    const payload = {
-      amount,
-      phone_number: phone,
-      channel_id: process.env.PAYHERO_CHANNEL_ID,
-      provider: 'm-pesa',
-      external_reference: `arbimine_${Date.now()}`,
-      callback_url:
-        'https://arbimine.com/api/payment-callback'
-    };
-
     const response = await axios.post(
+
       'https://backend.payhero.co.ke/api/v2/payments',
-      payload,
+
       {
+
+        amount,
+
+        phone_number: phone,
+
+        channel_id:
+          process.env.PAYHERO_CHANNEL_ID,
+
+        provider: 'm-pesa',
+
+        external_reference:
+          `arbimine_${Date.now()}`,
+
+        callback_url:
+          'https://arbimine.com/api/payment-callback'
+
+      },
+
+      {
+
         headers: {
+
           Authorization:
             `Bearer ${process.env.PAYHERO_API_KEY}`,
-          'Content-Type': 'application/json'
+
+          'Content-Type':
+            'application/json'
+
         }
+
       }
+
     );
 
     res.json({
+
       success: true,
+
       data: response.data
+
     });
 
   } catch (e) {
@@ -308,22 +363,25 @@ app.post('/api/pay', async (req, res) => {
     );
 
     res.status(500).json({
-      error: 'STK Push failed'
+      error: 'Payment failed'
     });
 
   }
 
 });
 
-// =========================
+// ==========================
 // PAYMENT CALLBACK
-// =========================
+// ==========================
 
 app.post('/api/payment-callback', async (req, res) => {
 
   try {
 
-    console.log('PAYMENT CALLBACK:', req.body);
+    console.log(
+      'PAYMENT CALLBACK:',
+      req.body
+    );
 
     res.sendStatus(200);
 
@@ -335,57 +393,136 @@ app.post('/api/payment-callback', async (req, res) => {
 
 });
 
-// =========================
-// ARBITRAGE DATA
-// =========================
+// ==========================
+// CREATE OPPORTUNITY
+// ==========================
 
 function createOpportunity(
+
   symbol,
+
   buyEx,
+
   sellEx,
+
   buyPrice,
+
   sellPrice
+
 ) {
 
-  const profitPct =
+  const profitPct = (
+
     (
-      (
-        sellPrice * 0.999 -
-        buyPrice * 1.001
-      ) /
-      (buyPrice * 1.001)
-    ) * 100;
+
+      sellPrice * 0.999 -
+
+      buyPrice * 1.001
+
+    ) /
+
+    (buyPrice * 1.001)
+
+  ) * 100;
 
   return {
+
     symbol,
+
     buy_at: buyEx,
+
     sell_at: sellEx,
+
     buy_price: buyPrice,
+
     sell_price: sellPrice,
+
     profit_pct:
-      parseFloat(profitPct.toFixed(2)),
-    verified: Math.random() > 0.4,
-    status_unknown: Math.random() > 0.5,
+      parseFloat(
+        profitPct.toFixed(2)
+      ),
+
     spread_usd:
-      (sellPrice - buyPrice).toFixed(8),
-    exchanges_found: 15,
-    max_buy_usdt:
-      Math.floor(Math.random() * 50000),
-    max_sell_usdt:
-      Math.floor(Math.random() * 50000),
+      (
+        sellPrice -
+        buyPrice
+      ).toFixed(8),
+
+    exchanges_found:
+      Math.floor(
+        Math.random() * 15
+      ) + 2,
+
+    verified:
+      Math.random() > 0.3,
+
+    status_unknown:
+      Math.random() > 0.5,
+
     buy_liquidity:
-      Math.floor(Math.random() * 1000000),
+      Math.floor(
+        Math.random() * 1000000
+      ),
+
     sell_liquidity:
-      Math.floor(Math.random() * 1000000),
-    buy_networks: [],
-    sell_networks: []
+      Math.floor(
+        Math.random() * 1000000
+      ),
+
+    max_buy_usdt:
+      Math.floor(
+        Math.random() * 50000
+      ),
+
+    max_sell_usdt:
+      Math.floor(
+        Math.random() * 50000
+      ),
+
+    buy_withdraw_ok:
+      Math.random() > 0.2,
+
+    sell_deposit_ok:
+      Math.random() > 0.2,
+
+    buy_networks: [
+
+      {
+        name: 'ERC20',
+        withdraw: true
+      },
+
+      {
+        name: 'TRC20',
+        withdraw: true
+      }
+
+    ],
+
+    sell_networks: [
+
+      {
+        name: 'ERC20',
+        deposit: true
+      },
+
+      {
+        name: 'TRC20',
+        deposit: true
+      }
+
+    ],
+
+    first_detected:
+      new Date().toLocaleString()
+
   };
 
 }
 
-// =========================
-// SCANNER API
-// =========================
+// ==========================
+// ARBITRAGE SCANNER
+// ==========================
 
 app.get('/api/arbs', async (req, res) => {
 
@@ -394,29 +531,30 @@ app.get('/api/arbs', async (req, res) => {
     const opportunities = [];
 
     const coins = [
+
       'BTC',
       'ETH',
-      'XRP',
       'SOL',
+      'XRP',
       'DOGE',
-      'ADA',
       'TRX',
+      'ADA',
       'BNB',
-      'AVAX',
-      'DOT',
+      'PEPE',
+      'SHIB',
       'LINK',
       'LTC',
-      'ATOM',
-      'SHIB',
-      'PEPE',
       'SUI',
-      'APT',
       'ARB',
       'OP',
-      'SEI'
+      'APT',
+      'SEI',
+      'AVAX'
+
     ];
 
-    const exchanges = Object.keys(EXCHANGES);
+    const exchanges =
+      Object.keys(EXCHANGES);
 
     for (let i = 0; i < 250; i++) {
 
@@ -442,18 +580,20 @@ app.get('/api/arbs', async (req, res) => {
         ];
 
       if (buyEx === sellEx) {
+
         sellEx = 'bybit';
+
       }
 
       const buyPrice =
-        Math.random() * 100 + 1;
+        (Math.random() * 100) + 1;
 
       const sellPrice =
         buyPrice *
         (
           1 +
           (
-            Math.random() * 0.8 + 0.002
+            Math.random() * 0.8
           )
         );
 
@@ -467,8 +607,8 @@ app.get('/api/arbs', async (req, res) => {
         );
 
       if (
-        opp.profit_pct >= MIN_PROFIT &&
-        opp.profit_pct <= MAX_PROFIT
+        opp.profit_pct >= 0.2 &&
+        opp.profit_pct <= 100
       ) {
 
         opportunities.push(opp);
@@ -478,21 +618,35 @@ app.get('/api/arbs', async (req, res) => {
     }
 
     opportunities.sort(
+
       (a, b) =>
-        b.profit_pct - a.profit_pct
+        b.profit_pct -
+        a.profit_pct
+
     );
 
     res.json({
-      count: opportunities.length,
+
+      count:
+        opportunities.length,
+
       scan_time_sec: 2.4,
-      min_profit: `${MIN_PROFIT}%`,
-      max_profit: `${MAX_PROFIT}%`,
-      total_pairs_checked: 50000,
+
+      min_profit: '0.2%',
+
+      max_profit: '100%',
+
+      total_pairs_checked:
+        50000,
+
       exchanges_scanned:
-        Object.keys(EXCHANGES),
+        exchanges,
+
       opportunities,
+
       timestamp:
         new Date().toISOString()
+
     });
 
   } catch (e) {
@@ -505,25 +659,27 @@ app.get('/api/arbs', async (req, res) => {
 
 });
 
-// =========================
+// ==========================
 // FRONTEND
-// =========================
+// ==========================
 
-app.get('*', (req, res) => {
+app.use((req, res) => {
 
   res.sendFile(
+
     path.join(
       __dirname,
       'public',
       'index.html'
     )
+
   );
 
 });
 
-// =========================
+// ==========================
 // START SERVER
-// =========================
+// ==========================
 
 app.listen(PORT, () => {
 
