@@ -3,17 +3,19 @@
 <head>
   <title>ArbiMine Scanner</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body { font-family: system-ui; background: #0a0a0a; color: #fff; margin: 0; padding: 20px; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 20px; }
-  .card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; padding: 16px; cursor: pointer; }
-  .card:hover { border-color: #4ade80; transform: translateY(-2px); }
-  .spread { font-size: 24px; font-weight: bold; color: #4ade80; }
-  .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; overflow-y: auto; }
-  .modal-content { background: #1a1a1a; margin: 2% auto; padding: 24px; width: 90%; max-width: 700px; border-radius: 12px; }
-  .close { float: right; font-size: 32px; cursor: pointer; color: #999; }
-  .close:hover { color: #fff; }
+   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 20px; }
+   .card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; padding: 16px; cursor: pointer; }
+   .card:hover { border-color: #4ade80; transform: translateY(-2px); }
+   .spread { font-size: 24px; font-weight: bold; color: #4ade80; }
+   .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; overflow-y: auto; }
+   .modal-content { background: #1a1a1a; margin: 2% auto; padding: 24px; width: 90%; max-width: 700px; border-radius: 12px; }
+   .back-btn { background: #333; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-bottom: 16px; }
+   .back-btn:hover { background: #444; }
+   .status-on { color: #4ade80; }
+   .status-off { color: #f87171; }
+   .tag { background: #2a2a2a; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin: 2px; display: inline-block; }
    button { background: #4ade80; color: #000; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
   </style>
 </head>
@@ -24,17 +26,13 @@
 
   <div id="modal" class="modal">
     <div class="modal-content">
-      <span class="close" onclick="closeModal()">&times;</span>
+      <button class="back-btn" onclick="closeModal()">← Back to Opportunities</button>
       <h2 id="modalTitle"></h2>
       <div id="modalStats"></div>
-      <canvas id="spreadChart" height="100"></canvas>
     </div>
   </div>
 
 <script>
-let chart;
-const token = localStorage.getItem('token'); // Your auth token
-
 async function loadOpps() {
   const res = await fetch('/api/scan');
   const data = await res.json();
@@ -62,90 +60,46 @@ async function showDetails(coin, buy, sell) {
   const res = await fetch(`/api/coin-details?coin=${coin}&buy=${buy}&sell=${sell}`);
   const d = await res.json();
   
+  const renderNetworks = (networks) => {
+    if (!networks || Object.keys(networks).length === 0) return '<span style="color:#666">N/A</span>';
+    return Object.entries(networks).map(([net, info]) => 
+      `<span class="tag">${net}</span>`
+    ).join('');
+  };
+  
   document.getElementById('modalTitle').textContent = `${coin}: ${buy} → ${sell}`;
   document.getElementById('modalStats').innerHTML = `
     <p><b>Current Spread:</b> ${d.spreadPercent.toFixed(2)}% ($${d.spread.toFixed(4)})</p>
     <p><b>Buy:</b> $${d.buyPrice} on ${buy}</p>
     <p><b>Sell:</b> $${d.sellPrice} on ${sell}</p>
     <p><b>24h Volume:</b> ${d.volume24h?.toLocaleString() || 'N/A'}</p>
-    <h3>Order Book Preview</h3>
-    <div style="display:flex;gap:20px">
-      <div><b>${buy} Bids:</b><br>${d.buyOrderBook.map(o=>`$${o[0]} x ${o[1]}`).join('<br>')}</div>
-      <div><b>${sell} Asks:</b><br>${d.sellOrderBook.map(o=>`$${o[0]} x ${o[1]}`).join('<br>')}</div>
-    </div>
+    
+    <h3>Liquidity - Top 10 Orders</h3>
+    <p><b>${buy} Liquidity:</b> $${d.liquidity.buy.toLocaleString()}</p>
+    <p><b>${sell} Liquidity:</b> $${d.liquidity.sell.toLocaleString()}</p>
+    
+    <h3>${buy} - ${coin} Status</h3>
+    <p><b>Deposit:</b> <span class="${d.buyStatus.deposit ? 'status-on' : 'status-off'}">${d.buyStatus.deposit ? 'Enabled' : 'Disabled'}</span></p>
+    <p><b>Withdraw:</b> <span class="${d.buyStatus.withdraw ? 'status-on' : 'status-off'}">${d.buyStatus.withdraw ? 'Enabled' : 'Disabled'}</span></p>
+    <p><b>Networks:</b> ${renderNetworks(d.buyStatus.networks)}</p>
+    
+    <h3>${sell} - ${coin} Status</h3>
+    <p><b>Deposit:</b> <span class="${d.sellStatus.deposit ? 'status-on' : 'status-off'}">${d.sellStatus.deposit ? 'Enabled' : 'Disabled'}</span></p>
+    <p><b>Withdraw:</b> <span class="${d.sellStatus.withdraw ? 'status-on' : 'status-off'}">${d.sellStatus.withdraw ? 'Enabled' : 'Disabled'}</span></p>
+    <p><b>Networks:</b> ${renderNetworks(d.sellStatus.networks)}</p>
   `;
-  
-  if (chart) chart.destroy();
-  const ctx = document.getElementById('spreadChart').getContext('2d');
-  chart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: d.history.map(h => new Date(h.time).toLocaleTimeString()),
-      datasets: [{ 
-        label: 'Spread %', 
-        data: d.history.map(h => h.spread), 
-        borderColor: '#4ade80', 
-        backgroundColor: 'rgba(74, 222, 128, 0.1)',
-        tension: 0.3,
-        fill: true
-      }]
-    },
-    options: { 
-      plugins: { legend: { display: false } }, 
-      scales: { 
-        y: { beginAtZero: false, ticks: { color: '#999' } },
-        x: { ticks: { color: '#999' } }
-      } 
-    }
-  });
   
   document.getElementById('modal').style.display = 'block';
 }
 
-function closeModal() { document.getElementById('modal').style.display = 'none'; }
-
-// YOUR M-PESA + AUTH CODE FROM SCREENSHOT
-async function pay() {
-  try {
-    const res = await fetch('/api/pay', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        phone,
-        amount: selectedAmount,
-        plan: selectedPlan
-      })
-    });
-    const data = await res.json();
-    if(data.success){
-      alert('STK Push sent. Enter your M-Pesa PIN.');
-    }else{
-      alert(data.error);
-    }
-  }catch(e){
-    alert('Payment failed');
-  }
+function closeModal() { 
+  document.getElementById('modal').style.display = 'none'; 
 }
 
-if(token){
-  fetch('/api/me',{
-    headers:{ Authorization: token }
-  })
- .then(r=>r.json())
- .then(d=>{
-    if(d.username){
-      showApp(d.username);
-    }
-  });
-}
-
-function showApp(username) {
-  // Your app logic here
-  console.log('Logged in as:', username);
-}
+// Your M-Pesa + auth code here from previous screenshot
 
 loadOpps();
-setInterval(loadOpps, 10000); // Refresh every 10s
+setInterval(loadOpps, 10000);
 </script>
 
 </body>

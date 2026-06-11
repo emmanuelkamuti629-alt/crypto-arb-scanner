@@ -10,19 +10,14 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// CCXT exchanges
 const exchanges = {
   mexc: new ccxt.mexc({ enableRateLimit: true }),
   bybit: new ccxt.bybit({ enableRateLimit: true }),
 };
 
-const opportunityHistory = {};
 const COINS = ['BTC', 'ETH', 'SOL', 'DOGE', 'XRP', 'ADA', 'AVAX', 'DOT', 'MATIC', 'LINK'];
 const MIN_SPREAD = 1.0;
 
-// --- ARBITRAGE SCANNER ROUTES ---
-
-// 1. Main scan endpoint
 app.get('/api/scan', async (req, res) => {
   try {
     const opportunities = [];
@@ -35,7 +30,7 @@ app.get('/api/scan', async (req, res) => {
           exchanges.mexc.fetchTicker(symbol).catch(() => null),
           exchanges.bybit.fetchTicker(symbol).catch(() => null),
         ]);
-        if (!mexcTicker ||!bybitTicker) continue;
+        if (!mexcTicker || !bybitTicker) continue;
         
         const scenarios = [
           { buy: 'MEXC', sell: 'BYBIT', buyPrice: mexcTicker.last, sellPrice: bybitTicker.last },
@@ -46,19 +41,13 @@ app.get('/api/scan', async (req, res) => {
           const spread = s.sellPrice - s.buyPrice;
           const spreadPercent = (spread / s.buyPrice) * 100;
           if (spreadPercent > MIN_SPREAD) {
-            const key = `${coin}-${s.buy}-${s.sell}`;
-            if (!opportunityHistory[key]) opportunityHistory[key] = { history: [] };
-            opportunityHistory[key].history.push({ time: Date.now(), spread: spreadPercent });
-            if (opportunityHistory[key].history.length > 100) opportunityHistory[key].history.shift();
-
             opportunities.push({
               coin, buyExchange: s.buy, sellExchange: s.sell,
               buyPrice: parseFloat(s.buyPrice.toFixed(4)),
               sellPrice: parseFloat(s.sellPrice.toFixed(4)),
               spread: parseFloat(spread.toFixed(4)),
               spreadPercent: parseFloat(spreadPercent.toFixed(2)),
-              status: 'TRADEABLE',
-              history: opportunityHistory[key]
+              status: 'TRADEABLE'
             });
           }
         }
@@ -71,53 +60,63 @@ app.get('/api/scan', async (req, res) => {
   }
 });
 
-// 2. Coin details for modal + graph
+// Details: deposit/withdraw + networks + liquidity
 app.get('/api/coin-details', async (req, res) => {
   try {
     const { coin, buy, sell } = req.query;
     const symbol = `${coin}/USDT`;
-    const [buyTicker, sellTicker] = await Promise.all([
-      exchanges[buy.toLowerCase()].fetchTicker(symbol),
-      exchanges[sell.toLowerCase()].fetchTicker(symbol)
+    
+    const buyEx = exchanges[buy.toLowerCase()];
+    const sellEx = exchanges[sell.toLowerCase()];
+    
+    await Promise.all([buyEx.loadMarkets(), sellEx.loadMarkets()]);
+    
+    const [buyTicker, sellTicker, buyCurrency, sellCurrency] = await Promise.all([
+      buyEx.fetchTicker(symbol),
+      sellEx.fetchTicker(symbol),
+      buyEx.currency(coin),
+      sellEx.currency(coin)
     ]);
-    const buyOB = await exchanges[buy.toLowerCase()].fetchOrderBook(symbol, 5);
-    const sellOB = await exchanges[sell.toLowerCase()].fetchOrderBook(symbol, 5);
+    
+    const buyOB = await buyEx.fetchOrderBook(symbol, 10);
+    const sellOB = await sellEx.fetchOrderBook(symbol, 10);
+    
+    // Calculate liquidity: sum of top 10 bids/asks in USDT
+    const buyLiquidity = buyOB.bids.slice(0,10).reduce((sum, [price, amount]) => sum + price * amount, 0);
+    const sellLiquidity = sellOB.asks.slice(0,10).reduce((sum, [price, amount]) => sum + price * amount, 0);
     
     res.json({
       coin, buyExchange: buy, sellExchange: sell,
-      buyPrice: buyTicker.last, sellPrice: sellTicker.last,
+      buyPrice: buyTicker.last, 
+      sellPrice: sellTicker.last,
       spread: sellTicker.last - buyTicker.last,
       spreadPercent: ((sellTicker.last - buyTicker.last) / buyTicker.last) * 100,
       volume24h: buyTicker.baseVolume,
-      buyOrderBook: buyOB.bids.slice(0, 5),
-      sellOrderBook: sellOB.asks.slice(0, 5),
-      history: opportunityHistory[`${coin}-${buy}-${sell}`]?.history || []
+      
+      buyStatus: {
+        deposit: buyCurrency.deposit,  // true/false
+        withdraw: buyCurrency.withdraw, // true/false
+        networks: buyCurrency.networks || {}
+      },
+      sellStatus: {
+        deposit: sellCurrency.deposit,
+        withdraw: sellCurrency.withdraw,
+        networks: sellCurrency.networks || {}
+      },
+      liquidity: {
+        buy: parseFloat(buyLiquidity.toFixed(2)),
+        sell: parseFloat(sellLiquidity.toFixed(2))
+      }
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// --- YOUR EXISTING AUTH + M-PESA ROUTES ---
-// Add your /api/pay and /api/me routes here from your old code
+// Your /api/pay and /api/me routes here
 
-app.post('/api/pay', async (req, res) => {
-  // Your M-Pesa STK push code here
-  // Use req.body.phone, req.body.amount, req.body.plan
-  res.json({ success: true, message: 'STK Push sent. Enter your M-Pesa PIN.' });
-});
-
-app.get('/api/me', (req, res) => {
-  // Your token auth code here
-  // Check req.headers.authorization
-  res.json({ username: 'testuser' }); // Replace with real logic
-});
-
-// Serve frontend
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 ArbiMine running on ${PORT}`);
-});
+app.listen(PORT, () => console.log(`🚀 Running on ${PORT}`));
