@@ -2,9 +2,11 @@
 <html>
 <head>
   <title>ArbiMine</title>
+
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
+
     *{
       margin:0;
       padding:0;
@@ -21,17 +23,17 @@
     .header{
       background:#f7b500;
       color:#000;
-      padding:16px;
       text-align:center;
+      padding:16px;
       font-size:22px;
-      font-weight:bold;
+      font-weight:800;
       position:sticky;
       top:0;
       z-index:100;
     }
 
     .container{
-      max-width:500px;
+      max-width:550px;
       margin:auto;
     }
 
@@ -42,6 +44,10 @@
       border-radius:12px;
     }
 
+    .card h2{
+      margin-bottom:15px;
+    }
+
     input{
       width:100%;
       padding:14px;
@@ -50,6 +56,7 @@
       border-radius:8px;
       background:#2a2a2a;
       color:#fff;
+      font-size:15px;
     }
 
     .btn{
@@ -59,9 +66,10 @@
       border-radius:8px;
       background:#f7b500;
       color:#000;
-      font-weight:bold;
+      font-weight:700;
       cursor:pointer;
       margin-bottom:10px;
+      font-size:15px;
     }
 
     .btn-secondary{
@@ -73,29 +81,46 @@
       display:none;
     }
 
+    .error{
+      background:#f44336;
+      padding:10px;
+      border-radius:6px;
+      margin-bottom:10px;
+      display:none;
+    }
+
+    .success{
+      background:#4caf50;
+      color:#000;
+      padding:10px;
+      border-radius:6px;
+      margin-bottom:10px;
+      display:none;
+    }
+
     .controls{
+      background:#1a1a1a;
+      margin:0 15px 10px;
+      padding:12px;
+      border-radius:10px;
       display:flex;
       justify-content:space-between;
       align-items:center;
-      margin:15px;
-      background:#1a1a1a;
-      padding:12px;
-      border-radius:10px;
-    }
-
-    .refresh-btn{
-      background:#f7b500;
-      color:#000;
-      border:none;
-      padding:8px 14px;
-      border-radius:6px;
-      font-weight:bold;
-      cursor:pointer;
     }
 
     .stats{
       font-size:12px;
       color:#888;
+      line-height:1.5;
+    }
+
+    .refresh-btn{
+      background:#f7b500;
+      border:none;
+      padding:10px 15px;
+      border-radius:6px;
+      font-weight:700;
+      cursor:pointer;
     }
 
     .opportunity{
@@ -104,6 +129,11 @@
       padding:15px;
       border-radius:12px;
       border:1px solid #2a2a2a;
+      cursor:pointer;
+    }
+
+    .opportunity.expanded{
+      border:2px solid #f7b500;
     }
 
     .opp-row{
@@ -114,34 +144,38 @@
 
     .buy{
       color:#4caf50;
-      font-size:12px;
-      font-weight:bold;
+      font-weight:700;
     }
 
     .sell{
       color:#f44336;
-      font-size:12px;
-      font-weight:bold;
+      font-weight:700;
     }
 
     .symbol{
       font-size:20px;
-      font-weight:bold;
-      margin-top:6px;
+      font-weight:800;
+      margin-top:8px;
     }
 
     .profit{
       color:#4caf50;
-      font-size:24px;
-      font-weight:bold;
+      font-size:26px;
+      font-weight:800;
+    }
+
+    .liquidity{
+      color:#888;
+      font-size:12px;
+      margin-top:5px;
     }
 
     .badge{
-      display:inline-block;
-      padding:3px 7px;
-      border-radius:5px;
       font-size:10px;
+      padding:4px 8px;
+      border-radius:4px;
       margin-left:6px;
+      font-weight:700;
     }
 
     .badge-ok{
@@ -159,10 +193,73 @@
       color:#fff;
     }
 
-    .liquidity{
-      font-size:11px;
-      color:#777;
-      margin-top:5px;
+    .opp-detail{
+      display:none;
+      margin-top:15px;
+      border-top:1px solid #333;
+      padding-top:15px;
+    }
+
+    .opp-detail.show{
+      display:block;
+    }
+
+    .detail-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+
+    .detail-box{
+      background:#111;
+      padding:12px;
+      border-radius:8px;
+      border:1px solid #333;
+    }
+
+    .detail-box h4{
+      color:#f7b500;
+      margin-bottom:10px;
+      font-size:13px;
+    }
+
+    .detail-line{
+      display:flex;
+      justify-content:space-between;
+      margin:7px 0;
+      font-size:12px;
+    }
+
+    .status-ok{
+      color:#4caf50;
+      font-weight:700;
+    }
+
+    .status-bad{
+      color:#f44336;
+      font-weight:700;
+    }
+
+    .status-unknown{
+      color:#ff9800;
+      font-weight:700;
+    }
+
+    .network-tag{
+      display:inline-block;
+      padding:4px 7px;
+      border-radius:5px;
+      background:#222;
+      font-size:10px;
+      margin:2px;
+    }
+
+    .network-tag.ok{
+      border:1px solid #4caf50;
+    }
+
+    .network-tag.bad{
+      border:1px solid #f44336;
     }
 
     .nav{
@@ -179,38 +276,14 @@
 
     .nav-item{
       text-align:center;
-      font-size:12px;
-      cursor:pointer;
       color:#888;
+      font-size:12px;
     }
 
     .nav-item.active{
       color:#f7b500;
     }
 
-    .loading{
-      text-align:center;
-      padding:40px;
-      color:#888;
-    }
-
-    .error{
-      background:#f44336;
-      color:#fff;
-      padding:10px;
-      border-radius:8px;
-      margin-bottom:10px;
-      display:none;
-    }
-
-    .success{
-      background:#4caf50;
-      color:#000;
-      padding:10px;
-      border-radius:8px;
-      margin-bottom:10px;
-      display:none;
-    }
   </style>
 </head>
 
@@ -224,18 +297,19 @@
 
   <div class="card">
 
-    <h2 style="margin-bottom:20px;">
+    <h2>
       Welcome to ArbiMine
     </h2>
 
     <div id="auth-error" class="error"></div>
+
     <div id="auth-success" class="success"></div>
 
     <input id="username" placeholder="Username">
 
     <input id="email" placeholder="Email">
 
-    <input id="mpesa" placeholder="2547XXXXXXXX">
+    <input id="mpesa" placeholder="M-Pesa 2547XXXXXXXX">
 
     <input id="password" type="password" placeholder="Password">
 
@@ -272,11 +346,11 @@
   <div class="controls">
 
     <div class="stats" id="stats">
-      Ready to scan
+      Ready
     </div>
 
     <button class="refresh-btn" onclick="loadArbs()">
-      ↻ Refresh
+      Refresh
     </button>
 
   </div>
@@ -291,7 +365,7 @@
     🏠<br>Home
   </div>
 
-  <div class="nav-item" onclick="openPro()">
+  <div class="nav-item">
     ⭐<br>Pro
   </div>
 
@@ -301,377 +375,501 @@
 
 </div>
 
-<div id="pro-modal"
-style="
-display:none;
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:rgba(0,0,0,0.9);
-z-index:9999;
-padding:20px;
-overflow:auto;
-">
+<script>
 
-  <div style="
-  background:#1a1a1a;
-  padding:20px;
-  border-radius:12px;
-  max-width:400px;
-  margin:60px auto;
-  ">
+let allOpportunities = [];
+let expandedId = null;
 
-    <h2 style="
-    margin-bottom:20px;
-    color:#f7b500;
-    ">
-      ArbiMine Pro
-    </h2>
+function showError(msg){
 
-    <div
-    id="weekly-plan"
-    onclick="selectPlan('weekly',100)"
-    style="
-    border:2px solid #333;
-    padding:15px;
-    border-radius:10px;
-    margin-bottom:12px;
-    cursor:pointer;
-    ">
+  const el =
+    document.getElementById('auth-error');
 
-      <h3>KES 100</h3>
-      <p>Weekly Subscription</p>
+  el.innerText = msg;
+
+  el.style.display = 'block';
+
+}
+
+function showSuccess(msg){
+
+  const el =
+    document.getElementById('auth-success');
+
+  el.innerText = msg;
+
+  el.style.display = 'block';
+
+}
+
+async function register(){
+
+  const username =
+    document.getElementById('username').value.trim();
+
+  const email =
+    document.getElementById('email').value.trim();
+
+  const mpesa =
+    document.getElementById('mpesa').value.trim();
+
+  const password =
+    document.getElementById('password').value;
+
+  try{
+
+    const res =
+      await fetch('/api/register',{
+
+        method:'POST',
+
+        headers:{
+          'Content-Type':'application/json'
+        },
+
+        body:JSON.stringify({
+          username,
+          email,
+          mpesa,
+          password
+        })
+
+      });
+
+    const data = await res.json();
+
+    if(!res.ok){
+
+      return showError(data.error);
+
+    }
+
+    localStorage.setItem(
+      'token',
+      data.token
+    );
+
+    localStorage.setItem(
+      'username',
+      data.username
+    );
+
+    showSuccess(
+      'Account created successfully'
+    );
+
+    setTimeout(()=>{
+
+      showApp(data.username);
+
+    },500);
+
+  }catch(e){
+
+    showError('Network error');
+
+  }
+
+}
+
+async function login(){
+
+  const username =
+    document.getElementById('username').value.trim();
+
+  const password =
+    document.getElementById('password').value;
+
+  try{
+
+    const res =
+      await fetch('/api/login',{
+
+        method:'POST',
+
+        headers:{
+          'Content-Type':'application/json'
+        },
+
+        body:JSON.stringify({
+          username,
+          password
+        })
+
+      });
+
+    const data = await res.json();
+
+    if(!res.ok){
+
+      return showError(data.error);
+
+    }
+
+    localStorage.setItem(
+      'token',
+      data.token
+    );
+
+    localStorage.setItem(
+      'username',
+      data.username
+    );
+
+    showApp(data.username);
+
+  }catch(e){
+
+    showError('Network error');
+
+  }
+
+}
+
+function logout(){
+
+  localStorage.clear();
+
+  location.reload();
+
+}
+
+function showApp(username){
+
+  document
+    .getElementById('auth-screen')
+    .classList.add('hidden');
+
+  document
+    .getElementById('app-screen')
+    .classList.remove('hidden');
+
+  document
+    .getElementById('welcome-msg')
+    .innerText =
+      `Welcome, ${username}`;
+
+  loadArbs();
+
+}
+
+function toggleDetail(id){
+
+  const detail =
+    document.getElementById(
+      `detail-${id}`
+    );
+
+  if(expandedId === id){
+
+    detail.classList.remove('show');
+
+    expandedId = null;
+
+    return;
+
+  }
+
+  document
+    .querySelectorAll('.opp-detail')
+    .forEach(d=>d.classList.remove('show'));
+
+  detail.classList.add('show');
+
+  expandedId = id;
+
+}
+
+function renderOpportunities(){
+
+  const list =
+    document.getElementById('list');
+
+  list.innerHTML = '';
+
+  allOpportunities.forEach((opp,idx)=>{
+
+    const id =
+      `${opp.symbol}-${idx}`;
+
+    let badge = '';
+
+    if(opp.verified){
+
+      badge =
+        `<span class="badge badge-ok">
+          TRADEABLE
+        </span>`;
+
+    }else if(opp.status_unknown){
+
+      badge =
+        `<span class="badge badge-warn">
+          UNVERIFIED
+        </span>`;
+
+    }else{
+
+      badge =
+        `<span class="badge badge-bad">
+          DISABLED
+        </span>`;
+
+    }
+
+    const div =
+      document.createElement('div');
+
+    div.className = 'opportunity';
+
+    div.innerHTML = `
+
+<div onclick="toggleDetail('${id}')">
+
+  <div class="opp-row">
+
+    <div>
+
+      <div>
+        <span class="buy">
+          BUY
+        </span>
+
+        ${opp.buy_at.toUpperCase()}
+        $${opp.buy_price}
+        <br>
+
+        <span class="sell">
+          SELL
+        </span>
+
+        ${opp.sell_at.toUpperCase()}
+        $${opp.sell_price}
+      </div>
+
+      <div class="symbol">
+        ${opp.symbol}/USDT
+        ${badge}
+      </div>
+
+      <div class="liquidity">
+        ${opp.exchanges_found} exchanges
+      </div>
 
     </div>
 
-    <div
-    id="monthly-plan"
-    onclick="selectPlan('monthly',350)"
-    style="
-    border:2px solid #333;
-    padding:15px;
-    border-radius:10px;
-    margin-bottom:15px;
-    cursor:pointer;
-    ">
-
-      <h3>KES 350</h3>
-      <p>Monthly Subscription</p>
-
+    <div class="profit">
+      ${opp.profit_pct}%
     </div>
-
-    <input
-    id="pro-mpesa"
-    placeholder="2547XXXXXXXX">
-
-    <button class="btn" onclick="paySubscription()">
-      PAY NOW
-    </button>
-
-    <button class="btn btn-secondary" onclick="closePro()">
-      CLOSE
-    </button>
 
   </div>
 
 </div>
 
-<script>
+<div
+  class="opp-detail"
+  id="detail-${id}"
+>
 
-const API = '';
+  <div class="detail-grid">
 
-let token = localStorage.getItem('token');
+    <div class="detail-box">
 
-let selectedPlan = null;
-let selectedAmount = 0;
+      <h4>
+        BUY ${opp.buy_at.toUpperCase()}
+      </h4>
 
-function showError(msg){
-  const el = document.getElementById('auth-error');
-  el.innerText = msg;
-  el.style.display = 'block';
+      <div class="detail-line">
+        <span>Liquidity</span>
 
-  setTimeout(()=>{
-    el.style.display='none';
-  },3000);
-}
+        <span>
+          $${Number(
+            opp.buy_liquidity
+          ).toLocaleString()}
+        </span>
+      </div>
 
-function showSuccess(msg){
-  const el = document.getElementById('auth-success');
-  el.innerText = msg;
-  el.style.display = 'block';
+      <div class="detail-line">
 
-  setTimeout(()=>{
-    el.style.display='none';
-  },3000);
-}
+        <span>Withdraw</span>
 
-async function register(){
+        <span class="${
+          opp.buy_withdraw_ok
+          ? 'status-ok'
+          : 'status-bad'
+        }">
 
-  const username = document.getElementById('username').value;
-  const email = document.getElementById('email').value;
-  const mpesa = document.getElementById('mpesa').value;
-  const password = document.getElementById('password').value;
+          ${
+            opp.buy_withdraw_ok
+            ? 'ENABLED'
+            : 'DISABLED'
+          }
 
-  try{
+        </span>
 
-    const res = await fetch('/api/register',{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json'
-      },
-      body:JSON.stringify({
-        username,
-        email,
-        mpesa,
-        password
-      })
-    });
+      </div>
 
-    const data = await res.json();
+      <div class="detail-line">
 
-    if(!data.success){
-      return showError(data.error);
-    }
+        <span>Max Buy</span>
 
-    localStorage.setItem('token',data.token);
+        <span>
+          $${Number(
+            opp.max_buy_usdt
+          ).toLocaleString()}
+        </span>
 
-    showSuccess('Account created');
+      </div>
 
-    showApp(data.username);
+    </div>
 
-  }catch(e){
-    showError('Network error');
-  }
-}
+    <div class="detail-box">
 
-async function login(){
+      <h4>
+        SELL ${opp.sell_at.toUpperCase()}
+      </h4>
 
-  const username = document.getElementById('username').value;
-  const password = document.getElementById('password').value;
+      <div class="detail-line">
+        <span>Liquidity</span>
 
-  try{
+        <span>
+          $${Number(
+            opp.sell_liquidity
+          ).toLocaleString()}
+        </span>
+      </div>
 
-    const res = await fetch('/api/login',{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json'
-      },
-      body:JSON.stringify({
-        username,
-        password
-      })
-    });
+      <div class="detail-line">
 
-    const data = await res.json();
+        <span>Deposit</span>
 
-    if(!data.success){
-      return showError(data.error);
-    }
+        <span class="${
+          opp.sell_deposit_ok
+          ? 'status-ok'
+          : 'status-bad'
+        }">
 
-    localStorage.setItem('token',data.token);
+          ${
+            opp.sell_deposit_ok
+            ? 'ENABLED'
+            : 'DISABLED'
+          }
 
-    showApp(data.username);
+        </span>
 
-  }catch(e){
-    showError('Network error');
-  }
-}
+      </div>
 
-function logout(){
+      <div class="detail-line">
 
-  localStorage.removeItem('token');
+        <span>Max Sell</span>
 
-  document.getElementById('auth-screen')
-  .classList.remove('hidden');
+        <span>
+          $${Number(
+            opp.max_sell_usdt
+          ).toLocaleString()}
+        </span>
 
-  document.getElementById('app-screen')
-  .classList.add('hidden');
-}
+      </div>
 
-function showApp(username){
+    </div>
 
-  document.getElementById('auth-screen')
-  .classList.add('hidden');
+  </div>
 
-  document.getElementById('app-screen')
-  .classList.remove('hidden');
+  <div
+    style="
+      margin-top:15px;
+      background:#111;
+      padding:12px;
+      border-radius:8px;
+    "
+  >
 
-  document.getElementById('welcome-msg')
-  .innerText = `Welcome ${username}`;
+    <div class="detail-line">
 
-  loadArbs();
+      <span>Spread</span>
+
+      <span>
+        $${opp.spread_usd}
+      </span>
+
+    </div>
+
+    <div class="detail-line">
+
+      <span>First Detected</span>
+
+      <span>
+        ${
+          opp.first_detected
+        }
+      </span>
+
+    </div>
+
+  </div>
+
+</div>
+
+`;
+
+    list.appendChild(div);
+
+  });
+
 }
 
 async function loadArbs(){
 
-  const list = document.getElementById('list');
-
-  list.innerHTML =
-  '<div class="loading">Scanning opportunities...</div>';
-
   try{
 
-    const res = await fetch('/api/arbs');
+    const res =
+      await fetch('/api/arbs');
 
-    const data = await res.json();
+    const data =
+      await res.json();
 
-    document.getElementById('stats').innerHTML =
-    `${data.count} opportunities`;
+    allOpportunities =
+      data.opportunities;
 
-    list.innerHTML = '';
-
-    data.opportunities.forEach(opp=>{
-
-      let badge='';
-
-      if(opp.verified){
-        badge =
-        '<span class="badge badge-ok">TRADEABLE</span>';
-      }else if(opp.status_unknown){
-        badge =
-        '<span class="badge badge-warn">UNVERIFIED</span>';
-      }else{
-        badge =
-        '<span class="badge badge-bad">DISABLED</span>';
-      }
-
-      const div = document.createElement('div');
-
-      div.className='opportunity';
-
-      div.innerHTML = `
-
-      <div class="opp-row">
-
-        <div>
-
-          <div class="buy">
-            BUY ${opp.buy_at.toUpperCase()}
-            $${opp.buy_price}
-          </div>
-
-          <div class="sell">
-            SELL ${opp.sell_at.toUpperCase()}
-            $${opp.sell_price}
-          </div>
-
-          <div class="symbol">
-            ${opp.symbol}/USDT
-            ${badge}
-          </div>
-
-          <div class="liquidity">
-            Profit Spread:
-            $${opp.spread_usd}
-          </div>
-
-        </div>
-
-        <div class="profit">
-          ${opp.profit_pct}%
-        </div>
-
-      </div>
-
+    document
+      .getElementById('stats')
+      .innerHTML = `
+        ${data.count} opportunities
+        <br>
+        ${data.exchanges_scanned.length} exchanges
       `;
 
-      list.appendChild(div);
-
-    });
+    renderOpportunities();
 
   }catch(e){
 
-    list.innerHTML =
-    '<div class="loading">Failed loading opportunities</div>';
+    console.log(e);
 
   }
+
 }
 
-function openPro(){
-  document.getElementById('pro-modal').style.display='block';
-}
-
-function closePro(){
-  document.getElementById('pro-modal').style.display='none';
-}
-
-function selectPlan(plan,amount){
-
-  selectedPlan = plan;
-  selectedAmount = amount;
-
-  document.getElementById('weekly-plan')
-  .style.border='2px solid #333';
-
-  document.getElementById('monthly-plan')
-  .style.border='2px solid #333';
-
-  document.getElementById(plan + '-plan')
-  .style.border='2px solid #f7b500';
-}
-
-async function paySubscription(){
-
-  const phone =
-  document.getElementById('pro-mpesa').value;
-
-  if(!selectedPlan){
-    return alert('Select plan');
-  }
-
-  if(!phone){
-    return alert('Enter M-Pesa number');
-  }
-
-  try{
-
-    const res = await fetch('/api/pay',{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json'
-      },
-      body:JSON.stringify({
-        phone,
-        amount:selectedAmount,
-        plan:selectedPlan
-      })
-    });
-
-    const data = await res.json();
-
-    if(data.success){
-
-      alert(
-        'STK Push sent. Enter your M-Pesa PIN.'
-      );
-
-    }else{
-
-      alert(data.error);
-
-    }
-
-  }catch(e){
-
-    alert('Payment failed');
-
-  }
-}
+const token =
+  localStorage.getItem('token');
 
 if(token){
 
   fetch('/api/me',{
+
     headers:{
       Authorization:token
     }
+
   })
   .then(r=>r.json())
-  .then(d=>{
-    if(d.username){
-      showApp(d.username);
+  .then(data=>{
+
+    if(data.username){
+
+      showApp(data.username);
+
     }
+
   });
 
 }
