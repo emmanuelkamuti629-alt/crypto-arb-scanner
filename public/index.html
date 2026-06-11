@@ -3,9 +3,9 @@
 <head>
   <title>ArbiMine</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <style>
-    * {
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <style>    * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
@@ -1344,7 +1344,10 @@ if (token) {
   .catch(() => logout());
 }
 
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js');
+  }
 </script>
-
 </body>
 </html>
