@@ -40,9 +40,9 @@ const EXCHANGES = {
   upbit: 'https://api.upbit.com/v1/ticker/all'
 };
 
-const MIN_PROFIT = 0.0;
+const MIN_PROFIT = 0.2;
 const MAX_PROFIT = 100.0;
-const MAX_CHECKS = 50;
+const MAX_CHECKS = 5000;
 
 const statusCache = {};
 const CACHE_TIME = 5 * 60 * 1000;
@@ -736,13 +736,9 @@ app.get('/api/arbs', async (req, res) => {
       }
     }
 
-    opportunities.sort(
-      (a, b) => b.profit_pct - a.profit_pct
-    );
-
-    const topCandidates =
-      opportunities.slice(0, MAX_CHECKS);
-
+const topCandidates = opportunities
+  .filter(o => o.profit_pct >= 0.2 && o.profit_pct <= 100)
+  .slice(0, MAX_CHECKS);
     const verified = [];
 
     for (const opp of topCandidates) {
