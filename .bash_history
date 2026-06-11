@@ -1,123 +1,3 @@
-# Add all new files to the staging area
-git add .
-# Save the changes with a message
-git commit -m "Add chat functionality and ArbiMine UI structure"
-# Push to your GitHub repository
-git push origin main
-# 1. Fetch and merge the remote changes into your local files
-git pull origin main
-# 2. If it asks for a merge message, just press Ctrl+O then Enter, then Ctrl+X
-# 3. Now push your new files again
-git push origin main
-git push -f origin main
-nano public/pro.html
-nano public/chat.html
-rm server.js
-nano server.js
-git add server.js
-git commit -m "Update server.js with full socket.io and static serving support"
-git push -f origin main
-nano public/pro.html
-git add public/pro.html
-git commit -m "Complete Go Pro UI structure"
-git push -f origin main
-nano public/payment.html
-nano public/chat.html
-git add public/chat.html
-git commit -m "Add real-time chat interface"
-git push -f origin main
-nano public/dashboard.html
-rm server js
-rm server.js
-nano server.js
-git add server.js
-git commit -m "Finalize server.js with payment, chat, and static routing"
-git push -f origin main
-nano public/index.html
-rm public/index.html
-nano public/index.html
-git add public/index.html
-git commit -m "Add navigation links to home page"
-git push -f origin main
-rm public/index.html
-<html lang="en">
-<head>
-</head>
-<body class="p-6">
-</body>
-</html>
-nano public/index.html
-git add .
-git commit -m "Add persistent bottom navigation bar"
-git push -f origin main
-nano profile.html
-git add .
-git commit -m "Add Profit tracker tab and navigation"
-git push -f origin main
-rm public/index.html
-nano public/index.html
-rm public/profit.html
-nano public/profit.html
-rm public/pro.html
-nano public/pro.html
-rm public/chat.html
-nano public/chat.html
-rm public/payment.html
-nano public/payment.html
-git add .
-git commit -m "Update all files with embedded bottom navigation"
-git push -f origin main
-nano public/profile.html
-<div class="fixed bottom-0 left-0 w-full bg-[#FFD700] p-3 flex justify-around text-black font-bold text-xs z-50">
-</div>
-git add .
-git commit -m "Add profile tab to all navigation bars"
-git push -f origin main
-rm public/index.html
-nano public/index.html
-git add .
-git commit -m "Update home page design to match Arbihunt style"
-git push -f origin main
-rm public/pro.html
-nano public/pro.html
-rm public/chat.html
-nano public/chay.html
-rm public/ profile.html
-rm public/profile.html
-nano public/profile.html
-git add .
-git commit -m "Add dynamic profile page"
-git push -f origin main
-nano public/index.html
-rm public/index.html
-nano public/index.html
-git add .
-git commit -m "Add profile tab to navigation bar on all pages"
-git push -f origin main
-rm public/ index.html
-rm public/index.html
-nano public/index.html
-rm server.js
-nano server.js
-npm install express express-session mongoose nodemailer bcryptjs
-rm server.js
-nano server.js
-git add .
-git commit -m "Add profile tab to navigation bar on all pages"
-git push -f origin main
-rm pro.html
-nano pro.html
-rm public/pro.html
-nano public/pro.html
-# 1. Add all modified files to the staging area
-git add .
-# 2. Commit your changes with a descriptive message
-git commit -m "Update pro page with Paystack and UI toggles"
-# 3. Push to your main branch
-git push origin main
-rm public/index.html
-nano public/index.html
-git add public/index.html
 git commit -m "Updated auth page with functional login/register"
 git push origin main
 nano package.json
@@ -497,4 +377,124 @@ rm server.js
 nano server.js
 git add server.js
 git commit -m "Add max buy/sell from order book depth"
+git push
+ls
+nano manifest.json
+git add .
+git commit -m "Fix manifest and add icon"
+git push
+rm manifest.json
+nano manifest.json
+git add .
+git commit -m "Fix manifest and add icon"
+git push
+nano public/index.html
+public/icon-192.png
+public/icon-512.png
+rm manifest.json
+nano public/manifest.json
+cd public
+curl -o icon-192.png https://via.placeholder.com/192x192.png?text=AM
+curl -o icon-512.png https://via.placeholder.com/512x512.png?text=AM
+cd ..cd public
+pkg install imagemagick
+magick -size 512x512 canvas:"#f7b500" icon-512.png
+cd ..cd public
+# This creates a 192x192 yellow PNG
+printf '\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\xc0\x00\x00\x00\xc0\x08\x02\x00\x00\x00\xd1\x9a\x58\xe9\x00\x00\x00\x0cIDATx\x9cc\xf8\xff?\x00\x05\xfe\x02\xfe\xa7\xe1\xe1\x02\x00\x00IEND\xaeB`\x82' > icon-192.png
+# This creates a 512x512 yellow PNG  
+printf '\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x02\x00\x00\x00\x02\x00\x08\x02\x00\x00\x00\xfd\xd4\x9a\x73\x00\x00\x00\x0cIDATx\x9cc\xf8\xff\xff?\x00\x05\xfe\x02\xfe\xa7\xe1\xe1\x02\x00\x00\x00\x00IEND\xaeB`\x82' > icon-512.png
+cd ..
+cd public
+pkg install wget
+wget -O icon-512.png http://via.placeholder.com/512x512.png/f7b500/000?text=AM
+cd ..ls -lh public/
+ls -lh
+echo "self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('fetch',e=>e.respondWith(fetch(e.request)));" > sw.js
+grep -E "manifest|theme-color|serviceWorker" index.html
+nano index.html
+grep -E "manifest|theme-color|serviceWorker" index.html
+cd ..
+rm -rf .bubblewrap
+git add public/
+git commit -m "Fix PWA: correct manifest tags + add service worker"
+git push
+cd public
+rm icon-192.png icon-512.png
+pkg install curl -y
+curl -L -o icon-192.png https://raw.githubusercontent.com/pwa-builder/pwa-starter/main/public/assets/icons/icon_192.png
+curl -L -o icon-512.png https://raw.githubusercontent.com/pwa-builder/pwa-starter/main/public/assets/icons/icon_512.png
+cd ..
+git add public/icon-*.png
+git commit -m "Fix: replace with valid PNG icons"
+git push
+cd ~/crypto-arb-scanner/public
+termux-setup-storage
+ls ~/storage/downloads/icon-*.png
+# Remove the old 66-byte broken icons
+rm icon-192.png icon-512.png
+# Copy your real ArbiMine logo
+cp ~/storage/downloads/icon-192.png icon-192.png
+cp ~/storage/downloads/icon-512.png icon-512.png
+# Verify - should show ~24K and ~116K, not 66 bytes
+ls -lh icon-*.png
+cd ~/crypto-arb-scanner
+pwd
+ls
+cd ~/crypto-arb-scanner/public
+termux-setup-storage
+# If the ls above shows the files, continue:
+rm -f icon-192.png icon-512.png
+cp ~/storage/downloads/icon-192.png .
+cp ~/storage/downloads/icon-512.png .
+# Verify sizes - should be ~24K and ~116K
+ls -lh icon-*.png
+termux-setup-storage
+cd ~
+find . -name "crypto-arb-scanner" -type d 2>/dev/null
+cd ~/crypto-arb-scanner/public
+ls ~/storage/downloads/icon-*.png
+cd ~
+find . -name "public" -type d 2>/dev/null | grep crypto
+termux-setup-storage
+ls ~/storage/shared/Pictures/1781165632347.png
+pkg install imagemagick -y
+cd ~
+find . -name "public" -type d 2>/dev/null | grep crypto
+cd ~/crypto-arb-scanner/public
+termux-setup-storage
+# If you see the 2 files, continue:
+rm -f icon-192.png icon-512.png
+cp ~/storage/downloads/icon-192.png .
+cp ~/storage/downloads/icon-512.png .
+ls -lh icon-*.png
+apt clean
+apt update
+apt upgrade -y
+cd ~
+ls
+find . -maxdepth 3 -name "manifest.json" -type f 2>/dev/null
+termux-setup-storage
+cd ~/public
+pwd
+rm -f icon-192.png icon-512.png
+cp ~/storage/downloads/icon-192.png .
+cp ~/storage/downloads/icon-512.png .
+ls -lh icon-*.png
+termux-setup-storage
+cd ~/public
+pwd
+rm -f icon-192.png icon-512.png
+cp ~/storage/downloads/icon-192.png .
+cp ~/storage/downloads/icon-512.png .
+ls -lh icon-*.png
+ls ~/storage/downloads/icon-*.png
+cd ~/public
+rm -f icon-192.png icon-512.png
+cp ~/storage/downloads/icon-192.png .
+cp ~/storage/downloads/icon-512.png .
+ls -lh icon-*.png
+cd ~
+git add public/icon-*.png
+git commit -m "Add ArbiMine logo - final version"
 git push

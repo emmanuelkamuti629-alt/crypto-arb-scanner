@@ -3,526 +3,241 @@
 <head>
   <title>ArbiMine</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#0f172a">
-  <style>    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      background: #0d0d0d;
-      color: #fff;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-      padding-bottom: 70px;
-    }
-
-    .header {
-      background: #f7b500;
-      color: #000;
-      padding: 16px;
-      text-align: center;
-      font-weight: 800;
-      font-size: 20px;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-
-    .container {
-      max-width: 500px;
-      margin: 0 auto;
-    }
-
-    .card {
-      background: #1a1a1a;
-      padding: 20px;
-      border-radius: 12px;
-      margin: 15px;
-    }
-
-    .card h2 {
-      margin-bottom: 15px;
-      font-size: 22px;
-    }
-
-    input {
-      width: 100%;
-      background: #2a2a2a;
-      border: 1px solid #333;
-      color: #fff;
-      padding: 14px;
-      border-radius: 8px;
-      margin-bottom: 12px;
-      font-size: 15px;
-    }
-
-    .btn {
-      width: 100%;
-      background: #f7b500;
-      color: #000;
-      border: none;
-      padding: 14px;
-      border-radius: 8px;
-      font-weight: bold;
-      cursor: pointer;
-      font-size: 16px;
-      margin-bottom: 10px;
-    }
-
-    .btn-secondary {
-      background: #333;
-      color: #fff;
-    }
-
-    .error {
-      background: #f44336;
-      color: #fff;
-      padding: 10px;
-      border-radius: 6px;
-      margin-bottom: 12px;
-      font-size: 14px;
-      display: none;
-    }
-
-    .success {
-      background: #4caf50;
-      color: #000;
-      padding: 10px;
-      border-radius: 6px;
-      margin-bottom: 12px;
-      font-size: 14px;
-      display: none;
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    .nav {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: #1a1a1a;
-      display: flex;
-      justify-content: space-around;
-      padding: 10px 0;
-      border-top: 1px solid #2a2a2a;
-    }
-
-    .nav-item {
-      text-align: center;
-      font-size: 12px;
-      color: #888;
-      cursor: pointer;
-    }
-
-    .nav-item.active {
-      color: #f7b500;
-    }
-
-    .controls {
-      background: #1a1a1a;
-      padding: 12px 15px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid #2a2a2a;
-      margin: 0 15px;
-      border-radius: 8px;
-    }
-
-    .stats {
-      font-size: 12px;
-      color: #888;
-      line-height: 1.4;
-    }
-
-    .refresh-btn {
-      background: #f7b500;
-      color: #000;
-      border: none;
-      padding: 8px 15px;
-      border-radius: 5px;
-      font-weight: bold;
-      cursor: pointer;
-      font-size: 13px;
-    }
-
-    .refresh-btn:disabled {
-      opacity: 0.5;
-    }
-
-    .opportunity {
-      background: #1a1a1a;
-      margin: 8px 15px;
-      padding: 14px;
-      border-radius: 10px;
-      cursor: pointer;
-      border: 1px solid #2a2a2a;
-      transition: all 0.3s ease;
-    }
-
-    .opportunity.untradeable {
-      opacity: 0.45;
-    }
-
-    .opportunity.expanded {
-      border: 2px solid #f7b500;
-      background: #222;
-    }
-
-    .opp-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .buy-sell {
-      font-size: 12px;
-      line-height: 1.6;
-    }
-
-    .buy {
-      color: #4caf50;
-      font-weight: 600;
-    }
-
-    .sell {
-      color: #f44336;
-      font-weight: 600;
-    }
-
-    .symbol {
-      font-size: 18px;
-      font-weight: bold;
-      margin: 6px 0;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-
-    .profit {
-      color: #4caf50;
-      font-size: 24px;
-      font-weight: 800;
-    }
-
-    .liquidity {
-      font-size: 11px;
-      color: #888;
-      margin-top: 4px;
-    }
-
-    .badge {
-      font-size: 10px;
-      padding: 3px 7px;
-      border-radius: 4px;
-      font-weight: 700;
-    }
-
-    .badge-ok {
-      background: #4caf50;
-      color: #000;
-    }
-
-    .badge-warn {
-      background: #ff9800;
-      color: #000;
-    }
-
-    .badge-bad {
-      background: #f44336;
-      color: #fff;
-    }
-
-    .opp-detail {
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.4s ease, padding 0.4s ease;
-      position: relative;
-    }
-
-    .opp-detail.show {
-      max-height: 900px;
-      padding-top: 40px;
-      margin-top: 16px;
-      border-top: 1px solid #333;
-    }
-
-    .close-detail {
-      position: absolute;
-      top: 8px;
-      left: 0;
-      background: #f44336;
-      color: #fff;
-      border: none;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      font-size: 18px;
-      font-weight: bold;
-      cursor: pointer;
-      z-index: 5;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .detail-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin: 12px 0;
-    }
-
-    .detail-box {
-      background: #0d0d0d;
-      padding: 12px;
-      border-radius: 8px;
-      border: 1px solid #333;
-    }
-
-    .detail-box h4 {
-      font-size: 13px;
-      color: #f7b500;
-      margin-bottom: 8px;
-    }
-
-    .detail-line {
-      font-size: 12px;
-      margin: 6px 0;
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .detail-line span:first-child {
-      color: #888;
-    }
 
-    .detail-line span:last-child {
-      font-weight: 600;
+  <style>
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
     }
 
-    .status-ok {
-      color: #4caf50;
+    body{
+      background:#0d0d0d;
+      color:#fff;
+      font-family:Arial,sans-serif;
+      padding-bottom:80px;
     }
 
-    .status-bad {
-      color: #f44336;
+    .header{
+      background:#f7b500;
+      color:#000;
+      padding:16px;
+      text-align:center;
+      font-size:22px;
+      font-weight:bold;
+      position:sticky;
+      top:0;
+      z-index:100;
     }
 
-    .status-unknown {
-      color: #ff9800;
+    .container{
+      max-width:500px;
+      margin:auto;
     }
 
-    .network-tag {
-      display: inline-block;
-      background: #2a2a2a;
-      padding: 3px 6px;
-      border-radius: 4px;
-      font-size: 10px;
-      margin: 2px;
+    .card{
+      background:#1a1a1a;
+      margin:15px;
+      padding:20px;
+      border-radius:12px;
     }
 
-    .network-tag.ok {
-      border: 1px solid #4caf50;
+    input{
+      width:100%;
+      padding:14px;
+      margin-bottom:12px;
+      border:none;
+      border-radius:8px;
+      background:#2a2a2a;
+      color:#fff;
     }
 
-    .network-tag.bad {
-      border: 1px solid #f44336;
-      opacity: 0.5;
+    .btn{
+      width:100%;
+      padding:14px;
+      border:none;
+      border-radius:8px;
+      background:#f7b500;
+      color:#000;
+      font-weight:bold;
+      cursor:pointer;
+      margin-bottom:10px;
     }
 
-    .trade-status {
-      margin: 12px 0;
-      padding: 10px;
-      background: #2a2a2a;
-      border-radius: 6px;
-      text-align: center;
-      font-weight: bold;
-      font-size: 13px;
+    .btn-secondary{
+      background:#333;
+      color:#fff;
     }
 
-    .action-btns {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-top: 12px;
+    .hidden{
+      display:none;
     }
 
-    .action-btn {
-      background: #f7b500;
-      color: #000;
-      border: none;
-      padding: 10px;
-      border-radius: 6px;
-      font-weight: bold;
-      cursor: pointer;
-      font-size: 13px;
+    .controls{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin:15px;
+      background:#1a1a1a;
+      padding:12px;
+      border-radius:10px;
     }
 
-    .loading {
-      text-align: center;
-      padding: 40px 20px;
-      color: #888;
-      font-size: 14px;
+    .refresh-btn{
+      background:#f7b500;
+      color:#000;
+      border:none;
+      padding:8px 14px;
+      border-radius:6px;
+      font-weight:bold;
+      cursor:pointer;
     }
 
-    .auto-refresh {
-      font-size: 11px;
-      color: #666;
-      text-align: center;
-      padding: 15px;
+    .stats{
+      font-size:12px;
+      color:#888;
     }
 
-    .filter-tab {
-      background: #2a2a2a;
-      color: #888;
-      border: 1px solid #333;
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 12px;
-      cursor: pointer;
-      font-weight: 600;
+    .opportunity{
+      background:#1a1a1a;
+      margin:10px 15px;
+      padding:15px;
+      border-radius:12px;
+      border:1px solid #2a2a2a;
     }
 
-    .filter-tab.active {
-      background: #f7b500;
-      color: #000;
-      border-color: #f7b500;
+    .opp-row{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
     }
 
-    .warning-banner {
-      background: #ff9800;
-      color: #000;
-      padding: 12px 15px;
-      margin: 8px 15px;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 700;
-      text-align: center;
-      animation: pulse 2s infinite;
+    .buy{
+      color:#4caf50;
+      font-size:12px;
+      font-weight:bold;
     }
 
-    .scanner-loader {
-      text-align: center;
-      padding: 60px 20px;
+    .sell{
+      color:#f44336;
+      font-size:12px;
+      font-weight:bold;
     }
 
-    .robot {
-      width: 80px;
-      height: 80px;
-      margin: 0 auto 20px;
-      position: relative;
-      animation: float 3s ease-in-out infinite;
+    .symbol{
+      font-size:20px;
+      font-weight:bold;
+      margin-top:6px;
     }
 
-    .robot-body {
-      width: 60px;
-      height: 70px;
-      background: #f7b500;
-      border-radius: 10px;
-      margin: 0 auto;
-      position: relative;
-      box-shadow: 0 0 20px rgba(247,181,0,0.5);
+    .profit{
+      color:#4caf50;
+      font-size:24px;
+      font-weight:bold;
     }
 
-    .robot-eye {
-      width: 12px;
-      height: 12px;
-      background: #0d0d0d;
-      border-radius: 50%;
-      position: absolute;
-      top: 20px;
-      animation: blink 3s infinite;
+    .badge{
+      display:inline-block;
+      padding:3px 7px;
+      border-radius:5px;
+      font-size:10px;
+      margin-left:6px;
     }
 
-    .robot-eye.left {
-      left: 12px;
+    .badge-ok{
+      background:#4caf50;
+      color:#000;
     }
 
-    .robot-eye.right {
-      right: 12px;
+    .badge-warn{
+      background:#ff9800;
+      color:#000;
     }
 
-    .robot-antenna {
-      width: 3px;
-      height: 15px;
-      background: #f7b500;
-      position: absolute;
-      top: -15px;
-      left: 50%;
-      transform: translateX(-50%);
+    .badge-bad{
+      background:#f44336;
+      color:#fff;
     }
 
-    .robot-antenna::after {
-      content: '';
-      width: 8px;
-      height: 8px;
-      background: #f44336;
-      border-radius: 50%;
-      position: absolute;
-      top: -4px;
-      left: -2.5px;
-      animation: ping 1s infinite;
+    .liquidity{
+      font-size:11px;
+      color:#777;
+      margin-top:5px;
     }
 
-    .scan-beam {
-      width: 100px;
-      height: 3px;
-      background: linear-gradient(90deg, transparent, #4caf50, transparent);
-      margin: 20px auto;
-      animation: scan 2s linear infinite;
+    .nav{
+      position:fixed;
+      bottom:0;
+      left:0;
+      right:0;
+      background:#1a1a1a;
+      display:flex;
+      justify-content:space-around;
+      padding:10px 0;
+      border-top:1px solid #333;
     }
 
-    @keyframes float {
-      0%,100% { transform: translateY(0px); }
-      50% { transform: translateY(-20px); }
+    .nav-item{
+      text-align:center;
+      font-size:12px;
+      cursor:pointer;
+      color:#888;
     }
 
-    @keyframes blink {
-      0%,90%,100% { height: 12px; }
-      95% { height: 2px; }
+    .nav-item.active{
+      color:#f7b500;
     }
 
-    @keyframes ping {
-      0%,100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.3; transform: scale(1.5); }
+    .loading{
+      text-align:center;
+      padding:40px;
+      color:#888;
     }
 
-    @keyframes scan {
-      0% { transform: translateX(-100px); }
-      100% { transform: translateX(100px); }
+    .error{
+      background:#f44336;
+      color:#fff;
+      padding:10px;
+      border-radius:8px;
+      margin-bottom:10px;
+      display:none;
     }
 
-    @keyframes pulse {
-      0%,100% { opacity: 1; }
-      50% { opacity: 0.7; }
+    .success{
+      background:#4caf50;
+      color:#000;
+      padding:10px;
+      border-radius:8px;
+      margin-bottom:10px;
+      display:none;
     }
   </style>
 </head>
 
 <body>
 
-<div class="header">🚀 ArbiMine</div>
+<div class="header">
+  🚀 ArbiMine
+</div>
 
-<!-- AUTH -->
 <div id="auth-screen" class="container">
 
   <div class="card">
-    <h2>Welcome to ArbiMine</h2>
+
+    <h2 style="margin-bottom:20px;">
+      Welcome to ArbiMine
+    </h2>
 
     <div id="auth-error" class="error"></div>
     <div id="auth-success" class="success"></div>
 
-    <input id="username" placeholder="Username" />
-    <input id="email" placeholder="Email" type="email" />
-    <input id="mpesa" placeholder="M-Pesa: 2547XXXXXXX" />
-    <input id="password" placeholder="Password" type="password" />
+    <input id="username" placeholder="Username">
+
+    <input id="email" placeholder="Email">
+
+    <input id="mpesa" placeholder="2547XXXXXXXX">
+
+    <input id="password" type="password" placeholder="Password">
 
     <button class="btn" onclick="register()">
       Create Account
@@ -531,126 +246,136 @@
     <button class="btn btn-secondary" onclick="login()">
       Login
     </button>
+
   </div>
 
 </div>
 
-<!-- APP -->
 <div id="app-screen" class="hidden">
 
   <div class="container">
-    <div class="card" style="margin-bottom:10px;">
-      <h2 id="welcome-msg">Welcome</h2>
+
+    <div class="card">
+
+      <h2 id="welcome-msg">
+        Welcome
+      </h2>
 
       <button class="btn btn-secondary" onclick="logout()">
         Logout
       </button>
+
     </div>
+
   </div>
 
   <div class="controls">
+
     <div class="stats" id="stats">
       Ready to scan
     </div>
 
-    <button
-      class="refresh-btn"
-      id="refresh-btn"
-      onclick="loadArbs()"
-    >
+    <button class="refresh-btn" onclick="loadArbs()">
       ↻ Refresh
     </button>
-  </div>
-
-  <div style="background:#1a1a1a;margin:0 15px 8px;padding:12px;border-radius:8px;border:1px solid #2a2a2a;">
-
-    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
-
-      <button class="filter-tab active"
-              data-filter="all"
-              onclick="setFilter('all')">
-        All
-      </button>
-
-      <button class="filter-tab"
-              data-filter="verified"
-              onclick="setFilter('verified')">
-        ✓ Tradeable
-      </button>
-
-      <button class="filter-tab"
-              data-filter="unverified"
-              onclick="setFilter('unverified')">
-        ? Unverified
-      </button>
-
-      <button class="filter-tab"
-              data-sort="high"
-              onclick="setSort('high')">
-        High → Low
-      </button>
-
-      <button class="filter-tab"
-              data-sort="low"
-              onclick="setSort('low')">
-        Low → High
-      </button>
-
-    </div>
-
-    <div style="display:flex;gap:8px;align-items:center;">
-      <span style="font-size:12px;color:#888;">
-        Profit %:
-      </span>
-
-      <input
-        id="min-profit"
-        type="number"
-        placeholder="0"
-        style="width:60px;padding:6px;background:#2a2a2a;border:1px solid #333;color:#fff;border-radius:4px;font-size:13px;"
-      />
-
-      <span style="color:#888;">-</span>
-
-      <input
-        id="max-profit"
-        type="number"
-        placeholder="100"
-        style="width:60px;padding:6px;background:#2a2a2a;border:1px solid #333;color:#fff;border-radius:4px;font-size:13px;"
-      />
-
-      <button
-        onclick="applyRangeFilter()"
-        style="background:#f7b500;color:#000;border:none;padding:6px 12px;border-radius:4px;font-weight:bold;cursor:pointer;font-size:12px;"
-      >
-        Apply
-      </button>
-
-    </div>
 
   </div>
 
   <div id="list"></div>
 
-  <div
-    id="warning-banner"
-    class="warning-banner"
-    style="display:none;"
-  >
-    ⚡ Crypto arbitrage opportunities disappear very fast. Hurry up!
+</div>
+
+<div class="nav">
+
+  <div class="nav-item active">
+    🏠<br>Home
   </div>
 
-  <div class="auto-refresh">
-    Auto-refreshes every 60 seconds
+  <div class="nav-item" onclick="openPro()">
+    ⭐<br>Pro
+  </div>
+
+  <div class="nav-item" onclick="logout()">
+    👤<br>Logout
   </div>
 
 </div>
 
-<!-- NAV -->
-<div class="nav">
-  <div class="nav-item active">🏠<br>Home</div>
-  <div class="nav-item">⭐<br>Pro</div>
-  <div class="nav-item" onclick="logout()">👤<br>Logout</div>
+<div id="pro-modal"
+style="
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.9);
+z-index:9999;
+padding:20px;
+overflow:auto;
+">
+
+  <div style="
+  background:#1a1a1a;
+  padding:20px;
+  border-radius:12px;
+  max-width:400px;
+  margin:60px auto;
+  ">
+
+    <h2 style="
+    margin-bottom:20px;
+    color:#f7b500;
+    ">
+      ArbiMine Pro
+    </h2>
+
+    <div
+    id="weekly-plan"
+    onclick="selectPlan('weekly',100)"
+    style="
+    border:2px solid #333;
+    padding:15px;
+    border-radius:10px;
+    margin-bottom:12px;
+    cursor:pointer;
+    ">
+
+      <h3>KES 100</h3>
+      <p>Weekly Subscription</p>
+
+    </div>
+
+    <div
+    id="monthly-plan"
+    onclick="selectPlan('monthly',350)"
+    style="
+    border:2px solid #333;
+    padding:15px;
+    border-radius:10px;
+    margin-bottom:15px;
+    cursor:pointer;
+    ">
+
+      <h3>KES 350</h3>
+      <p>Monthly Subscription</p>
+
+    </div>
+
+    <input
+    id="pro-mpesa"
+    placeholder="2547XXXXXXXX">
+
+    <button class="btn" onclick="paySubscription()">
+      PAY NOW
+    </button>
+
+    <button class="btn btn-secondary" onclick="closePro()">
+      CLOSE
+    </button>
+
+  </div>
+
 </div>
 
 <script>
@@ -659,87 +384,44 @@ const API = '';
 
 let token = localStorage.getItem('token');
 
-let isLoading = false;
+let selectedPlan = null;
+let selectedAmount = 0;
 
-let allOpportunities = [];
-
-let currentFilter = 'all';
-let currentSort = 'high';
-
-let minProfitFilter = 0;
-let maxProfitFilter = 100;
-
-let expandedId = null;
-
-let refreshInterval = null;
-
-const EXCHANGE_LINKS = {
-  mexc: 'https://www.mexc.com',
-  kucoin: 'https://www.kucoin.com',
-  bitmart: 'https://www.bitmart.com',
-  bitget: 'https://www.bitget.com',
-  lbank: 'https://www.lbank.com',
-  coinex: 'https://www.coinex.com',
-  gateio: 'https://www.gate.io',
-  okx: 'https://www.okx.com',
-  bybit: 'https://www.bybit.com',
-  huobi: 'https://www.huobi.com',
-  bitfinex: 'https://www.bitfinex.com',
-  poloniex: 'https://www.poloniex.com',
-  cryptocom: 'https://crypto.com/exchange',
-  upbit: 'https://upbit.com'
-};
-
-function showError(msg) {
+function showError(msg){
   const el = document.getElementById('auth-error');
-
-  el.textContent = msg;
+  el.innerText = msg;
   el.style.display = 'block';
 
-  setTimeout(() => {
-    el.style.display = 'none';
-  }, 4000);
+  setTimeout(()=>{
+    el.style.display='none';
+  },3000);
 }
 
-function showSuccess(msg) {
+function showSuccess(msg){
   const el = document.getElementById('auth-success');
-
-  el.textContent = msg;
+  el.innerText = msg;
   el.style.display = 'block';
 
-  setTimeout(() => {
-    el.style.display = 'none';
-  }, 3000);
+  setTimeout(()=>{
+    el.style.display='none';
+  },3000);
 }
 
-async function register() {
+async function register(){
 
-  const username =
-    document.getElementById('username').value.trim();
+  const username = document.getElementById('username').value;
+  const email = document.getElementById('email').value;
+  const mpesa = document.getElementById('mpesa').value;
+  const password = document.getElementById('password').value;
 
-  const email =
-    document.getElementById('email').value.trim();
+  try{
 
-  const mpesa =
-    document.getElementById('mpesa').value.trim();
-
-  const password =
-    document.getElementById('password').value;
-
-  if (!username || !email || !mpesa || !password) {
-    return showError('All fields required');
-  }
-
-  try {
-
-    const res = await fetch(API + '/api/register', {
-      method: 'POST',
-
-      headers: {
-        'Content-Type': 'application/json'
+    const res = await fetch('/api/register',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json'
       },
-
-      body: JSON.stringify({
+      body:JSON.stringify({
         username,
         email,
         mpesa,
@@ -749,48 +431,34 @@ async function register() {
 
     const data = await res.json();
 
-    if (!res.ok) {
+    if(!data.success){
       return showError(data.error);
     }
 
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('username', data.username);
+    localStorage.setItem('token',data.token);
 
-    showSuccess('Account created!');
+    showSuccess('Account created');
 
-    setTimeout(() => {
-      showApp(data.username);
-    }, 500);
+    showApp(data.username);
 
-  } catch (e) {
+  }catch(e){
     showError('Network error');
   }
 }
 
-async function login() {
+async function login(){
 
-  const username =
-    document.getElementById('username').value.trim();
+  const username = document.getElementById('username').value;
+  const password = document.getElementById('password').value;
 
-  const password =
-    document.getElementById('password').value;
+  try{
 
-  if (!username || !password) {
-    return showError(
-      'Username and password required'
-    );
-  }
-
-  try {
-
-    const res = await fetch(API + '/api/login', {
-      method: 'POST',
-
-      headers: {
-        'Content-Type': 'application/json'
+    const res = await fetch('/api/login',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json'
       },
-
-      body: JSON.stringify({
+      body:JSON.stringify({
         username,
         password
       })
@@ -798,556 +466,217 @@ async function login() {
 
     const data = await res.json();
 
-    if (!res.ok) {
+    if(!data.success){
       return showError(data.error);
     }
 
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('username', data.username);
+    localStorage.setItem('token',data.token);
 
     showApp(data.username);
 
-  } catch (e) {
+  }catch(e){
     showError('Network error');
   }
 }
 
-function logout() {
+function logout(){
 
   localStorage.removeItem('token');
-  localStorage.removeItem('username');
-
-  if (refreshInterval) {
-    clearInterval(refreshInterval);
-    refreshInterval = null;
-  }
 
   document.getElementById('auth-screen')
-    .classList.remove('hidden');
+  .classList.remove('hidden');
 
   document.getElementById('app-screen')
-    .classList.add('hidden');
+  .classList.add('hidden');
 }
 
-function showApp(username) {
+function showApp(username){
 
   document.getElementById('auth-screen')
-    .classList.add('hidden');
+  .classList.add('hidden');
 
   document.getElementById('app-screen')
-    .classList.remove('hidden');
+  .classList.remove('hidden');
 
   document.getElementById('welcome-msg')
-    .textContent = `Welcome, ${username}`;
+  .innerText = `Welcome ${username}`;
 
   loadArbs();
-
-  if (refreshInterval) {
-    clearInterval(refreshInterval);
-  }
-
-  refreshInterval = setInterval(
-    loadArbs,
-    60000
-  );
 }
 
-function setFilter(type) {
+async function loadArbs(){
 
-  currentFilter = type;
+  const list = document.getElementById('list');
 
-  document.querySelectorAll('.filter-tab')
-    .forEach(t => t.classList.remove('active'));
+  list.innerHTML =
+  '<div class="loading">Scanning opportunities...</div>';
 
-  document.querySelector(
-    `[data-filter="${type}"]`
-  ).classList.add('active');
+  try{
 
-  renderOpportunities();
-}
-
-function setSort(type) {
-
-  currentSort = type;
-
-  document.querySelectorAll('[data-sort]')
-    .forEach(t => t.classList.remove('active'));
-
-  document.querySelector(
-    `[data-sort="${type}"]`
-  ).classList.add('active');
-
-  renderOpportunities();
-}
-
-function applyRangeFilter() {
-
-  minProfitFilter =
-    parseFloat(
-      document.getElementById('min-profit').value
-    ) || 0;
-
-  maxProfitFilter =
-    parseFloat(
-      document.getElementById('max-profit').value
-    ) || 100;
-
-  renderOpportunities();
-}
-
-function toggleDetail(id) {
-
-  const card =
-    document.getElementById(`opp-${id}`);
-
-  const detail =
-    document.getElementById(`detail-${id}`);
-
-  if (expandedId === id) {
-
-    card.classList.remove('expanded');
-    detail.classList.remove('show');
-
-    expandedId = null;
-
-  } else {
-
-    if (expandedId !== null) {
-
-      document.getElementById(
-        `opp-${expandedId}`
-      )?.classList.remove('expanded');
-
-      document.getElementById(
-        `detail-${expandedId}`
-      )?.classList.remove('show');
-    }
-
-    card.classList.add('expanded');
-    detail.classList.add('show');
-
-    expandedId = id;
-  }
-}
-
-function renderOpportunities() {
-
-  const list =
-    document.getElementById('list');
-
-  let filtered = [...allOpportunities];
-
-  if (currentFilter === 'verified') {
-    filtered = filtered.filter(
-      o => o.verified === true
-    );
-  }
-
-  else if (currentFilter === 'unverified') {
-    filtered = filtered.filter(
-      o => o.verified !== true
-    );
-  }
-
-  filtered = filtered.filter(
-    o =>
-      o.profit_pct >= minProfitFilter &&
-      o.profit_pct <= maxProfitFilter
-  );
-
-  if (currentSort === 'high') {
-    filtered.sort(
-      (a, b) => b.profit_pct - a.profit_pct
-    );
-  }
-
-  else {
-    filtered.sort(
-      (a, b) => a.profit_pct - b.profit_pct
-    );
-  }
-
-  if (filtered.length === 0) {
-
-    list.innerHTML =
-      '<div class="loading">No opportunities match your filters.</div>';
-
-    document.getElementById('warning-banner')
-      .style.display = 'none';
-
-    return;
-  }
-
-  list.innerHTML = '';
-
-  filtered.forEach((opp, idx) => {
-
-    const id = `${opp.symbol}-${idx}`;
-
-    const div =
-      document.createElement('div');
-
-    div.className =
-      'opportunity' +
-      (
-        opp.verified || opp.status_unknown
-          ? ''
-          : ' untradeable'
-      );
-
-    div.id = `opp-${id}`;
-
-    let badge = '';
-
-    if (opp.verified) {
-      badge =
-        '<span class="badge badge-ok">TRADEABLE</span>';
-    }
-
-    else if (opp.status_unknown) {
-      badge =
-        '<span class="badge badge-warn">UNVERIFIED</span>';
-    }
-
-    else {
-      badge =
-        '<span class="badge badge-bad">DISABLED</span>';
-    }
-
-    let buyNetworks =
-      (opp.buy_networks || [])
-      .map(n =>
-        `<span class="network-tag ${n.withdraw ? 'ok' : 'bad'}">${n.name}</span>`
-      )
-      .join('') ||
-      '<span style="color:#666">No data</span>';
-
-    let sellNetworks =
-      (opp.sell_networks || [])
-      .map(n =>
-        `<span class="network-tag ${n.deposit ? 'ok' : 'bad'}">${n.name}</span>`
-      )
-      .join('') ||
-      '<span style="color:#666">No data</span>';
-
-    let tradeStatus = '';
-
-    if (opp.verified) {
-      tradeStatus =
-        '<div class="trade-status status-ok">✓ TRADEABLE</div>';
-    }
-
-    else if (opp.status_unknown) {
-      tradeStatus =
-        '<div class="trade-status status-unknown">⚠ UNVERIFIED</div>';
-    }
-
-    else {
-      tradeStatus =
-        '<div class="trade-status status-bad">✗ NOT TRADEABLE</div>';
-    }
-
-    div.innerHTML = `
-      <div onclick="toggleDetail('${id}')">
-
-        <div class="opp-row">
-
-          <div>
-
-            <div class="buy-sell">
-              <span class="buy">BUY</span>
-              ${opp.buy_at.toUpperCase()}
-              $${opp.buy_price}
-
-              <br>
-
-              <span class="sell">SELL</span>
-              ${opp.sell_at.toUpperCase()}
-              $${opp.sell_price}
-            </div>
-
-            <div class="symbol">
-              ${opp.symbol}/USDT
-              ${badge}
-            </div>
-
-            <div class="liquidity">
-              ${opp.exchanges_found} exchanges |
-              Spread: $${opp.spread_usd}
-            </div>
-
-          </div>
-
-          <div class="profit">
-            ${opp.profit_pct}%
-          </div>
-
-        </div>
-
-      </div>
-
-      <div class="opp-detail" id="detail-${id}">
-
-        <button
-          class="close-detail"
-          onclick="event.stopPropagation(); toggleDetail('${id}')"
-        >
-          ×
-        </button>
-
-        <div class="detail-grid" style="margin-top:8px;">
-
-          <div class="detail-box">
-
-            <h4>
-              BUY ${opp.buy_at.toUpperCase()}
-            </h4>
-
-            <div class="detail-line">
-              <span>Price</span>
-              <span>$${opp.buy_price}</span>
-            </div>
-
-            <div class="detail-line">
-              <span>24h Volume</span>
-              <span>$${(opp.buy_liquidity / 1000).toFixed(0)}K</span>
-            </div>
-
-            <div class="detail-line">
-              <span>Max Buy</span>
-              <span class="status-ok">
-                $${opp.max_buy_usdt.toLocaleString()}
-              </span>
-            </div>
-
-            <div class="detail-line">
-              <span>Withdrawal</span>
-
-              <span class="${
-                opp.buy_withdraw_ok
-                  ? 'status-ok'
-                  : opp.buy_withdraw_ok === false
-                    ? 'status-bad'
-                    : 'status-unknown'
-              }">
-
-                ${
-                  opp.buy_withdraw_ok
-                    ? 'ENABLED'
-                    : opp.buy_withdraw_ok === false
-                      ? 'DISABLED'
-                      : 'UNKNOWN'
-                }
-
-              </span>
-
-            </div>
-
-            <div style="margin-top:8px;">
-              ${buyNetworks}
-            </div>
-
-          </div>
-
-          <div class="detail-box">
-
-            <h4>
-              SELL ${opp.sell_at.toUpperCase()}
-            </h4>
-
-            <div class="detail-line">
-              <span>Price</span>
-              <span>$${opp.sell_price}</span>
-            </div>
-
-            <div class="detail-line">
-              <span>24h Volume</span>
-              <span>$${(opp.sell_liquidity / 1000).toFixed(0)}K</span>
-            </div>
-
-            <div class="detail-line">
-              <span>Max Sell</span>
-              <span class="status-ok">
-                $${opp.max_sell_usdt.toLocaleString()}
-              </span>
-            </div>
-
-            <div class="detail-line">
-              <span>Deposit</span>
-
-              <span class="${
-                opp.sell_deposit_ok
-                  ? 'status-ok'
-                  : opp.sell_deposit_ok === false
-                    ? 'status-bad'
-                    : 'status-unknown'
-              }">
-
-                ${
-                  opp.sell_deposit_ok
-                    ? 'ENABLED'
-                    : opp.sell_deposit_ok === false
-                      ? 'DISABLED'
-                      : 'UNKNOWN'
-                }
-
-              </span>
-
-            </div>
-
-            <div style="margin-top:8px;">
-              ${sellNetworks}
-            </div>
-
-          </div>
-
-        </div>
-
-        ${tradeStatus}
-
-        <div class="action-btns">
-
-          <button
-            class="action-btn"
-            onclick="event.stopPropagation(); window.open(EXCHANGE_LINKS[opp.buy_at],'_blank')"
-          >
-            OPEN ${opp.buy_at.toUpperCase()}
-          </button>
-
-          <button
-            class="action-btn"
-            onclick="event.stopPropagation(); window.open(EXCHANGE_LINKS[opp.sell_at],'_blank')"
-          >
-            OPEN ${opp.sell_at.toUpperCase()}
-          </button>
-
-        </div>
-
-        <div style="margin-top:12px;font-size:11px;color:#666;line-height:1.5">
-          ⚠️ Match networks on both exchanges.
-          Max Buy/Sell shows order book depth before 1% slippage.
-        </div>
-
-      </div>
-    `;
-
-    list.appendChild(div);
-  });
-
-  document.getElementById('warning-banner')
-    .style.display = 'block';
-}
-
-async function loadArbs() {
-
-  if (isLoading) return;
-
-  isLoading = true;
-
-  const list =
-    document.getElementById('list');
-
-  const refreshBtn =
-    document.getElementById('refresh-btn');
-
-  const stats =
-    document.getElementById('stats');
-
-  refreshBtn.textContent = 'Scanning...';
-  refreshBtn.disabled = true;
-
-  list.innerHTML = `
-    <div class="scanner-loader">
-
-      <div class="robot">
-
-        <div class="robot-antenna"></div>
-
-        <div class="robot-body">
-          <div class="robot-eye left"></div>
-          <div class="robot-eye right"></div>
-        </div>
-
-      </div>
-
-      <div class="scan-beam"></div>
-
-      <div style="color:#f7b500;font-size:16px;font-weight:700;margin-top:20px;">
-        Scanning markets please wait...
-      </div>
-
-      <div style="color:#888;font-size:12px;margin-top:8px;">
-        Checking 14 exchanges for opportunities
-      </div>
-
-    </div>
-  `;
-
-  try {
-
-    const res =
-      await fetch('/api/arbs?t=' + Date.now());
+    const res = await fetch('/api/arbs');
 
     const data = await res.json();
 
-    stats.innerHTML = `
-      ${data.count} opportunities |
-      ${data.scan_time_sec}s scan
-      <br>
-      ${data.exchanges_scanned.length} exchanges |
-      ${data.total_pairs_checked} pairs
-    `;
+    document.getElementById('stats').innerHTML =
+    `${data.count} opportunities`;
 
-    allOpportunities = data.opportunities;
+    list.innerHTML = '';
 
-    renderOpportunities();
+    data.opportunities.forEach(opp=>{
 
-  } catch (e) {
+      let badge='';
+
+      if(opp.verified){
+        badge =
+        '<span class="badge badge-ok">TRADEABLE</span>';
+      }else if(opp.status_unknown){
+        badge =
+        '<span class="badge badge-warn">UNVERIFIED</span>';
+      }else{
+        badge =
+        '<span class="badge badge-bad">DISABLED</span>';
+      }
+
+      const div = document.createElement('div');
+
+      div.className='opportunity';
+
+      div.innerHTML = `
+
+      <div class="opp-row">
+
+        <div>
+
+          <div class="buy">
+            BUY ${opp.buy_at.toUpperCase()}
+            $${opp.buy_price}
+          </div>
+
+          <div class="sell">
+            SELL ${opp.sell_at.toUpperCase()}
+            $${opp.sell_price}
+          </div>
+
+          <div class="symbol">
+            ${opp.symbol}/USDT
+            ${badge}
+          </div>
+
+          <div class="liquidity">
+            Profit Spread:
+            $${opp.spread_usd}
+          </div>
+
+        </div>
+
+        <div class="profit">
+          ${opp.profit_pct}%
+        </div>
+
+      </div>
+
+      `;
+
+      list.appendChild(div);
+
+    });
+
+  }catch(e){
 
     list.innerHTML =
-      '<div class="loading">Error loading data. Tap Refresh to retry.</div>';
+    '<div class="loading">Failed loading opportunities</div>';
 
-    document.getElementById('warning-banner')
-      .style.display = 'none';
-
-    console.error(e);
-
-  } finally {
-
-    isLoading = false;
-
-    refreshBtn.textContent = '↻ Refresh';
-
-    refreshBtn.disabled = false;
   }
 }
 
-if (token) {
+function openPro(){
+  document.getElementById('pro-modal').style.display='block';
+}
 
-  fetch(
-    API + '/api/me',
-    {
-      headers: {
-        'Authorization': token
-      }
+function closePro(){
+  document.getElementById('pro-modal').style.display='none';
+}
+
+function selectPlan(plan,amount){
+
+  selectedPlan = plan;
+  selectedAmount = amount;
+
+  document.getElementById('weekly-plan')
+  .style.border='2px solid #333';
+
+  document.getElementById('monthly-plan')
+  .style.border='2px solid #333';
+
+  document.getElementById(plan + '-plan')
+  .style.border='2px solid #f7b500';
+}
+
+async function paySubscription(){
+
+  const phone =
+  document.getElementById('pro-mpesa').value;
+
+  if(!selectedPlan){
+    return alert('Select plan');
+  }
+
+  if(!phone){
+    return alert('Enter M-Pesa number');
+  }
+
+  try{
+
+    const res = await fetch('/api/pay',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json'
+      },
+      body:JSON.stringify({
+        phone,
+        amount:selectedAmount,
+        plan:selectedPlan
+      })
+    });
+
+    const data = await res.json();
+
+    if(data.success){
+
+      alert(
+        'STK Push sent. Enter your M-Pesa PIN.'
+      );
+
+    }else{
+
+      alert(data.error);
+
     }
-  )
 
-  .then(r => r.json())
+  }catch(e){
 
-  .then(d => {
-    if (d.username) {
-      showApp(d.username);
+    alert('Payment failed');
+
+  }
+}
+
+if(token){
+
+  fetch('/api/me',{
+    headers:{
+      Authorization:token
     }
   })
+  .then(r=>r.json())
+  .then(d=>{
+    if(d.username){
+      showApp(d.username);
+    }
+  });
 
-  .catch(() => logout());
 }
 
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js');
-  }
 </script>
+
 </body>
 </html>
