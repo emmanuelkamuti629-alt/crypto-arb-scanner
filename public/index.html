@@ -1,682 +1,154 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>ArbiMine</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <style>
-    *{
-      margin:0;
-      padding:0;
-      box-sizing:border-box;
-    }
-
-    body{
-      background:#0d0d0d;
-      color:#fff;
-      font-family:Arial,sans-serif;
-      padding-bottom:80px;
-    }
-
-    .header{
-      background:#f7b500;
-      color:#000;
-      padding:16px;
-      text-align:center;
-      font-size:22px;
-      font-weight:bold;
-      position:sticky;
-      top:0;
-      z-index:100;
-    }
-
-    .container{
-      max-width:500px;
-      margin:auto;
-    }
-
-    .card{
-      background:#1a1a1a;
-      margin:15px;
-      padding:20px;
-      border-radius:12px;
-    }
-
-    input{
-      width:100%;
-      padding:14px;
-      margin-bottom:12px;
-      border:none;
-      border-radius:8px;
-      background:#2a2a2a;
-      color:#fff;
-    }
-
-    .btn{
-      width:100%;
-      padding:14px;
-      border:none;
-      border-radius:8px;
-      background:#f7b500;
-      color:#000;
-      font-weight:bold;
-      cursor:pointer;
-      margin-bottom:10px;
-    }
-
-    .btn-secondary{
-      background:#333;
-      color:#fff;
-    }
-
-    .hidden{
-      display:none;
-    }
-
-    .controls{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      margin:15px;
-      background:#1a1a1a;
-      padding:12px;
-      border-radius:10px;
-    }
-
-    .refresh-btn{
-      background:#f7b500;
-      color:#000;
-      border:none;
-      padding:8px 14px;
-      border-radius:6px;
-      font-weight:bold;
-      cursor:pointer;
-    }
-
-    .stats{
-      font-size:12px;
-      color:#888;
-    }
-
-    .opportunity{
-      background:#1a1a1a;
-      margin:10px 15px;
-      padding:15px;
-      border-radius:12px;
-      border:1px solid #2a2a2a;
-    }
-
-    .opp-row{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-    }
-
-    .buy{
-      color:#4caf50;
-      font-size:12px;
-      font-weight:bold;
-    }
-
-    .sell{
-      color:#f44336;
-      font-size:12px;
-      font-weight:bold;
-    }
-
-    .symbol{
-      font-size:20px;
-      font-weight:bold;
-      margin-top:6px;
-    }
-
-    .profit{
-      color:#4caf50;
-      font-size:24px;
-      font-weight:bold;
-    }
-
-    .badge{
-      display:inline-block;
-      padding:3px 7px;
-      border-radius:5px;
-      font-size:10px;
-      margin-left:6px;
-    }
-
-    .badge-ok{
-      background:#4caf50;
-      color:#000;
-    }
-
-    .badge-warn{
-      background:#ff9800;
-      color:#000;
-    }
-
-    .badge-bad{
-      background:#f44336;
-      color:#fff;
-    }
-
-    .liquidity{
-      font-size:11px;
-      color:#777;
-      margin-top:5px;
-    }
-
-    .nav{
-      position:fixed;
-      bottom:0;
-      left:0;
-      right:0;
-      background:#1a1a1a;
-      display:flex;
-      justify-content:space-around;
-      padding:10px 0;
-      border-top:1px solid #333;
-    }
-
-    .nav-item{
-      text-align:center;
-      font-size:12px;
-      cursor:pointer;
-      color:#888;
-    }
-
-    .nav-item.active{
-      color:#f7b500;
-    }
-
-    .loading{
-      text-align:center;
-      padding:40px;
-      color:#888;
-    }
-
-    .error{
-      background:#f44336;
-      color:#fff;
-      padding:10px;
-      border-radius:8px;
-      margin-bottom:10px;
-      display:none;
-    }
-
-    .success{
-      background:#4caf50;
-      color:#000;
-      padding:10px;
-      border-radius:8px;
-      margin-bottom:10px;
-      display:none;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ArbiMine - Crypto Arbitrage Scanner</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/react-modal@3.16.1/dist/react-modal.min.js"></script>
+  <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
-
-<body>
-
-<div class="header">
-  🚀 ArbiMine
-</div>
-
-<div id="auth-screen" class="container">
-
-  <div class="card">
-
-    <h2 style="margin-bottom:20px;">
-      Welcome to ArbiMine
-    </h2>
-
-    <div id="auth-error" class="error"></div>
-    <div id="auth-success" class="success"></div>
-
-    <input id="username" placeholder="Username">
-
-    <input id="email" placeholder="Email">
-
-    <input id="mpesa" placeholder="2547XXXXXXXX">
-
-    <input id="password" type="password" placeholder="Password">
-
-    <button class="btn" onclick="register()">
-      Create Account
-    </button>
-
-    <button class="btn btn-secondary" onclick="login()">
-      Login
-    </button>
-
-  </div>
-
-</div>
-
-<div id="app-screen" class="hidden">
-
-  <div class="container">
-
-    <div class="card">
-
-      <h2 id="welcome-msg">
-        Welcome
-      </h2>
-
-      <button class="btn btn-secondary" onclick="logout()">
-        Logout
-      </button>
-
-    </div>
-
-  </div>
-
-  <div class="controls">
-
-    <div class="stats" id="stats">
-      Ready to scan
-    </div>
-
-    <button class="refresh-btn" onclick="loadArbs()">
-      ↻ Refresh
-    </button>
-
-  </div>
-
-  <div id="list"></div>
-
-</div>
-
-<div class="nav">
-
-  <div class="nav-item active">
-    🏠<br>Home
-  </div>
-
-  <div class="nav-item" onclick="openPro()">
-    ⭐<br>Pro
-  </div>
-
-  <div class="nav-item" onclick="logout()">
-    👤<br>Logout
-  </div>
-
-</div>
-
-<div id="pro-modal"
-style="
-display:none;
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:rgba(0,0,0,0.9);
-z-index:9999;
-padding:20px;
-overflow:auto;
-">
-
-  <div style="
-  background:#1a1a1a;
-  padding:20px;
-  border-radius:12px;
-  max-width:400px;
-  margin:60px auto;
-  ">
-
-    <h2 style="
-    margin-bottom:20px;
-    color:#f7b500;
-    ">
-      ArbiMine Pro
-    </h2>
-
-    <div
-    id="weekly-plan"
-    onclick="selectPlan('weekly',100)"
-    style="
-    border:2px solid #333;
-    padding:15px;
-    border-radius:10px;
-    margin-bottom:12px;
-    cursor:pointer;
-    ">
-
-      <h3>KES 100</h3>
-      <p>Weekly Subscription</p>
-
-    </div>
-
-    <div
-    id="monthly-plan"
-    onclick="selectPlan('monthly',350)"
-    style="
-    border:2px solid #333;
-    padding:15px;
-    border-radius:10px;
-    margin-bottom:15px;
-    cursor:pointer;
-    ">
-
-      <h3>KES 350</h3>
-      <p>Monthly Subscription</p>
-
-    </div>
-
-    <input
-    id="pro-mpesa"
-    placeholder="2547XXXXXXXX">
-
-    <button class="btn" onclick="paySubscription()">
-      PAY NOW
-    </button>
-
-    <button class="btn btn-secondary" onclick="closePro()">
-      CLOSE
-    </button>
-
-  </div>
-
-</div>
-
-<script>
-
-const API = '';
-
-let token = localStorage.getItem('token');
-
-let selectedPlan = null;
-let selectedAmount = 0;
-
-function showError(msg){
-  const el = document.getElementById('auth-error');
-  el.innerText = msg;
-  el.style.display = 'block';
-
-  setTimeout(()=>{
-    el.style.display='none';
-  },3000);
-}
-
-function showSuccess(msg){
-  const el = document.getElementById('auth-success');
-  el.innerText = msg;
-  el.style.display = 'block';
-
-  setTimeout(()=>{
-    el.style.display='none';
-  },3000);
-}
-
-async function register(){
-
-  const username = document.getElementById('username').value;
-  const email = document.getElementById('email').value;
-  const mpesa = document.getElementById('mpesa').value;
-  const password = document.getElementById('password').value;
-
-  try{
-
-    const res = await fetch('/api/register',{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json'
-      },
-      body:JSON.stringify({
-        username,
-        email,
-        mpesa,
-        password
-      })
-    });
-
-    const data = await res.json();
-
-    if(!data.success){
-      return showError(data.error);
-    }
-
-    localStorage.setItem('token',data.token);
-
-    showSuccess('Account created');
-
-    showApp(data.username);
-
-  }catch(e){
-    showError('Network error');
-  }
-}
-
-async function login(){
-
-  const username = document.getElementById('username').value;
-  const password = document.getElementById('password').value;
-
-  try{
-
-    const res = await fetch('/api/login',{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json'
-      },
-      body:JSON.stringify({
-        username,
-        password
-      })
-    });
-
-    const data = await res.json();
-
-    if(!data.success){
-      return showError(data.error);
-    }
-
-    localStorage.setItem('token',data.token);
-
-    showApp(data.username);
-
-  }catch(e){
-    showError('Network error');
-  }
-}
-
-function logout(){
-
-  localStorage.removeItem('token');
-
-  document.getElementById('auth-screen')
-  .classList.remove('hidden');
-
-  document.getElementById('app-screen')
-  .classList.add('hidden');
-}
-
-function showApp(username){
-
-  document.getElementById('auth-screen')
-  .classList.add('hidden');
-
-  document.getElementById('app-screen')
-  .classList.remove('hidden');
-
-  document.getElementById('welcome-msg')
-  .innerText = `Welcome ${username}`;
-
-  loadArbs();
-}
-
-async function loadArbs(){
-
-  const list = document.getElementById('list');
-
-  list.innerHTML =
-  '<div class="loading">Scanning opportunities...</div>';
-
-  try{
-
-    const res = await fetch('/api/arbs');
-
-    const data = await res.json();
-
-    document.getElementById('stats').innerHTML =
-    `${data.count} opportunities`;
-
-    list.innerHTML = '';
-
-    data.opportunities.forEach(opp=>{
-
-      let badge='';
-
-      if(opp.verified){
-        badge =
-        '<span class="badge badge-ok">TRADEABLE</span>';
-      }else if(opp.status_unknown){
-        badge =
-        '<span class="badge badge-warn">UNVERIFIED</span>';
-      }else{
-        badge =
-        '<span class="badge badge-bad">DISABLED</span>';
-      }
-
-      const div = document.createElement('div');
-
-      div.className='opportunity';
-
-      div.innerHTML = `
-
-      <div class="opp-row">
-
-        <div>
-
-          <div class="buy">
-            BUY ${opp.buy_at.toUpperCase()}
-            $${opp.buy_price}
-          </div>
-
-          <div class="sell">
-            SELL ${opp.sell_at.toUpperCase()}
-            $${opp.sell_price}
-          </div>
-
-          <div class="symbol">
-            ${opp.symbol}/USDT
-            ${badge}
-          </div>
-
-          <div class="liquidity">
-            Profit Spread:
-            $${opp.spread_usd}
-          </div>
-
+<body class="bg-gray-900 text-white">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+    const { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } = Recharts;
+    ReactModal.setAppElement('#root');
+
+    function App() {
+      const [opportunities, setOpportunities] = useState([]);
+      const [loading, setLoading] = useState(true);
+      const [selectedOpp, setSelectedOpp] = useState(null);
+      const [modalOpen, setModalOpen] = useState(false);
+      const [details, setDetails] = useState(null);
+      const [detailsLoading, setDetailsLoading] = useState(false);
+
+      const fetchOpps = async () => {
+        try {
+          const res = await fetch('/api/scan');
+          const data = await res.json();
+          setOpportunities(data.opportunities || []);
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      useEffect(() => {
+        fetchOpps();
+        const interval = setInterval(fetchOpps, 10000); // refresh every 10s
+        return () => clearInterval(interval);
+      }, []);
+
+      const openModal = async (opp) => {
+        setSelectedOpp(opp);
+        setModalOpen(true);
+        setDetailsLoading(true);
+        try {
+          const res = await fetch(`/api/coin-details?coin=${opp.coin}&buyExchange=${opp.buyExchange}&sellExchange=${opp.sellExchange}`);
+          const data = await res.json();
+          setDetails(data);
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setDetailsLoading(false);
+        }
+      };
+
+      const chartData = selectedOpp?.history?.history?.map(h => ({
+        time: new Date(h.time).toLocaleTimeString(),
+        spread: h.spread
+      })) || [];
+
+      return (
+        <div className="p-4 max-w-6xl mx-auto">
+          <h1 className="text-3xl font-bold mb-6 text-green-400">ArbiMine Scanner</h1>
+          
+          {loading? <p>Loading opportunities...</p> : 
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {opportunities.map((opp, i) => (
+                <div 
+                  key={i} 
+                  onClick={() => openModal(opp)}
+                  className="bg-gray-800 p-4 rounded-lg border border-gray-700 hover:border-green-500 cursor-pointer transition"
+                >
+                  <div className="flex justify-between text-sm text-gray-400">
+                    <span>BUY {opp.buyExchange}</span>
+                    <span>SELL {opp.sellExchange}</span>
+                  </div>
+                  <div className="flex justify-between text-lg my-2">
+                    <span className="text-red-400">${opp.buyPrice}</span>
+                    <span className="text-green-400">${opp.sellPrice}</span>
+                  </div>
+                  <div className="text-center text-xl font-bold">{opp.coin}/USDT</div>
+                  <div className="text-center text-2xl text-green-400 font-bold">{opp.spreadPercent}%</div>
+                  <div className="text-center text-xs mt-2 text-gray-500">{opp.status}</div>
+                </div>
+              ))}
+            </div>
+          }
+
+          <ReactModal 
+            isOpen={modalOpen} 
+            onRequestClose={() => setModalOpen(false)}
+            className="bg-gray-800 p-6 rounded-lg max-w-4xl mx-auto mt-20 outline-none"
+            overlayClassName="fixed inset-0 bg-black bg-opacity-75 flex items-start justify-center overflow-auto"
+          >
+            {selectedOpp && (
+              <div>
+                <div className="flex justify-between items-start mb-4">
+                  <h2 className="text-2xl font-bold text-green-400">{selectedOpp.coin}/USDT Arbitrage</h2>
+                  <button onClick={() => setModalOpen(false)} className="text-gray-400 hover:text-white text-2xl">&times;</button>
+                </div>
+                
+                {detailsLoading? <p>Loading execution data...</p> : details && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div className="bg-gray-900 p-4 rounded">
+                      <h3 className="text-xl font-bold mb-2 text-red-400">BUY: {details.buy.exchange}</h3>
+                      <p>Deposit: {details.buy.depositEnabled? '✅ Enabled' : '❌ Disabled'}</p>
+                      <p>Withdraw: {details.buy.withdrawEnabled? '✅ Enabled' : '❌ Disabled'}</p>
+                      <p>Networks: {details.buy.networks.join(', ')}</p>
+                      <p>Max Buy: ~${details.buy.maxBuy.toFixed(0)}</p>
+                      <p>Liquidity: ${details.buy.liquidity.toFixed(0)}</p>
+                    </div>
+                    <div className="bg-gray-900 p-4 rounded">
+                      <h3 className="text-xl font-bold mb-2 text-green-400">SELL: {details.sell.exchange}</h3>
+                      <p>Deposit: {details.sell.depositEnabled? '✅ Enabled' : '❌ Disabled'}</p>
+                      <p>Withdraw: {details.sell.withdrawEnabled? '✅ Enabled' : '❌ Disabled'}</p>
+                      <p>Networks: {details.sell.networks.join(', ')}</p>
+                      <p>Max Sell: ~${details.sell.maxSell.toFixed(0)}</p>
+                      <p>Liquidity: ${details.sell.liquidity.toFixed(0)}</p>
+                    </div>
+                  </div>
+                )}
+
+                <h3 className="text-xl font-bold mb-2">Spread History</h3>
+                <p className="text-sm text-gray-400 mb-2">
+                  First seen: {new Date(selectedOpp.history?.firstSeen).toLocaleString()} at {selectedOpp.history?.firstSpread}%
+                </p>
+                <div className="h-64 bg-gray-900 p-2 rounded">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <XAxis dataKey="time" stroke="#9ca3af" />
+                      <YAxis stroke="#9ca3af" unit="%" />
+                      <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: 'none' }} />
+                      <Line type="monotone" dataKey="spread" stroke="#4ade80" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+          </ReactModal>
         </div>
-
-        <div class="profit">
-          ${opp.profit_pct}%
-        </div>
-
-      </div>
-
-      `;
-
-      list.appendChild(div);
-
-    });
-
-  }catch(e){
-
-    list.innerHTML =
-    '<div class="loading">Failed loading opportunities</div>';
-
-  }
-}
-
-function openPro(){
-  document.getElementById('pro-modal').style.display='block';
-}
-
-function closePro(){
-  document.getElementById('pro-modal').style.display='none';
-}
-
-function selectPlan(plan,amount){
-
-  selectedPlan = plan;
-  selectedAmount = amount;
-
-  document.getElementById('weekly-plan')
-  .style.border='2px solid #333';
-
-  document.getElementById('monthly-plan')
-  .style.border='2px solid #333';
-
-  document.getElementById(plan + '-plan')
-  .style.border='2px solid #f7b500';
-}
-
-async function paySubscription(){
-
-  const phone =
-  document.getElementById('pro-mpesa').value;
-
-  if(!selectedPlan){
-    return alert('Select plan');
-  }
-
-  if(!phone){
-    return alert('Enter M-Pesa number');
-  }
-
-  try{
-
-    const res = await fetch('/api/pay',{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json'
-      },
-      body:JSON.stringify({
-        phone,
-        amount:selectedAmount,
-        plan:selectedPlan
-      })
-    });
-
-    const data = await res.json();
-
-    if(data.success){
-
-      alert(
-        'STK Push sent. Enter your M-Pesa PIN.'
       );
-
-    }else{
-
-      alert(data.error);
-
     }
 
-  }catch(e){
-
-    alert('Payment failed');
-
-  }
-}
-
-if(token){
-
-  fetch('/api/me',{
-    headers:{
-      Authorization:token
-    }
-  })
-  .then(r=>r.json())
-  .then(d=>{
-    if(d.username){
-      showApp(d.username);
-    }
-  });
-
-}
-
-</script>
-
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
 </body>
 </html>
