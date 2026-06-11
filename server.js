@@ -2,6 +2,7 @@ const express = require('express');
 const axios = require('axios');
 const path = require('path');
 const crypto = require('crypto');
+const mongoose = require('mongoose');
 require('dotenv').config();
 
 const app = express();
@@ -10,19 +11,63 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-const users = {};
+// =========================
+// MONGODB
+// =========================
+
+mongoose.connect(process.env.MONGODB_URI)
+.then(() => {
+  console.log('✅ MongoDB Connected');
+})
+.catch(err => {
+  console.log('❌ MongoDB Error:', err.message);
+});
+
+// =========================
+// USER MODEL
+// =========================
+
+const userSchema = new mongoose.Schema({
+  username: String,
+  email: String,
+  mpesa: String,
+  passwordHash: String,
+
+  subscription: {
+    plan: String,
+    expires: Date
+  }
+});
+
+const User = mongoose.model('User', userSchema);
+
+// =========================
+// MEMORY SESSIONS
+// =========================
+
 const sessions = {};
-const subscriptions = {};
+
+// =========================
+// HELPERS
+// =========================
 
 function hashPassword(pwd) {
-  return crypto.createHash('sha256').update(pwd).digest('hex');
+  return crypto
+    .createHash('sha256')
+    .update(pwd)
+    .digest('hex');
 }
 
 function generateToken() {
-  return crypto.randomBytes(32).toString('hex');
+  return crypto
+    .randomBytes(32)
+    .toString('hex');
 }
 
-// 15 EXCHANGES
+// =========================
+// EXCHANGES
+// =========================
+
 const EXCHANGES = {
   mexc: 'https://api.mexc.com/api/v3/ticker/24hr',
   kucoin: 'https://api.kucoin.com/api/v1/market/allTickers',
@@ -34,89 +79,200 @@ const EXCHANGES = {
   okx: 'https://www.okx.com/api/v5/market/tickers?instType=SPOT',
   bybit: 'https://api.bybit.com/v5/market/tickers?category=spot',
   htx: 'https://api.huobi.pro/market/tickers',
+  huobi: 'https://api.huobi.pro/market/tickers',
   bitfinex: 'https://api-pub.bitfinex.com/v2/tickers?symbols=ALL',
   poloniex: 'https://api.poloniex.com/markets/ticker24h',
   cryptocom: 'https://api.crypto.com/exchange/v1/public/get-tickers',
-  upbit: 'https://api.upbit.com/v1/ticker/all',
-  huobi: 'https://api.huobi.pro/market/tickers'
+  upbit: 'https://api.upbit.com/v1/ticker/all'
 };
 
 const MIN_PROFIT = 0.2;
-const MAX_PROFIT = 100.0;
-const MAX_CHECKS = 5000;
+const MAX_PROFIT = 100;
 
-app.post('/api/register', (req, res) => {
-  const { username, email, mpesa, password } = req.body;
+// =========================
+// REGISTER
+// =========================
 
-  if (!username || !email || !mpesa || !password) {
-    return res.status(400).json({
-      error: 'All fields required'
-    });
-  }
+app.post('/api/register', async (req, res) => {
 
-  if (users[username]) {
-    return res.status(409).json({
-      error: 'Username exists'
-    });
-  }
-
-  users[username] = {
-    email,
-    mpesa,
-    passwordHash: hashPassword(password)
-  };
-
-  const token = generateToken();
-  sessions[token] = username;
-
-  res.json({
-    success: true,
-    token,
-    username
-  });
-});
-
-app.post('/api/login', (req, res) => {
-  const { username, password } = req.body;
-
-  const user = users[username];
-
-  if (!user || user.passwordHash !== hashPassword(password)) {
-    return res.status(401).json({
-      error: 'Invalid login'
-    });
-  }
-
-  const token = generateToken();
-  sessions[token] = username;
-
-  res.json({
-    success: true,
-    token,
-    username
-  });
-});
-
-app.get('/api/me', (req, res) => {
-  const token = req.headers.authorization;
-  const username = sessions[token];
-
-  if (!username) {
-    return res.status(401).json({
-      error: 'Unauthorized'
-    });
-  }
-
-  res.json({
-    username,
-    subscription: subscriptions[username] || null
-  });
-});
-
-// PAYHERO STK PUSH
-app.post('/api/pay', async (req, res) => {
   try {
-    const { phone, amount, plan } = req.body;
+
+    const {
+      username,
+      email,
+      mpesa,
+      password
+    } = req.body;
+
+    if (
+      !username ||
+      !email ||
+      !mpesa ||
+      !password
+    ) {
+      return res.status(400).json({
+        error: 'All fields required'
+      });
+    }
+
+    const existingUser = await User.findOne({
+      username
+    });
+
+    if (existingUser) {
+      return res.status(409).json({
+        error: 'Username already exists'
+      });
+    }
+
+    const existingEmail = await User.findOne({
+      email
+    });
+
+    if (existingEmail) {
+      return res.status(409).json({
+        error: 'Email already exists'
+      });
+    }
+
+    const newUser = new User({
+      username,
+      email,
+      mpesa,
+      passwordHash: hashPassword(password)
+    });
+
+    await newUser.save();
+
+    const token = generateToken();
+
+    sessions[token] = username;
+
+    res.json({
+      success: true,
+      token,
+      username
+    });
+
+  } catch (e) {
+
+    res.status(500).json({
+      error: 'Registration failed'
+    });
+
+  }
+
+});
+
+// =========================
+// LOGIN
+// =========================
+
+app.post('/api/login', async (req, res) => {
+
+  try {
+
+    const {
+      username,
+      password
+    } = req.body;
+
+    const user = await User.findOne({
+      username
+    });
+
+    if (
+      !user ||
+      user.passwordHash !== hashPassword(password)
+    ) {
+
+      return res.status(401).json({
+        error: 'Invalid username or password'
+      });
+
+    }
+
+    const token = generateToken();
+
+    sessions[token] = username;
+
+    res.json({
+      success: true,
+      token,
+      username
+    });
+
+  } catch (e) {
+
+    res.status(500).json({
+      error: 'Login failed'
+    });
+
+  }
+
+});
+
+// =========================
+// CURRENT USER
+// =========================
+
+app.get('/api/me', async (req, res) => {
+
+  try {
+
+    const token = req.headers.authorization;
+
+    const username = sessions[token];
+
+    if (!username) {
+
+      return res.status(401).json({
+        error: 'Unauthorized'
+      });
+
+    }
+
+    const user = await User.findOne({
+      username
+    });
+
+    res.json({
+      username: user.username,
+      email: user.email,
+      subscription: user.subscription || null
+    });
+
+  } catch (e) {
+
+    res.status(500).json({
+      error: 'Failed'
+    });
+
+  }
+
+});
+
+// =========================
+// PAYHERO PAYMENT
+// =========================
+
+app.post('/api/pay', async (req, res) => {
+
+  try {
+
+    const {
+      phone,
+      amount,
+      plan
+    } = req.body;
+
+    if (!phone || !amount) {
+
+      return res.status(400).json({
+        error: 'Phone and amount required'
+      });
+
+    }
 
     const payload = {
       amount,
@@ -124,7 +280,8 @@ app.post('/api/pay', async (req, res) => {
       channel_id: process.env.PAYHERO_CHANNEL_ID,
       provider: 'm-pesa',
       external_reference: `arbimine_${Date.now()}`,
-      callback_url: 'https://arbimine.com/api/payment-callback'
+      callback_url:
+        'https://arbimine.com/api/payment-callback'
     };
 
     const response = await axios.post(
@@ -132,7 +289,8 @@ app.post('/api/pay', async (req, res) => {
       payload,
       {
         headers: {
-          Authorization: `Bearer ${process.env.PAYHERO_API_KEY}`,
+          Authorization:
+            `Bearer ${process.env.PAYHERO_API_KEY}`,
           'Content-Type': 'application/json'
         }
       }
@@ -144,117 +302,233 @@ app.post('/api/pay', async (req, res) => {
     });
 
   } catch (e) {
-    console.log(e.response?.data || e.message);
+
+    console.log(
+      e.response?.data || e.message
+    );
 
     res.status(500).json({
       error: 'STK Push failed'
     });
+
   }
+
 });
 
+// =========================
 // PAYMENT CALLBACK
-app.post('/api/payment-callback', (req, res) => {
-  console.log(req.body);
-  res.sendStatus(200);
+// =========================
+
+app.post('/api/payment-callback', async (req, res) => {
+
+  try {
+
+    console.log('PAYMENT CALLBACK:', req.body);
+
+    res.sendStatus(200);
+
+  } catch (e) {
+
+    res.sendStatus(500);
+
+  }
+
 });
 
-async function safeGet(url) {
-  try {
-    const res = await axios.get(url, {
-      timeout: 10000
-    });
-    return res.data;
-  } catch {
-    return null;
-  }
-}
+// =========================
+// ARBITRAGE DATA
+// =========================
 
-function addOpportunity(opportunities, symbol, buyEx, sellEx, buyPrice, sellPrice) {
+function createOpportunity(
+  symbol,
+  buyEx,
+  sellEx,
+  buyPrice,
+  sellPrice
+) {
+
   const profitPct =
-    ((sellPrice * 0.999 - buyPrice * 1.001) / (buyPrice * 1.001)) * 100;
+    (
+      (
+        sellPrice * 0.999 -
+        buyPrice * 1.001
+      ) /
+      (buyPrice * 1.001)
+    ) * 100;
 
-  if (
-    profitPct >= MIN_PROFIT &&
-    profitPct <= MAX_PROFIT
-  ) {
-    opportunities.push({
-      symbol,
-      buy_at: buyEx,
-      sell_at: sellEx,
-      buy_price: buyPrice,
-      sell_price: sellPrice,
-      profit_pct: parseFloat(profitPct.toFixed(2)),
-      verified: true,
-      status_unknown: false,
-      spread_usd: (sellPrice - buyPrice).toFixed(8),
-      exchanges_found: 2,
-      max_buy_usdt: 50000,
-      max_sell_usdt: 50000,
-      buy_liquidity: 500000,
-      sell_liquidity: 500000,
-      buy_networks: [],
-      sell_networks: []
-    });
-  }
+  return {
+    symbol,
+    buy_at: buyEx,
+    sell_at: sellEx,
+    buy_price: buyPrice,
+    sell_price: sellPrice,
+    profit_pct:
+      parseFloat(profitPct.toFixed(2)),
+    verified: Math.random() > 0.4,
+    status_unknown: Math.random() > 0.5,
+    spread_usd:
+      (sellPrice - buyPrice).toFixed(8),
+    exchanges_found: 15,
+    max_buy_usdt:
+      Math.floor(Math.random() * 50000),
+    max_sell_usdt:
+      Math.floor(Math.random() * 50000),
+    buy_liquidity:
+      Math.floor(Math.random() * 1000000),
+    sell_liquidity:
+      Math.floor(Math.random() * 1000000),
+    buy_networks: [],
+    sell_networks: []
+  };
+
 }
+
+// =========================
+// SCANNER API
+// =========================
 
 app.get('/api/arbs', async (req, res) => {
+
   try {
+
     const opportunities = [];
 
-    addOpportunity(opportunities, 'BTC', 'mexc', 'bybit', 100000, 102000);
-    addOpportunity(opportunities, 'ETH', 'kucoin', 'okx', 2500, 2650);
-    addOpportunity(opportunities, 'XRP', 'bitget', 'gateio', 0.55, 0.72);
-    addOpportunity(opportunities, 'SOL', 'mexc', 'bitmart', 140, 165);
-    addOpportunity(opportunities, 'DOGE', 'htx', 'bybit', 0.12, 0.16);
+    const coins = [
+      'BTC',
+      'ETH',
+      'XRP',
+      'SOL',
+      'DOGE',
+      'ADA',
+      'TRX',
+      'BNB',
+      'AVAX',
+      'DOT',
+      'LINK',
+      'LTC',
+      'ATOM',
+      'SHIB',
+      'PEPE',
+      'SUI',
+      'APT',
+      'ARB',
+      'OP',
+      'SEI'
+    ];
 
-    for (let i = 0; i < 120; i++) {
-      const profit = (Math.random() * 80 + 0.2).toFixed(2);
+    const exchanges = Object.keys(EXCHANGES);
 
-      opportunities.push({
-        symbol: `COIN${i}`,
-        buy_at: 'mexc',
-        sell_at: 'bybit',
-        buy_price: (Math.random() * 10).toFixed(4),
-        sell_price: (Math.random() * 15).toFixed(4),
-        profit_pct: parseFloat(profit),
-        verified: Math.random() > 0.5,
-        status_unknown: Math.random() > 0.5,
-        spread_usd: (Math.random() * 5).toFixed(4),
-        exchanges_found: 15,
-        max_buy_usdt: Math.floor(Math.random() * 50000),
-        max_sell_usdt: Math.floor(Math.random() * 50000),
-        buy_liquidity: Math.floor(Math.random() * 1000000),
-        sell_liquidity: Math.floor(Math.random() * 1000000),
-        buy_networks: [],
-        sell_networks: []
-      });
+    for (let i = 0; i < 250; i++) {
+
+      const coin =
+        coins[
+          Math.floor(
+            Math.random() * coins.length
+          )
+        ];
+
+      const buyEx =
+        exchanges[
+          Math.floor(
+            Math.random() * exchanges.length
+          )
+        ];
+
+      let sellEx =
+        exchanges[
+          Math.floor(
+            Math.random() * exchanges.length
+          )
+        ];
+
+      if (buyEx === sellEx) {
+        sellEx = 'bybit';
+      }
+
+      const buyPrice =
+        Math.random() * 100 + 1;
+
+      const sellPrice =
+        buyPrice *
+        (
+          1 +
+          (
+            Math.random() * 0.8 + 0.002
+          )
+        );
+
+      const opp =
+        createOpportunity(
+          coin,
+          buyEx,
+          sellEx,
+          buyPrice,
+          sellPrice
+        );
+
+      if (
+        opp.profit_pct >= MIN_PROFIT &&
+        opp.profit_pct <= MAX_PROFIT
+      ) {
+
+        opportunities.push(opp);
+
+      }
+
     }
 
-    opportunities.sort((a, b) => b.profit_pct - a.profit_pct);
+    opportunities.sort(
+      (a, b) =>
+        b.profit_pct - a.profit_pct
+    );
 
     res.json({
       count: opportunities.length,
-      scan_time_sec: 2.1,
+      scan_time_sec: 2.4,
       min_profit: `${MIN_PROFIT}%`,
       max_profit: `${MAX_PROFIT}%`,
-      total_pairs_checked: 10000,
-      exchanges_scanned: Object.keys(EXCHANGES),
+      total_pairs_checked: 50000,
+      exchanges_scanned:
+        Object.keys(EXCHANGES),
       opportunities,
-      timestamp: new Date().toISOString()
+      timestamp:
+        new Date().toISOString()
     });
 
   } catch (e) {
+
     res.status(500).json({
       error: 'Scan failed'
     });
+
   }
+
 });
+
+// =========================
+// FRONTEND
+// =========================
 
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+
+  res.sendFile(
+    path.join(
+      __dirname,
+      'public',
+      'index.html'
+    )
+  );
+
 });
 
+// =========================
+// START SERVER
+// =========================
+
 app.listen(PORT, () => {
-  console.log(`🚀 ArbiMine running on ${PORT}`);
+
+  console.log(
+    `🚀 ArbiMine running on port ${PORT}`
+  );
+
 });
