@@ -1,12 +1,17 @@
 {
   "name": "crypto-arb-scanner",
   "version": "1.0.0",
-  "description": "Crypto arbitrage scanner with M-Pesa deposits",
-  "type": "module",
-  "dependencies": {
-    "ccxt": "^4.3.91"
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "build": "echo 'no build step'"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": "18.x"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "ccxt": "^4.3.66"
   }
 }
