@@ -18,5 +18,19 @@
     "express": "^4.22.2",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.7.0"
-  }
+  },
+  "description": "",
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/emmanuelkamuti629-alt/crypto-arb-scanner.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/emmanuelkamuti629-alt/crypto-arb-scanner/issues"
+  },
+  "homepage": "https://github.com/emmanuelkamuti629-alt/crypto-arb-scanner#readme"
 }
