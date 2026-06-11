@@ -1,154 +1,152 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ArbiMine - Crypto Arbitrage Scanner</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/react-modal@3.16.1/dist/react-modal.min.js"></script>
-  <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <title>ArbiMine Scanner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: system-ui; background: #0a0a0a; color: #fff; margin: 0; padding: 20px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 20px; }
+  .card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; padding: 16px; cursor: pointer; }
+  .card:hover { border-color: #4ade80; transform: translateY(-2px); }
+  .spread { font-size: 24px; font-weight: bold; color: #4ade80; }
+  .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; overflow-y: auto; }
+  .modal-content { background: #1a1a1a; margin: 2% auto; padding: 24px; width: 90%; max-width: 700px; border-radius: 12px; }
+  .close { float: right; font-size: 32px; cursor: pointer; color: #999; }
+  .close:hover { color: #fff; }
+   button { background: #4ade80; color: #000; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+  </style>
 </head>
-<body class="bg-gray-900 text-white">
-  <div id="root"></div>
+<body>
+  <h1>ArbiMine Live Scanner</h1>
+  <button onclick="loadOpps()">Refresh</button>
+  <div id="opportunities" class="grid"></div>
 
-  <script type="text/babel">
-    const { useState, useEffect } = React;
-    const { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } = Recharts;
-    ReactModal.setAppElement('#root');
+  <div id="modal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal()">&times;</span>
+      <h2 id="modalTitle"></h2>
+      <div id="modalStats"></div>
+      <canvas id="spreadChart" height="100"></canvas>
+    </div>
+  </div>
 
-    function App() {
-      const [opportunities, setOpportunities] = useState([]);
-      const [loading, setLoading] = useState(true);
-      const [selectedOpp, setSelectedOpp] = useState(null);
-      const [modalOpen, setModalOpen] = useState(false);
-      const [details, setDetails] = useState(null);
-      const [detailsLoading, setDetailsLoading] = useState(false);
+<script>
+let chart;
+const token = localStorage.getItem('token'); // Your auth token
 
-      const fetchOpps = async () => {
-        try {
-          const res = await fetch('/api/scan');
-          const data = await res.json();
-          setOpportunities(data.opportunities || []);
-        } catch (e) {
-          console.error(e);
-        } finally {
-          setLoading(false);
-        }
-      };
+async function loadOpps() {
+  const res = await fetch('/api/scan');
+  const data = await res.json();
+  const grid = document.getElementById('opportunities');
+  if (!data.opportunities.length) {
+    grid.innerHTML = '<p style="color:#999">No opportunities >1% right now. Scanning...</p>';
+    return;
+  }
+  grid.innerHTML = data.opportunities.map(o => `
+    <div class="card" onclick="showDetails('${o.coin}','${o.buyExchange}','${o.sellExchange}')">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <strong style="font-size:18px">${o.coin}</strong>
+        <span class="spread">${o.spreadPercent}%</span>
+      </div>
+      <div style="margin-top:12px;color:#999;font-size:14px">
+        Buy: ${o.buyExchange} $${o.buyPrice}<br>
+        Sell: ${o.sellExchange} $${o.sellPrice}<br>
+        Profit: $${o.spread}
+      </div>
+    </div>
+  `).join('');
+}
 
-      useEffect(() => {
-        fetchOpps();
-        const interval = setInterval(fetchOpps, 10000); // refresh every 10s
-        return () => clearInterval(interval);
-      }, []);
-
-      const openModal = async (opp) => {
-        setSelectedOpp(opp);
-        setModalOpen(true);
-        setDetailsLoading(true);
-        try {
-          const res = await fetch(`/api/coin-details?coin=${opp.coin}&buyExchange=${opp.buyExchange}&sellExchange=${opp.sellExchange}`);
-          const data = await res.json();
-          setDetails(data);
-        } catch (e) {
-          console.error(e);
-        } finally {
-          setDetailsLoading(false);
-        }
-      };
-
-      const chartData = selectedOpp?.history?.history?.map(h => ({
-        time: new Date(h.time).toLocaleTimeString(),
-        spread: h.spread
-      })) || [];
-
-      return (
-        <div className="p-4 max-w-6xl mx-auto">
-          <h1 className="text-3xl font-bold mb-6 text-green-400">ArbiMine Scanner</h1>
-          
-          {loading? <p>Loading opportunities...</p> : 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {opportunities.map((opp, i) => (
-                <div 
-                  key={i} 
-                  onClick={() => openModal(opp)}
-                  className="bg-gray-800 p-4 rounded-lg border border-gray-700 hover:border-green-500 cursor-pointer transition"
-                >
-                  <div className="flex justify-between text-sm text-gray-400">
-                    <span>BUY {opp.buyExchange}</span>
-                    <span>SELL {opp.sellExchange}</span>
-                  </div>
-                  <div className="flex justify-between text-lg my-2">
-                    <span className="text-red-400">${opp.buyPrice}</span>
-                    <span className="text-green-400">${opp.sellPrice}</span>
-                  </div>
-                  <div className="text-center text-xl font-bold">{opp.coin}/USDT</div>
-                  <div className="text-center text-2xl text-green-400 font-bold">{opp.spreadPercent}%</div>
-                  <div className="text-center text-xs mt-2 text-gray-500">{opp.status}</div>
-                </div>
-              ))}
-            </div>
-          }
-
-          <ReactModal 
-            isOpen={modalOpen} 
-            onRequestClose={() => setModalOpen(false)}
-            className="bg-gray-800 p-6 rounded-lg max-w-4xl mx-auto mt-20 outline-none"
-            overlayClassName="fixed inset-0 bg-black bg-opacity-75 flex items-start justify-center overflow-auto"
-          >
-            {selectedOpp && (
-              <div>
-                <div className="flex justify-between items-start mb-4">
-                  <h2 className="text-2xl font-bold text-green-400">{selectedOpp.coin}/USDT Arbitrage</h2>
-                  <button onClick={() => setModalOpen(false)} className="text-gray-400 hover:text-white text-2xl">&times;</button>
-                </div>
-                
-                {detailsLoading? <p>Loading execution data...</p> : details && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div className="bg-gray-900 p-4 rounded">
-                      <h3 className="text-xl font-bold mb-2 text-red-400">BUY: {details.buy.exchange}</h3>
-                      <p>Deposit: {details.buy.depositEnabled? '✅ Enabled' : '❌ Disabled'}</p>
-                      <p>Withdraw: {details.buy.withdrawEnabled? '✅ Enabled' : '❌ Disabled'}</p>
-                      <p>Networks: {details.buy.networks.join(', ')}</p>
-                      <p>Max Buy: ~${details.buy.maxBuy.toFixed(0)}</p>
-                      <p>Liquidity: ${details.buy.liquidity.toFixed(0)}</p>
-                    </div>
-                    <div className="bg-gray-900 p-4 rounded">
-                      <h3 className="text-xl font-bold mb-2 text-green-400">SELL: {details.sell.exchange}</h3>
-                      <p>Deposit: {details.sell.depositEnabled? '✅ Enabled' : '❌ Disabled'}</p>
-                      <p>Withdraw: {details.sell.withdrawEnabled? '✅ Enabled' : '❌ Disabled'}</p>
-                      <p>Networks: {details.sell.networks.join(', ')}</p>
-                      <p>Max Sell: ~${details.sell.maxSell.toFixed(0)}</p>
-                      <p>Liquidity: ${details.sell.liquidity.toFixed(0)}</p>
-                    </div>
-                  </div>
-                )}
-
-                <h3 className="text-xl font-bold mb-2">Spread History</h3>
-                <p className="text-sm text-gray-400 mb-2">
-                  First seen: {new Date(selectedOpp.history?.firstSeen).toLocaleString()} at {selectedOpp.history?.firstSpread}%
-                </p>
-                <div className="h-64 bg-gray-900 p-2 rounded">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData}>
-                      <XAxis dataKey="time" stroke="#9ca3af" />
-                      <YAxis stroke="#9ca3af" unit="%" />
-                      <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: 'none' }} />
-                      <Line type="monotone" dataKey="spread" stroke="#4ade80" strokeWidth={2} dot={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            )}
-          </ReactModal>
-        </div>
-      );
+async function showDetails(coin, buy, sell) {
+  const res = await fetch(`/api/coin-details?coin=${coin}&buy=${buy}&sell=${sell}`);
+  const d = await res.json();
+  
+  document.getElementById('modalTitle').textContent = `${coin}: ${buy} → ${sell}`;
+  document.getElementById('modalStats').innerHTML = `
+    <p><b>Current Spread:</b> ${d.spreadPercent.toFixed(2)}% ($${d.spread.toFixed(4)})</p>
+    <p><b>Buy:</b> $${d.buyPrice} on ${buy}</p>
+    <p><b>Sell:</b> $${d.sellPrice} on ${sell}</p>
+    <p><b>24h Volume:</b> ${d.volume24h?.toLocaleString() || 'N/A'}</p>
+    <h3>Order Book Preview</h3>
+    <div style="display:flex;gap:20px">
+      <div><b>${buy} Bids:</b><br>${d.buyOrderBook.map(o=>`$${o[0]} x ${o[1]}`).join('<br>')}</div>
+      <div><b>${sell} Asks:</b><br>${d.sellOrderBook.map(o=>`$${o[0]} x ${o[1]}`).join('<br>')}</div>
+    </div>
+  `;
+  
+  if (chart) chart.destroy();
+  const ctx = document.getElementById('spreadChart').getContext('2d');
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: d.history.map(h => new Date(h.time).toLocaleTimeString()),
+      datasets: [{ 
+        label: 'Spread %', 
+        data: d.history.map(h => h.spread), 
+        borderColor: '#4ade80', 
+        backgroundColor: 'rgba(74, 222, 128, 0.1)',
+        tension: 0.3,
+        fill: true
+      }]
+    },
+    options: { 
+      plugins: { legend: { display: false } }, 
+      scales: { 
+        y: { beginAtZero: false, ticks: { color: '#999' } },
+        x: { ticks: { color: '#999' } }
+      } 
     }
+  });
+  
+  document.getElementById('modal').style.display = 'block';
+}
 
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-  </script>
+function closeModal() { document.getElementById('modal').style.display = 'none'; }
+
+// YOUR M-PESA + AUTH CODE FROM SCREENSHOT
+async function pay() {
+  try {
+    const res = await fetch('/api/pay', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone,
+        amount: selectedAmount,
+        plan: selectedPlan
+      })
+    });
+    const data = await res.json();
+    if(data.success){
+      alert('STK Push sent. Enter your M-Pesa PIN.');
+    }else{
+      alert(data.error);
+    }
+  }catch(e){
+    alert('Payment failed');
+  }
+}
+
+if(token){
+  fetch('/api/me',{
+    headers:{ Authorization: token }
+  })
+ .then(r=>r.json())
+ .then(d=>{
+    if(d.username){
+      showApp(d.username);
+    }
+  });
+}
+
+function showApp(username) {
+  // Your app logic here
+  console.log('Logged in as:', username);
+}
+
+loadOpps();
+setInterval(loadOpps, 10000); // Refresh every 10s
+</script>
+
 </body>
 </html>
