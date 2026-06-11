@@ -1,931 +1,468 @@
-const express = require('express');
-const axios = require('axios');
-const path = require('path');
-const crypto = require('crypto');
-const mongoose = require('mongoose');
-require('dotenv').config();
+const express = require("express");
+const cors = require("cors");
+const path = require("path");
+const crypto = require("crypto");
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const app = express();
 
-const PORT = process.env.PORT || 3000;
-
-// ======================
-// MIDDLEWARE
-// ======================
-
+app.use(cors());
 app.use(express.json());
+app.use(express.static(path.join(__dirname, "public")));
 
-app.use(express.static(path.join(__dirname, 'public')));
+const PORT = process.env.PORT || 3000;
+const JWT_SECRET = process.env.JWT_SECRET || "arbimine_secret_key";
+const MONGO_URI = process.env.MONGO_URI;
 
-// ======================
-// MONGODB
-// ======================
+// ===============================
+// MONGODB CONNECT
+// ===============================
+mongoose
+  .connect(MONGO_URI)
+  .then(() => {
+    console.log("✅ MongoDB Connected");
+  })
+  .catch((err) => {
+    console.log("❌ MongoDB Error:", err.message);
+  });
 
-mongoose.connect(process.env.MONGODB_URI, {
-
-  useNewUrlParser: true,
-
-  useUnifiedTopology: true
-
-})
-
-.then(() => {
-
-  console.log('✅ MongoDB Connected');
-
-})
-
-.catch((err) => {
-
-  console.log('❌ MongoDB Error:', err.message);
-
-});
-
-// ======================
-// USER MODEL
-// ======================
-
+// ===============================
+// USER SCHEMA
+// ===============================
 const userSchema = new mongoose.Schema({
-
-  username: {
-
-    type: String,
-
-    unique: true
-
-  },
-
-  email: {
-
-    type: String,
-
-    unique: true
-
-  },
-
-  mpesa: {
-
-    type: String,
-
-    unique: true
-
-  },
-
-  passwordHash: String,
-
-  subscription: {
-
-    plan: {
-
-      type: String,
-
-      default: 'free'
-
-    },
-
-    expires: Date
-
-  },
-
+  username: String,
+  email: String,
+  mpesa: String,
+  password: String,
   createdAt: {
-
     type: Date,
-
-    default: Date.now
-
-  }
-
+    default: Date.now,
+  },
 });
 
-const User = mongoose.model('User', userSchema);
+const User = mongoose.model("User", userSchema);
 
-// ======================
-// HELPERS
-// ======================
+// ===============================
+// AUTH MIDDLEWARE
+// ===============================
+function auth(req, res, next) {
+  const token = req.headers.authorization;
 
-function hashPassword(password) {
-
-  return crypto
-    .createHash('sha256')
-    .update(password)
-    .digest('hex');
-
-}
-
-function generateToken() {
-
-  return crypto
-    .randomBytes(32)
-    .toString('hex');
-
-}
-
-const sessions = {};
-
-async function safeGet(url, name) {
-
-  try {
-
-    const response = await axios.get(url, {
-
-      timeout: 10000
-
+  if (!token) {
+    return res.status(401).json({
+      error: "No token provided",
     });
-
-    return response.data;
-
-  } catch (e) {
-
-    console.log(`${name} failed`);
-
-    return null;
-
   }
 
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch {
+    res.status(401).json({
+      error: "Invalid token",
+    });
+  }
 }
 
-// ======================
-// EXCHANGES
-// ======================
-
-const EXCHANGES = {
-
-  mexc:
-    'https://api.mexc.com/api/v3/ticker/24hr',
-
-  kucoin:
-    'https://api.kucoin.com/api/v1/market/allTickers',
-
-  bitmart:
-    'https://api-cloud.bitmart.com/spot/v1/ticker',
-
-  bitget:
-    'https://api.bitget.com/api/spot/v1/market/tickers',
-
-  lbank:
-    'https://api.lbank.info/v1/ticker.do?symbol=all',
-
-  coinex:
-    'https://api.coinex.com/v1/market/ticker/all',
-
-  gateio:
-    'https://api.gateio.ws/api/v4/spot/tickers',
-
-  okx:
-    'https://www.okx.com/api/v5/market/tickers?instType=SPOT',
-
-  bybit:
-    'https://api.bybit.com/v5/market/tickers?category=spot',
-
-  htx:
-    'https://api.huobi.pro/market/tickers',
-
-  huobi:
-    'https://api.huobi.pro/market/tickers',
-
-  bitfinex:
-    'https://api-pub.bitfinex.com/v2/tickers?symbols=ALL',
-
-  poloniex:
-    'https://api.poloniex.com/markets/ticker24h',
-
-  cryptocom:
-    'https://api.crypto.com/exchange/v1/public/get-tickers'
-
-};
-
-// ======================
+// ===============================
 // REGISTER
-// ======================
-
-app.post('/api/register', async (req, res) => {
-
+// ===============================
+app.post("/api/register", async (req, res) => {
   try {
+    const { username, email, mpesa, password } = req.body;
 
-    const {
-
-      username,
-
-      email,
-
-      mpesa,
-
-      password
-
-    } = req.body;
-
-    if (
-
-      !username ||
-
-      !email ||
-
-      !mpesa ||
-
-      !password
-
-    ) {
-
+    if (!username || !email || !mpesa || !password) {
       return res.status(400).json({
-
-        error: 'All fields required'
-
+        error: "All fields required",
       });
-
     }
 
     const existing = await User.findOne({
-
-      $or: [
-
-        { username },
-
-        { email },
-
-        { mpesa }
-
-      ]
-
+      $or: [{ username }, { email }],
     });
 
     if (existing) {
-
-      return res.status(409).json({
-
-        error: 'User already exists'
-
+      return res.status(400).json({
+        error: "User already exists",
       });
-
     }
 
-    const user = new User({
+    const hashedPassword = await bcrypt.hash(password, 10);
 
+    const user = await User.create({
       username,
-
       email,
-
       mpesa,
-
-      passwordHash:
-
-        hashPassword(password)
-
+      password: hashedPassword,
     });
 
-    await user.save();
-
-    const token = generateToken();
-
-    sessions[token] = username;
-
-    res.json({
-
-      success: true,
-
-      token,
-
-      username
-
-    });
-
-  } catch (e) {
-
-    console.log(e);
-
-    res.status(500).json({
-
-      error: 'Registration failed'
-
-    });
-
-  }
-
-});
-
-// ======================
-// LOGIN
-// ======================
-
-app.post('/api/login', async (req, res) => {
-
-  try {
-
-    const {
-
-      username,
-
-      password
-
-    } = req.body;
-
-    const user = await User.findOne({
-
-      username
-
-    });
-
-    if (
-
-      !user ||
-
-      user.passwordHash !==
-
-      hashPassword(password)
-
-    ) {
-
-      return res.status(401).json({
-
-        error: 'Invalid username or password'
-
-      });
-
-    }
-
-    const token = generateToken();
-
-    sessions[token] = username;
-
-    res.json({
-
-      success: true,
-
-      token,
-
-      username
-
-    });
-
-  } catch (e) {
-
-    res.status(500).json({
-
-      error: 'Login failed'
-
-    });
-
-  }
-
-});
-
-// ======================
-// GET USER
-// ======================
-
-app.get('/api/me', async (req, res) => {
-
-  try {
-
-    const token =
-
-      req.headers.authorization;
-
-    const username =
-
-      sessions[token];
-
-    if (!username) {
-
-      return res.status(401).json({
-
-        error: 'Unauthorized'
-
-      });
-
-    }
-
-    const user = await User.findOne({
-
-      username
-
-    });
-
-    res.json({
-
-      username: user.username,
-
-      email: user.email,
-
-      subscription:
-
-        user.subscription
-
-    });
-
-  } catch (e) {
-
-    res.status(500).json({
-
-      error: 'Failed'
-
-    });
-
-  }
-
-});
-
-// ======================
-// PAYHERO STK PUSH
-// ======================
-
-app.post('/api/pay', async (req, res) => {
-
-  try {
-
-    const {
-
-      phone,
-
-      amount,
-
-      plan
-
-    } = req.body;
-
-    const response = await axios.post(
-
-      'https://backend.payhero.co.ke/api/v2/payments',
-
+    const token = jwt.sign(
       {
-
-        phone_number: phone,
-
-        amount: amount,
-
-        channel_id:
-
-          process.env.PAYHERO_CHANNEL_ID,
-
-        provider: 'm-pesa',
-
-        external_reference:
-
-          `arbimine_${Date.now()}`,
-
-        callback_url:
-
-          'https://arbimine.com/api/payment-callback'
-
+        id: user._id,
+        username: user.username,
       },
-
+      JWT_SECRET,
       {
-
-        headers: {
-
-          Authorization:
-
-            `Bearer ${process.env.PAYHERO_API_KEY}`,
-
-          'Content-Type':
-
-            'application/json'
-
-        }
-
+        expiresIn: "30d",
       }
-
     );
 
     res.json({
-
       success: true,
-
-      data: response.data
-
+      token,
+      username: user.username,
     });
-
-  } catch (e) {
-
-    console.log(
-
-      e.response?.data ||
-
-      e.message
-
-    );
+  } catch (err) {
+    console.log(err);
 
     res.status(500).json({
-
-      error: 'Payment failed'
-
+      error: "Registration failed",
     });
-
   }
-
 });
 
-// ======================
-// PAYMENT CALLBACK
-// ======================
-
-app.post('/api/payment-callback', async (req, res) => {
-
+// ===============================
+// LOGIN
+// ===============================
+app.post("/api/login", async (req, res) => {
   try {
+    const { username, password } = req.body;
 
-    console.log(
+    const user = await User.findOne({ username });
 
-      'PAYMENT:',
+    if (!user) {
+      return res.status(400).json({
+        error: "User not found",
+      });
+    }
 
-      req.body
+    const valid = await bcrypt.compare(password, user.password);
 
+    if (!valid) {
+      return res.status(400).json({
+        error: "Wrong password",
+      });
+    }
+
+    const token = jwt.sign(
+      {
+        id: user._id,
+        username: user.username,
+      },
+      JWT_SECRET,
+      {
+        expiresIn: "30d",
+      }
     );
 
-    res.sendStatus(200);
-
-  } catch (e) {
-
-    res.sendStatus(500);
-
+    res.json({
+      success: true,
+      token,
+      username: user.username,
+    });
+  } catch {
+    res.status(500).json({
+      error: "Login failed",
+    });
   }
-
 });
 
-// ======================
-// SCANNER
-// ======================
-
-app.get('/api/arbs', async (req, res) => {
-
+// ===============================
+// GET USER
+// ===============================
+app.get("/api/me", auth, async (req, res) => {
   try {
+    const user = await User.findById(req.user.id).select("-password");
 
-    const start = Date.now();
+    if (!user) {
+      return res.status(404).json({
+        error: "User not found",
+      });
+    }
 
-    const opportunities = [];
+    res.json(user);
+  } catch {
+    res.status(500).json({
+      error: "Server error",
+    });
+  }
+});
 
-    const coins = [
+// ===============================
+// RANDOM ARBITRAGE DATA
+// ===============================
+function randomBetween(min, max) {
+  return (Math.random() * (max - min) + min).toFixed(2);
+}
 
-      'BTC',
+function generateOpportunity(symbol) {
+  const exchanges = [
+    "binance",
+    "bybit",
+    "mexc",
+    "bitget",
+    "kucoin",
+    "gate",
+    "okx",
+    "htx",
+    "bingx",
+    "coinex",
+  ];
 
-      'ETH',
+  const buyAt =
+    exchanges[Math.floor(Math.random() * exchanges.length)];
 
-      'SOL',
+  let sellAt =
+    exchanges[Math.floor(Math.random() * exchanges.length)];
 
-      'DOGE',
+  while (sellAt === buyAt) {
+    sellAt =
+      exchanges[Math.floor(Math.random() * exchanges.length)];
+  }
 
-      'XRP',
+  const buyPrice = parseFloat(randomBetween(0.1, 500));
+  const profit = parseFloat(randomBetween(0.2, 100));
 
-      'TRX',
+  const sellPrice = (
+    buyPrice +
+    (buyPrice * profit) / 100
+  ).toFixed(4);
 
-      'ADA',
+  const verified = Math.random() > 0.3;
 
-      'BNB',
+  return {
+    id: crypto.randomUUID(),
+    symbol,
 
-      'PEPE',
+    buy_at: buyAt,
+    sell_at: sellAt,
 
-      'SHIB',
+    buy_price: buyPrice.toFixed(4),
+    sell_price,
 
-      'LINK',
+    profit_pct: profit,
 
-      'AVAX',
+    spread_usd: (
+      sellPrice - buyPrice
+    ).toFixed(4),
 
-      'APT',
+    exchanges_found: Math.floor(
+      Math.random() * 8 + 2
+    ),
 
-      'SUI',
+    verified,
+    status_unknown: !verified,
 
-      'ARB',
+    buy_liquidity: Math.floor(
+      Math.random() * 5000000
+    ),
 
-      'SEI',
+    sell_liquidity: Math.floor(
+      Math.random() * 5000000
+    ),
 
-      'OP'
+    max_buy_usdt: Math.floor(
+      Math.random() * 100000
+    ),
 
+    max_sell_usdt: Math.floor(
+      Math.random() * 100000
+    ),
+
+    buy_withdraw_ok: Math.random() > 0.2,
+    sell_deposit_ok: Math.random() > 0.2,
+
+    buy_networks: [
+      {
+        name: "TRC20",
+        withdraw: Math.random() > 0.2,
+      },
+      {
+        name: "BEP20",
+        withdraw: Math.random() > 0.2,
+      },
+      {
+        name: "ERC20",
+        withdraw: Math.random() > 0.2,
+      },
+    ],
+
+    sell_networks: [
+      {
+        name: "TRC20",
+        deposit: Math.random() > 0.2,
+      },
+      {
+        name: "BEP20",
+        deposit: Math.random() > 0.2,
+      },
+      {
+        name: "ERC20",
+        deposit: Math.random() > 0.2,
+      },
+    ],
+
+    first_detected: new Date(
+      Date.now() -
+        Math.floor(Math.random() * 3600000)
+    ).toISOString(),
+  };
+}
+
+// ===============================
+// ARBITRAGE API
+// ===============================
+app.get("/api/arbs", async (req, res) => {
+  try {
+    const symbols = [
+      "BTC",
+      "ETH",
+      "SOL",
+      "XRP",
+      "DOGE",
+      "ADA",
+      "TRX",
+      "AVAX",
+      "LINK",
+      "LTC",
+      "PEPE",
+      "SHIB",
+      "BNB",
+      "SUI",
+      "TON",
+      "APT",
+      "ARB",
+      "OP",
+      "INJ",
+      "ATOM",
+      "NEAR",
+      "FTM",
+      "MATIC",
+      "WLD",
+      "SEI",
+      "FLOKI",
+      "JUP",
+      "RUNE",
+      "UNI",
+      "AAVE",
+      "CRV",
+      "DYDX",
+      "TIA",
+      "PYTH",
+      "ONDO",
+      "BONK",
+      "ENA",
+      "ZRO",
+      "STRK",
+      "NOT",
+      "TURBO",
+      "MEME",
+      "BOME",
+      "ALT",
+      "AI",
+      "RENDER",
+      "GALA",
+      "SAND",
+      "MANA",
+      "BLUR",
+      "GMT",
+      "ACE",
+      "PIXEL",
+      "PORTAL",
+      "CATI",
+      "HMSTR",
+      "XLM",
+      "ETC",
+      "FIL",
+      "ICP",
+      "ALGO",
+      "VET",
+      "EOS",
+      "KAS",
+      "FLOW",
+      "THETA",
+      "EGLD",
+      "XTZ",
+      "KAVA",
+      "CHZ",
+      "COMP",
+      "SNX",
+      "LDO",
+      "CAKE",
+      "1INCH",
+      "BAT",
+      "ENJ",
+      "ZIL",
+      "HOT",
+      "ANKR",
+      "CELO",
+      "ROSE",
+      "CFX",
+      "CKB",
+      "SKL",
+      "DYM",
+      "MANTA",
+      "BEAM",
+      "SUPER",
+      "WIF",
+      "BRETT",
+      "POPCAT",
+      "MEW",
+      "BOOK",
+      "SLERF",
+      "MOG",
+      "PONKE",
+      "GOAT",
+      "PNUT",
+      "ACT",
+      "NEIRO",
     ];
 
-    const exchangeNames =
-
-      Object.keys(EXCHANGES);
-
-    for (let i = 0; i < 300; i++) {
-
-      const symbol =
-
-        coins[
-
-          Math.floor(
-
-            Math.random() *
-
-            coins.length
-
-          )
-
-        ];
-
-      const buy_at =
-
-        exchangeNames[
-
-          Math.floor(
-
-            Math.random() *
-
-            exchangeNames.length
-
-          )
-
-        ];
-
-      let sell_at =
-
-        exchangeNames[
-
-          Math.floor(
-
-            Math.random() *
-
-            exchangeNames.length
-
-          )
-
-        ];
-
-      if (buy_at === sell_at) {
-
-        sell_at = 'bybit';
-
-      }
-
-      const buy_price =
-
-        parseFloat(
-
-          (
-
-            Math.random() * 100
-
-          ) + 1
-
-        ).toFixed(4);
-
-      const sell_price =
-
-        parseFloat(
-
-          buy_price *
-
-          (
-
-            1 +
-
-            (
-
-              Math.random() * 0.9
-
-            )
-
-          )
-
-        ).toFixed(4);
-
-      const profit_pct =
-
-        (
-
-          (
-
-            sell_price -
-
-            buy_price
-
-          ) /
-
-          buy_price
-
-        ) * 100;
-
-      if (
-
-        profit_pct >= 0.2 &&
-
-        profit_pct <= 100
-
-      ) {
-
-        opportunities.push({
-
-          symbol,
-
-          buy_at,
-
-          sell_at,
-
-          buy_price,
-
-          sell_price,
-
-          profit_pct:
-
-            parseFloat(
-
-              profit_pct.toFixed(2)
-
-            ),
-
-          spread_usd:
-
-            (
-
-              sell_price -
-
-              buy_price
-
-            ).toFixed(6),
-
-          verified:
-
-            Math.random() > 0.3,
-
-          status_unknown:
-
-            Math.random() > 0.5,
-
-          exchanges_found:
-
-            Math.floor(
-
-              Math.random() * 15
-
-            ) + 2,
-
-          buy_liquidity:
-
-            Math.floor(
-
-              Math.random() * 5000000
-
-            ),
-
-          sell_liquidity:
-
-            Math.floor(
-
-              Math.random() * 5000000
-
-            ),
-
-          max_buy_usdt:
-
-            Math.floor(
-
-              Math.random() * 100000
-
-            ),
-
-          max_sell_usdt:
-
-            Math.floor(
-
-              Math.random() * 100000
-
-            ),
-
-          buy_withdraw_ok:
-
-            Math.random() > 0.2,
-
-          sell_deposit_ok:
-
-            Math.random() > 0.2,
-
-          first_detected:
-
-            new Date().toLocaleString(),
-
-          buy_networks: [
-
-            {
-
-              name: 'TRC20',
-
-              withdraw: true
-
-            },
-
-            {
-
-              name: 'ERC20',
-
-              withdraw: true
-
-            }
-
-          ],
-
-          sell_networks: [
-
-            {
-
-              name: 'TRC20',
-
-              deposit: true
-
-            },
-
-            {
-
-              name: 'ERC20',
-
-              deposit: true
-
-            }
-
-          ]
-
-        });
-
-      }
-
-    }
-
-    opportunities.sort(
-
-      (a, b) =>
-
-        b.profit_pct -
-
-        a.profit_pct
-
+    const opportunities = symbols.map((symbol) =>
+      generateOpportunity(symbol)
     );
 
     res.json({
-
-      count:
-
-        opportunities.length,
-
-      scan_time_sec:
-
-        (
-
-          (
-
-            Date.now() -
-
-            start
-
-          ) / 1000
-
-        ).toFixed(1),
-
-      exchanges_scanned:
-
-        exchangeNames,
-
-      total_pairs_checked:
-
-        50000,
-
+      success: true,
+      count: opportunities.length,
+      scan_time_sec: randomBetween(2, 7),
+      exchanges_scanned: [
+        "binance",
+        "bybit",
+        "mexc",
+        "bitget",
+        "kucoin",
+        "gate",
+        "okx",
+        "htx",
+        "bingx",
+        "coinex",
+      ],
+      total_pairs_checked: 1200,
       opportunities,
-
-      timestamp:
-
-        new Date().toISOString()
-
     });
-
-  } catch (e) {
-
+  } catch {
     res.status(500).json({
-
-      error: 'Scanner failed'
-
+      error: "Failed to fetch opportunities",
     });
-
   }
-
 });
 
-// ======================
-// FRONTEND ROUTE
-// ======================
-
-app.use((req, res) => {
-
+// ===============================
+// ROOT
+// ===============================
+app.get("/", (req, res) => {
   res.sendFile(
-
-    path.join(
-
-      __dirname,
-
-      'public',
-
-      'index.html'
-
-    )
-
+    path.join(__dirname, "public", "index.html")
   );
-
 });
 
-// ======================
+// ===============================
 // START SERVER
-// ======================
-
+// ===============================
 app.listen(PORT, () => {
-
-  console.log(
-
-    `🚀 ArbiMine running on port ${PORT}`
-
-  );
-
+  console.log(`🚀 ArbiMine running on port ${PORT}`);
 });
