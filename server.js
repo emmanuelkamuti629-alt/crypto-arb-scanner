@@ -39,10 +39,13 @@ app.get('/api/scan', async (req, res) => {
 
         for (const s of scenarios) {
           const spread = s.sellPrice - s.buyPrice;
+          if (spread <= 0) continue;
           const spreadPercent = (spread / s.buyPrice) * 100;
           if (spreadPercent > MIN_SPREAD) {
             opportunities.push({
-              coin, buyExchange: s.buy, sellExchange: s.sell,
+              coin, // Real name: BTC, ETH, etc
+              buyExchange: s.buy, 
+              sellExchange: s.sell,
               buyPrice: parseFloat(s.buyPrice.toFixed(4)),
               sellPrice: parseFloat(s.sellPrice.toFixed(4)),
               spread: parseFloat(spread.toFixed(4)),
@@ -60,12 +63,10 @@ app.get('/api/scan', async (req, res) => {
   }
 });
 
-// Details: deposit/withdraw + networks + liquidity
 app.get('/api/coin-details', async (req, res) => {
   try {
     const { coin, buy, sell } = req.query;
     const symbol = `${coin}/USDT`;
-    
     const buyEx = exchanges[buy.toLowerCase()];
     const sellEx = exchanges[sell.toLowerCase()];
     
@@ -81,21 +82,18 @@ app.get('/api/coin-details', async (req, res) => {
     const buyOB = await buyEx.fetchOrderBook(symbol, 10);
     const sellOB = await sellEx.fetchOrderBook(symbol, 10);
     
-    // Calculate liquidity: sum of top 10 bids/asks in USDT
     const buyLiquidity = buyOB.bids.slice(0,10).reduce((sum, [price, amount]) => sum + price * amount, 0);
     const sellLiquidity = sellOB.asks.slice(0,10).reduce((sum, [price, amount]) => sum + price * amount, 0);
     
     res.json({
       coin, buyExchange: buy, sellExchange: sell,
-      buyPrice: buyTicker.last, 
-      sellPrice: sellTicker.last,
+      buyPrice: buyTicker.last, sellPrice: sellTicker.last,
       spread: sellTicker.last - buyTicker.last,
       spreadPercent: ((sellTicker.last - buyTicker.last) / buyTicker.last) * 100,
       volume24h: buyTicker.baseVolume,
-      
       buyStatus: {
-        deposit: buyCurrency.deposit,  // true/false
-        withdraw: buyCurrency.withdraw, // true/false
+        deposit: buyCurrency.deposit,
+        withdraw: buyCurrency.withdraw,
         networks: buyCurrency.networks || {}
       },
       sellStatus: {
@@ -112,8 +110,6 @@ app.get('/api/coin-details', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
-// Your /api/pay and /api/me routes here
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
