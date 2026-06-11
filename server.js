@@ -53,52 +53,22 @@ app.post('/api/register', (req, res) => {
 });
 
 app.post('/api/login', (req, res) => {
-// Add this near the top with your other requires
-const axios = require('axios');
-
-// Add this with your other API routes, BEFORE app.get('*')
-app.get('/api/arbs', async (req, res) => {
-    try {
-        // Fetch BTC price from Binance + KuCoin at the same time
-        const [binanceRes, kucoinRes] = await Promise.all([
-            axios.get('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT'),
-            axios.get('https://api.kucoin.com/api/v1/market/orderbook/level1?symbol=BTC-USDT')
-        ]);
-        
-        const binancePrice = parseFloat(binanceRes.data.price);
-        const kucoinPrice = parseFloat(kucoinRes.data.data.price);
-        
-        // Calculate which is cheaper and the spread %
-        let buyExchange, sellExchange, buyPrice, sellPrice;
-        if (binancePrice < kucoinPrice) {
-            buyExchange = 'Binance';
-            sellExchange = 'KuCoin';
-            buyPrice = binancePrice;
-            sellPrice = kucoinPrice;
-        } else {
-            buyExchange = 'KuCoin';
-            sellExchange = 'Binance';
-            buyPrice = kucoinPrice;
-            sellPrice = binancePrice;
-        }
-        
-        const spread = ((sellPrice - buyPrice) / buyPrice * 100).toFixed(2);
-        
-        res.json([{
-            pair: 'BTC/USDT',
-            buy: buyExchange,
-            buyPrice: buyPrice.toFixed(2),
-            sell: sellExchange, 
-            sellPrice: sellPrice.toFixed(2),
-            profit: spread + '%',
-            timestamp: new Date().toISOString()
-        }]);
-        
-    } catch (err) {
-        console.error('Arb fetch error:', err.message);
-        res.status(500).json({ error: 'Failed to fetch arbitrage data' });
-    }
+  const { username, password } = req.body;
+  if (!username ||!password) return res.status(400).json({ error: 'Username and password required' });
+  const user = users[username];
+  if (!user || user.passwordHash!== hashPassword(password)) return res.status(401).json({ error: 'Invalid username or password' });
+  const token = generateToken();
+  sessions[token] = username;
+  res.json({ success: true, token, username });
 });
+
+app.get('/api/me', (req, res) => {
+  const token = req.headers['authorization'];
+  const username = sessions[token];
+  if (!username) return res.status(401).json({ error: 'Not logged in' });
+  res.json({ username, email: users[username].email });
+});
+
 // SCANNER
 async function safeGet(url, name) {
   try {
@@ -422,11 +392,7 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Export for Vercel
-module.exports = app;
+app.listen(PORT, () => {
+  console.log(`🚀 ArbiMine running on port ${PORT}`);
+});
 
-// Start server for Render/local only  
-if (require.main === module) {
-    const PORT = process.env.PORT || 3000;
-    app.listen(PORT, () => console.log(`🚀 ArbiMine running on port ${PORT}`));
-}
