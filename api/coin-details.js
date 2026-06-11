@@ -1,62 +1,54 @@
-import ccxt from 'ccxt';
+const ccxt = require('ccxt');
 
-export default async function handler(req, res) {
-  const { coin, buyExchange, sellExchange } = req.query;
-  
-  if (!coin ||!buyExchange ||!sellExchange) {
-    return res.status(400).json({ error: 'Missing params: coin, buyExchange, sellExchange' });
-  }
-  
+const exchanges = {
+  mexc: new ccxt.mexc({ enableRateLimit: true }),
+  bybit: new ccxt.bybit({ enableRateLimit: true }),
+};
+
+module.exports = async (req, res) => {
   try {
-    const buyEx = new ccxt[buyExchange.toLowerCase()]({ enableRateLimit: true });
-    const sellEx = new ccxt[sellExchange.toLowerCase()]({ enableRateLimit: true });
-    
+    const { coin, buy, sell } = req.query;
     const symbol = `${coin}/USDT`;
+    const buyEx = exchanges[buy.toLowerCase()];
+    const sellEx = exchanges[sell.toLowerCase()];
     
-    const [buyCurrencies, sellCurrencies, buyBook, sellBook] = await Promise.all([
-      buyEx.fetchCurrencies().catch(() => ({})),
-      sellEx.fetchCurrencies().catch(() => ({})), 
-      buyEx.fetchOrderBook(symbol, 5).catch(() => ({ asks: [], bids: [] })),
-      sellEx.fetchOrderBook(symbol, 5).catch(() => ({ asks: [], bids: [] }))
+    await Promise.all([buyEx.loadMarkets(), sellEx.loadMarkets()]);
+    
+    const [buyTicker, sellTicker, buyCurrency, sellCurrency] = await Promise.all([
+      buyEx.fetchTicker(symbol),
+      sellEx.fetchTicker(symbol),
+      buyEx.currency(coin),
+      sellEx.currency(coin)
     ]);
     
-    const buyCoinData = buyCurrencies;
-    const sellCoinData = sellCurrencies;
+    const buyOB = await buyEx.fetchOrderBook(symbol, 10);
+    const sellOB = await sellEx.fetchOrderBook(symbol, 10);
     
-    // Get active networks for the coin
-    const getNetworks = (coinData) => {
-      if (!coinData?.networks) return ['Unknown'];
-      return Object.keys(coinData.networks).filter(n => coinData.networks[n].active);
-    };
+    const buyLiquidity = buyOB.bids.slice(0,10).reduce((sum, [price, amount]) => sum + price * amount, 0);
+    const sellLiquidity = sellOB.asks.slice(0,10).reduce((sum, [price, amount]) => sum + price * amount, 0);
     
-    // Calc liquidity from top 5 levels
-    const calcLiquidity = (book) => {
-      return book.asks?.slice(0,5).reduce((sum, [price, qty]) => sum + price * qty, 0) || 0;
-    };
-    
-    res.status(200).json({
-      buy: {
-        exchange: buyExchange,
-        depositEnabled: buyCoinData?.deposit?? true,
-        withdrawEnabled: buyCoinData?.withdraw?? true,
-        networks: getNetworks(buyCoinData),
-        maxBuy: buyBook.asks?.[0]? buyBook.asks[0][0] * buyBook.asks[0][1] : 0,
-        liquidity: calcLiquidity(buyBook)
+    res.json({
+      coin, buyExchange: buy, sellExchange: sell,
+      buyPrice: buyTicker.last, sellPrice: sellTicker.last,
+      spread: sellTicker.last - buyTicker.last,
+      spreadPercent: ((sellTicker.last - buyTicker.last) / buyTicker.last) * 100,
+      volume24h: buyTicker.baseVolume,
+      buyStatus: {
+        deposit: buyCurrency.deposit,
+        withdraw: buyCurrency.withdraw,
+        networks: buyCurrency.networks || {}
       },
-      sell: {
-        exchange: sellExchange,
-        depositEnabled: sellCoinData?.deposit?? true,
-        withdrawEnabled: sellCoinData?.withdraw?? true,
-        networks: getNetworks(sellCoinData),
-        maxSell: sellBook.bids?.[0]? sellBook.bids[0][0] * sellBook.bids[0][1] : 0,
-        liquidity: sellBook.bids?.slice(0,5).reduce((sum, [p,q]) => sum + p*q, 0) || 0
+      sellStatus: {
+        deposit: sellCurrency.deposit,
+        withdraw: sellCurrency.withdraw,
+        networks: sellCurrency.networks || {}
+      },
+      liquidity: {
+        buy: parseFloat(buyLiquidity.toFixed(2)),
+        sell: parseFloat(sellLiquidity.toFixed(2))
       }
     });
   } catch (error) {
-    console.error('Coin details error:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch details',
-      message: error.message 
-    });
+    res.status(500).json({ error: error.message });
   }
-}
+};
