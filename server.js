@@ -392,6 +392,11 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 ArbiMine running on port ${PORT}`);
-});
+// Export for Vercel
+module.exports = app;
+
+// Start server for Render/local only  
+if (require.main === module) {
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, () => console.log(`🚀 ArbiMine running on port ${PORT}`));
+}
