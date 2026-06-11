@@ -42,7 +42,7 @@ const EXCHANGES = {
 
 const MIN_PROFIT = 0.2;
 const MAX_PROFIT = 50.0;
-const MAX_CHECKS = 1000;
+const MAX_CHECKS = 100;
 
 const statusCache = {};
 const CACHE_TIME = 5 * 60 * 1000;
