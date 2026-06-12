@@ -1,42 +1,41 @@
-const express = require('express');
-const axios = require('axios');
-const path = require('path');
-const crypto = require('crypto');
+const express = require("express");
+const axios = require("axios");
+const path = require("path");
+const crypto = require("crypto");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, "public")));
 
 /*
-========================================
-MEMORY
-========================================
+========================
+MEMORY STORAGE
+========================
 */
 const users = {};
 const sessions = {};
 const opportunityHistory = {};
-const priceMemory = {};
 
 /*
-========================================
+========================
 UTILS
-========================================
+========================
 */
 function hashPassword(p) {
-    return crypto.createHash('sha256').update(p).digest('hex');
+    return crypto.createHash("sha256").update(p).digest("hex");
 }
 
 function token() {
-    return crypto.randomBytes(32).toString('hex');
+    return crypto.randomBytes(32).toString("hex");
 }
 
 async function safeGet(url, name) {
     try {
         const res = await axios.get(url, {
             timeout: 12000,
-            headers: { 'User-Agent': 'Mozilla/5.0' }
+            headers: { "User-Agent": "Mozilla/5.0" }
         });
         return res.data;
     } catch (e) {
@@ -46,23 +45,23 @@ async function safeGet(url, name) {
 }
 
 /*
-========================================
+========================
 EXCHANGES
-========================================
+========================
 */
 const EXCHANGES = {
-    mexc: 'https://api.mexc.com/api/v3/ticker/24hr',
-    kucoin: 'https://api.kucoin.com/api/v1/market/allTickers',
-    bitmart: 'https://api-cloud.bitmart.com/spot/v1/ticker',
-    bitget: 'https://api.bitget.com/api/spot/v1/market/tickers',
-    gateio: 'https://api.gateio.ws/api/v4/spot/tickers',
-    okx: 'https://www.okx.com/api/v5/market/tickers?instType=SPOT',
-    bybit: 'https://api.bybit.com/v5/market/tickers?category=spot',
-    htx: 'https://api.huobi.pro/market/tickers',
-    bitfinex: 'https://api-pub.bitfinex.com/v2/tickers?symbols=ALL',
-    poloniex: 'https://api.poloniex.com/markets/ticker24h',
-    cryptocom: 'https://api.crypto.com/exchange/v1/public/get-tickers',
-    upbit: 'https://api.upbit.com/v1/ticker?markets=KRW-BTC'
+    mexc: "https://api.mexc.com/api/v3/ticker/24hr",
+    kucoin: "https://api.kucoin.com/api/v1/market/allTickers",
+    bitmart: "https://api-cloud.bitmart.com/spot/v1/ticker",
+    bitget: "https://api.bitget.com/api/spot/v1/market/tickers",
+    gateio: "https://api.gateio.ws/api/v4/spot/tickers",
+    okx: "https://www.okx.com/api/v5/market/tickers?instType=SPOT",
+    bybit: "https://api.bybit.com/v5/market/tickers?category=spot",
+    htx: "https://api.huobi.pro/market/tickers",
+    bitfinex: "https://api-pub.bitfinex.com/v2/tickers?symbols=ALL",
+    poloniex: "https://api.poloniex.com/markets/ticker24h",
+    cryptocom: "https://api.crypto.com/exchange/v1/public/get-tickers",
+    upbit: "https://api.upbit.com/v1/ticker?markets=KRW-BTC"
 };
 
 const MIN_PROFIT = 0.5;
@@ -70,27 +69,29 @@ const MAX_PROFIT = 60;
 const MIN_VOLUME = 80000;
 
 /*
-========================================
+========================
 LIQUIDITY ENGINE
-========================================
+========================
 */
 function getLiquidity(volume) {
-    if (volume > 5000000) return "HIGH";
-    if (volume > 500000) return "MEDIUM";
-    return "LOW";
+    const score = Math.min(100, Math.floor(volume / 50000));
+
+    if (score > 80) return { label: "HIGH", score };
+    if (score > 40) return { label: "MEDIUM", score };
+    return { label: "LOW", score };
 }
 
 /*
-========================================
+========================
 RISK ENGINE
-========================================
+========================
 */
-function getRisk(spread, liquidity, volatility = 2) {
+function getRisk(spread, liquidity) {
     let score = 0;
 
     if (spread > 15) score += 2;
     if (liquidity === "LOW") score += 2;
-    if (volatility > 5) score += 2;
+    if (spread > 5 && spread <= 15) score += 1;
 
     if (score <= 1) return { level: "LOW", color: "green" };
     if (score <= 3) return { level: "MEDIUM", color: "yellow" };
@@ -98,9 +99,9 @@ function getRisk(spread, liquidity, volatility = 2) {
 }
 
 /*
-========================================
+========================
 TREND ENGINE
-========================================
+========================
 */
 function getTrend(history) {
     if (!history || history.length < 3) return "STABLE";
@@ -114,11 +115,34 @@ function getTrend(history) {
 }
 
 /*
-========================================
-ARRIVAL TIME
-========================================
+========================
+NETWORKS (REAL MODEL)
+========================
 */
-function estimateArrival(exchange) {
+function getBuyNetworks() {
+    return [
+        { network: "ERC20", withdraw: true },
+        { network: "TRC20", withdraw: true },
+        { network: "BEP20", withdraw: true },
+        { network: "SOL", withdraw: true }
+    ];
+}
+
+function getSellNetworks() {
+    return [
+        { network: "ERC20", deposit: true },
+        { network: "TRC20", deposit: true },
+        { network: "BEP20", deposit: true },
+        { network: "SOL", deposit: true }
+    ];
+}
+
+/*
+========================
+ARRIVAL TIME
+========================
+*/
+function estimateArrival(ex) {
     const speed = {
         okx: 2,
         bybit: 3,
@@ -126,57 +150,50 @@ function estimateArrival(exchange) {
         kucoin: 4,
         gateio: 3,
         bitmart: 5,
-        htx: 3,
-        bitfinex: 4
+        htx: 3
     };
 
-    return speed[exchange] || 5;
+    return speed[ex] || 5;
 }
 
 /*
-========================================
+========================
 NORMALIZER
-========================================
+========================
 */
 function normalize(symbol, ex, t) {
     let sym = null;
-    let price = null;
+    let price = 0;
     let volume = 0;
 
-    if (ex === 'mexc' && symbol.endsWith('USDT')) {
-        sym = symbol.replace('USDT', '');
+    if (ex === "mexc" && symbol.endsWith("USDT")) {
+        sym = symbol.replace("USDT", "");
         price = +t.lastPrice;
         volume = +t.quoteVolume || 0;
     }
 
-    if (ex === 'kucoin' && symbol.endsWith('-USDT')) {
-        sym = symbol.replace('-USDT', '');
+    if (ex === "kucoin" && symbol.endsWith("-USDT")) {
+        sym = symbol.replace("-USDT", "");
         price = +t.last;
         volume = +t.volValue || 0;
     }
 
-    if (ex === 'bitmart' && symbol.endsWith('_USDT')) {
-        sym = symbol.replace('_USDT', '');
+    if (ex === "bitmart" && symbol.endsWith("_USDT")) {
+        sym = symbol.replace("_USDT", "");
         price = +t.last_price;
         volume = +t.quote_volume || 0;
     }
 
-    if (ex === 'okx' && symbol.endsWith('-USDT')) {
-        sym = symbol.replace('-USDT', '');
+    if (ex === "okx" && symbol.endsWith("-USDT")) {
+        sym = symbol.replace("-USDT", "");
         price = +t.last;
         volume = +t.volCcy24h || 0;
     }
 
-    if (ex === 'bybit' && symbol.endsWith('USDT')) {
-        sym = symbol.replace('USDT', '');
+    if (ex === "bybit" && symbol.endsWith("USDT")) {
+        sym = symbol.replace("USDT", "");
         price = +t.lastPrice;
         volume = +t.turnover24h || 0;
-    }
-
-    if (ex === 'gateio' && symbol.endsWith('_USDT')) {
-        sym = symbol.replace('_USDT', '');
-        price = +t.last;
-        volume = +t.quote_volume || 0;
     }
 
     if (!sym || !price || price <= 0) return null;
@@ -185,26 +202,11 @@ function normalize(symbol, ex, t) {
 }
 
 /*
-========================================
-NETWORKS (REALISTIC MODEL)
-========================================
+========================
+OPPORTUNITIES API
+========================
 */
-function getNetworks() {
-    return [
-        { network: "ERC20", deposit: true, withdraw: true, eta: "5-15 min" },
-        { network: "TRC20", deposit: true, withdraw: true, eta: "2-10 min" },
-        { network: "BEP20", deposit: true, withdraw: true, eta: "3-12 min" },
-        { network: "SOL", deposit: true, withdraw: true, eta: "1-5 min" }
-    ];
-}
-
-/*
-========================================
-OPPORTUNITIES
-========================================
-*/
-app.get('/api/opportunities', async (req, res) => {
-
+app.get("/api/opportunities", async (req, res) => {
     try {
 
         const results = await Promise.all(
@@ -215,22 +217,21 @@ app.get('/api/opportunities', async (req, res) => {
         Object.keys(EXCHANGES).forEach(e => map[e] = {});
 
         results.forEach((data, idx) => {
-
             const ex = Object.keys(EXCHANGES)[idx];
             if (!data) return;
 
             let tickers = [];
 
-            if (ex === 'mexc') tickers = data;
-            else if (ex === 'kucoin') tickers = data.data?.ticker || [];
-            else if (ex === 'bitmart') tickers = data.data?.tickers || [];
-            else if (ex === 'okx') tickers = data.data || [];
-            else if (ex === 'bybit') tickers = data.result?.list || [];
-            else if (ex === 'gateio') tickers = data || [];
+            if (ex === "mexc") tickers = data;
+            else if (ex === "kucoin") tickers = data.data?.ticker || [];
+            else if (ex === "bitmart") tickers = data.data?.tickers || [];
+            else if (ex === "okx") tickers = data.data || [];
+            else if (ex === "bybit") tickers = data.result?.list || [];
+            else if (ex === "gateio") tickers = data || [];
 
             tickers.forEach(t => {
 
-                const key = t.symbol || t.currency_pair || t.instId || '';
+                const key = t.symbol || t.currency_pair || t.instId || "";
                 const d = normalize(key, ex, t);
 
                 if (d && d.volume > MIN_VOLUME) {
@@ -289,10 +290,8 @@ app.get('/api/opportunities', async (req, res) => {
             const history = opportunityHistory[id];
 
             const liquidity = getLiquidity((buy.volume + sell.volume) / 2);
-            const risk = getRisk(spread, liquidity);
+            const risk = getRisk(spread, liquidity.label);
             const trend = getTrend(history);
-
-            priceMemory[id] = { buy: buy.price, sell: sell.price };
 
             opportunities.push({
                 id,
@@ -306,18 +305,28 @@ app.get('/api/opportunities', async (req, res) => {
 
                 spread: spread.toFixed(2),
 
-                tradable: true,
-
                 liquidity,
 
                 risk,
 
                 trend,
 
+                buySide: {
+                    exchange: buyEx.toUpperCase(),
+                    withdrawNetworks: getBuyNetworks()
+                },
+
+                sellSide: {
+                    exchange: sellEx.toUpperCase(),
+                    depositNetworks: getSellNetworks()
+                },
+
                 arrivalTime: {
                     buy: estimateArrival(buyEx),
                     sell: estimateArrival(sellEx)
                 },
+
+                tradable: true,
 
                 history
             });
@@ -338,15 +347,15 @@ app.get('/api/opportunities', async (req, res) => {
 });
 
 /*
-========================================
-DETAIL FIX (NO ZERO PRICES)
-========================================
+========================
+DETAIL API
+========================
 */
-app.get('/api/opportunity/:id', (req, res) => {
+app.get("/api/opportunity/:id", (req, res) => {
 
     const id = req.params.id;
     const history = opportunityHistory[id] || [];
-    const p = id.split('-');
+    const p = id.split("-");
 
     const last = history[history.length - 1];
 
@@ -361,23 +370,28 @@ app.get('/api/opportunity/:id', (req, res) => {
             buyPrice: last?.buyPrice || 0,
             sellPrice: last?.sellPrice || 0,
 
-            history,
-
             liquidity: "MEDIUM",
 
             risk: getRisk(last?.spread || 0, "MEDIUM"),
 
             trend: getTrend(history),
 
+            buySide: {
+                exchange: p[1],
+                withdrawNetworks: getBuyNetworks()
+            },
+
+            sellSide: {
+                exchange: p[2],
+                depositNetworks: getSellNetworks()
+            },
+
             arrivalTime: {
                 buy: estimateArrival(p[1]),
                 sell: estimateArrival(p[2])
             },
 
-            networks: {
-                buy: getNetworks(),
-                sell: getNetworks()
-            },
+            history,
 
             tradable: true
         }
@@ -385,28 +399,35 @@ app.get('/api/opportunity/:id', (req, res) => {
 });
 
 /*
-
-========================================
-PAYMENT
-========================================
+========================
+PRO SUBSCRIPTION
+========================
 */
-app.post('/api/pesapal/pay', (req, res) => {
+app.post("/api/subscribe", (req, res) => {
 
-    const { phone, amount, plan } = req.body;
+    const { plan } = req.body;
 
-    console.log("PAY:", phone, amount, plan);
+    const plans = {
+        weekly: 100,
+        monthly: 350
+    };
+
+    if (!plans[plan]) {
+        return res.status(400).json({ error: "Invalid plan" });
+    }
 
     res.json({
         success: true,
-        message: `STK Push sent to ${phone}`
+        message: `Subscribed to ${plan} plan`,
+        price: plans[plan]
     });
 });
 
 /*
-========================================
-START
-========================================
+========================
+START SERVER
+========================
 */
 app.listen(PORT, () => {
-    console.log("🚀 ArbiMine PRO running on", PORT);
+    console.log("🚀 ArbiMine PRO FULL running on", PORT);
 });
