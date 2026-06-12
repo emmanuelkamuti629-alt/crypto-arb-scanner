@@ -9,27 +9,17 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-/*
-========================
-MEMORY STORAGE
-========================
-*/
 const users = {};
 const sessions = {};
-const opportunityHistory = {};
+const historyStore = {};
 
-/*
-========================
-UTILS
-========================
-*/
-function hashPassword(p) {
-    return crypto.createHash("sha256").update(p).digest("hex");
-}
+/* ===================== HELPERS ===================== */
 
-function token() {
-    return crypto.randomBytes(32).toString("hex");
-}
+const hash = (p) =>
+    crypto.createHash("sha256").update(p).digest("hex");
+
+const token = () =>
+    crypto.randomBytes(24).toString("hex");
 
 async function safeGet(url, name) {
     try {
@@ -39,129 +29,71 @@ async function safeGet(url, name) {
         });
         return res.data;
     } catch (e) {
-        console.log(name, "FAILED:", e.message);
+        console.log(name, "SKIP:", e.response?.status || e.message);
         return null;
     }
 }
 
-/*
-========================
-EXCHANGES
-========================
-*/
+/* ===================== EXCHANGES ===================== */
+
 const EXCHANGES = {
     mexc: "https://api.mexc.com/api/v3/ticker/24hr",
     kucoin: "https://api.kucoin.com/api/v1/market/allTickers",
-    bitmart: "https://api-cloud.bitmart.com/spot/v1/ticker",
-    bitget: "https://api.bitget.com/api/spot/v1/market/tickers",
     gateio: "https://api.gateio.ws/api/v4/spot/tickers",
     okx: "https://www.okx.com/api/v5/market/tickers?instType=SPOT",
-    bybit: "https://api.bybit.com/v5/market/tickers?category=spot",
-    htx: "https://api.huobi.pro/market/tickers",
-    bitfinex: "https://api-pub.bitfinex.com/v2/tickers?symbols=ALL",
-    poloniex: "https://api.poloniex.com/markets/ticker24h",
-    cryptocom: "https://api.crypto.com/exchange/v1/public/get-tickers",
-    upbit: "https://api.upbit.com/v1/ticker?markets=KRW-BTC"
+    htx: "https://api.huobi.pro/market/tickers"
 };
 
-const MIN_PROFIT = 0.5;
-const MAX_PROFIT = 60;
-const MIN_VOLUME = 80000;
+/* ===================== CORE ENGINE ===================== */
 
-/*
-========================
-LIQUIDITY ENGINE
-========================
-*/
-function getLiquidity(volume) {
-    const score = Math.min(100, Math.floor(volume / 50000));
+const MIN_SPREAD = 0.5;
+const MAX_SPREAD = 50;
 
-    if (score > 80) return { label: "HIGH", score };
-    if (score > 40) return { label: "MEDIUM", score };
+/* liquidity FIX (IMPORTANT) */
+function liquidityScore(volume) {
+
+    const score = Math.min(100, Math.floor(volume / 60000));
+
+    if (score > 75) return { label: "HIGH", score };
+    if (score > 35) return { label: "MEDIUM", score };
+
     return { label: "LOW", score };
 }
 
-/*
-========================
-RISK ENGINE
-========================
-*/
-function getRisk(spread, liquidity) {
-    let score = 0;
+/* risk engine */
+function riskEngine(spread, liquidity) {
 
-    if (spread > 15) score += 2;
-    if (liquidity === "LOW") score += 2;
-    if (spread > 5 && spread <= 15) score += 1;
+    let risk = 0;
 
-    if (score <= 1) return { level: "LOW", color: "green" };
-    if (score <= 3) return { level: "MEDIUM", color: "yellow" };
+    if (spread > 10) risk++;
+    if (liquidity === "LOW") risk++;
+    if (spread > 25) risk++;
+
+    if (risk <= 1)
+        return { level: "LOW", color: "green" };
+
+    if (risk === 2)
+        return { level: "MEDIUM", color: "orange" };
+
     return { level: "HIGH", color: "red" };
 }
 
-/*
-========================
-TREND ENGINE
-========================
-*/
-function getTrend(history) {
-    if (!history || history.length < 3) return "STABLE";
-
-    const first = history[0].spread;
-    const last = history[history.length - 1].spread;
-
-    if (last > first) return "INCREASING";
-    if (last < first) return "DECREASING";
-    return "STABLE";
-}
-
-/*
-========================
-NETWORKS (REAL MODEL)
-========================
-*/
-function getBuyNetworks() {
-    return [
-        { network: "ERC20", withdraw: true },
-        { network: "TRC20", withdraw: true },
-        { network: "BEP20", withdraw: true },
-        { network: "SOL", withdraw: true }
-    ];
-}
-
-function getSellNetworks() {
-    return [
-        { network: "ERC20", deposit: true },
-        { network: "TRC20", deposit: true },
-        { network: "BEP20", deposit: true },
-        { network: "SOL", deposit: true }
-    ];
-}
-
-/*
-========================
-ARRIVAL TIME
-========================
-*/
-function estimateArrival(ex) {
-    const speed = {
-        okx: 2,
-        bybit: 3,
+/* arrival time */
+function arrival(exchange) {
+    const map = {
         mexc: 2,
-        kucoin: 4,
-        gateio: 3,
-        bitmart: 5,
+        kucoin: 3,
+        okx: 2,
+        gateio: 4,
         htx: 3
     };
-
-    return speed[ex] || 5;
+    return map[exchange] || 5;
 }
 
-/*
-========================
-NORMALIZER
-========================
-*/
-function normalize(symbol, ex, t) {
+/* ===================== NORMALIZER ===================== */
+
+function normalize(ex, symbol, t) {
+
     let sym = null;
     let price = 0;
     let volume = 0;
@@ -178,67 +110,57 @@ function normalize(symbol, ex, t) {
         volume = +t.volValue || 0;
     }
 
-    if (ex === "bitmart" && symbol.endsWith("_USDT")) {
-        sym = symbol.replace("_USDT", "");
-        price = +t.last_price;
-        volume = +t.quote_volume || 0;
-    }
-
-    if (ex === "okx" && symbol.endsWith("-USDT")) {
+    if (ex === "okx" && symbol.includes("-USDT")) {
         sym = symbol.replace("-USDT", "");
         price = +t.last;
         volume = +t.volCcy24h || 0;
     }
 
-    if (ex === "bybit" && symbol.endsWith("USDT")) {
-        sym = symbol.replace("USDT", "");
-        price = +t.lastPrice;
-        volume = +t.turnover24h || 0;
-    }
+    if (!sym || !price) return null;
 
-    if (!sym || !price || price <= 0) return null;
-
-    return { symbol: sym, price, volume };
+    return { sym, price, volume };
 }
 
-/*
-========================
-OPPORTUNITIES API
-========================
-*/
+/* ===================== OPPORTUNITIES ===================== */
+
 app.get("/api/opportunities", async (req, res) => {
+
     try {
 
         const results = await Promise.all(
-            Object.entries(EXCHANGES).map(([n, u]) => safeGet(u, n))
+            Object.entries(EXCHANGES).map(([n, u]) =>
+                safeGet(u, n)
+            )
         );
 
         const map = {};
         Object.keys(EXCHANGES).forEach(e => map[e] = {});
 
         results.forEach((data, idx) => {
+
             const ex = Object.keys(EXCHANGES)[idx];
             if (!data) return;
 
             let tickers = [];
 
             if (ex === "mexc") tickers = data;
-            else if (ex === "kucoin") tickers = data.data?.ticker || [];
-            else if (ex === "bitmart") tickers = data.data?.tickers || [];
-            else if (ex === "okx") tickers = data.data || [];
-            else if (ex === "bybit") tickers = data.result?.list || [];
-            else if (ex === "gateio") tickers = data || [];
+            if (ex === "kucoin") tickers = data.data?.ticker || [];
+            if (ex === "okx") tickers = data.data || [];
+            if (ex === "gateio") tickers = data || [];
+            if (ex === "htx") tickers = data.data || [];
 
             tickers.forEach(t => {
 
-                const key = t.symbol || t.currency_pair || t.instId || "";
-                const d = normalize(key, ex, t);
+                const key =
+                    t.symbol ||
+                    t.currency_pair ||
+                    t.instId ||
+                    "";
 
-                if (d && d.volume > MIN_VOLUME) {
-                    map[ex][d.symbol] = {
-                        price: d.price,
-                        volume: d.volume
-                    };
+                const d = normalize(ex, key, t);
+
+                if (d && d.volume > 50000) {
+                    map[ex][d.sym] = d;
                 }
             });
         });
@@ -250,52 +172,51 @@ app.get("/api/opportunities", async (req, res) => {
 
         const opportunities = [];
 
-        for (const symbol of symbols) {
+        for (const sym of symbols) {
 
             const prices = {};
 
             Object.keys(map).forEach(ex => {
-                if (map[ex][symbol]) {
-                    prices[ex] = map[ex][symbol];
-                }
+                if (map[ex][sym]) prices[ex] = map[ex][sym];
             });
 
-            const entries = Object.entries(prices);
-            if (entries.length < 2) continue;
+            const arr = Object.entries(prices);
+            if (arr.length < 2) continue;
 
-            entries.sort((a, b) => a[1].price - b[1].price);
+            arr.sort((a, b) => a[1].price - b[1].price);
 
-            const [buyEx, buy] = entries[0];
-            const [sellEx, sell] = entries.at(-1);
+            const [buyEx, buy] = arr[0];
+            const [sellEx, sell] = arr.at(-1);
 
             const spread =
                 ((sell.price - buy.price) / buy.price) * 100;
 
-            if (spread < MIN_PROFIT || spread > MAX_PROFIT) continue;
+            if (spread < MIN_SPREAD || spread > MAX_SPREAD) continue;
 
-            const id = `${symbol}-${buyEx}-${sellEx}`;
+            const id = `${sym}-${buyEx}-${sellEx}`;
 
-            if (!opportunityHistory[id]) opportunityHistory[id] = [];
+            if (!historyStore[id]) historyStore[id] = [];
 
-            opportunityHistory[id].push({
+            historyStore[id].push({
+                spread,
                 time: Date.now(),
-                spread: +spread.toFixed(2),
                 buyPrice: buy.price,
                 sellPrice: sell.price
             });
 
-            if (opportunityHistory[id].length > 25)
-                opportunityHistory[id].shift();
+            if (historyStore[id].length > 30)
+                historyStore[id].shift();
 
-            const history = opportunityHistory[id];
+            const hist = historyStore[id];
 
-            const liquidity = getLiquidity((buy.volume + sell.volume) / 2);
-            const risk = getRisk(spread, liquidity.label);
-            const trend = getTrend(history);
+            const liquidity = liquidityScore((buy.volume + sell.volume) / 2);
 
-            opportunities.push({
+            const risk = riskEngine(spread, liquidity.label);
+
+            const obj = {
+
                 id,
-                symbol,
+                symbol: sym,
 
                 buyExchange: buyEx.toUpperCase(),
                 sellExchange: sellEx.toUpperCase(),
@@ -305,36 +226,32 @@ app.get("/api/opportunities", async (req, res) => {
 
                 spread: spread.toFixed(2),
 
-                liquidity,
+                /* IMPORTANT FIX → flatten values */
+                liquidity: liquidity.label,
+                liquidityScore: liquidity.score,
 
-                risk,
+                riskLevel: risk.level,
+                riskColor: risk.color,
 
-                trend,
-
-                buySide: {
-                    exchange: buyEx.toUpperCase(),
-                    withdrawNetworks: getBuyNetworks()
-                },
-
-                sellSide: {
-                    exchange: sellEx.toUpperCase(),
-                    depositNetworks: getSellNetworks()
-                },
+                trend:
+                    hist.length > 2
+                        ? hist.at(-1).spread > hist[0].spread
+                            ? "UP"
+                            : "DOWN"
+                        : "STABLE",
 
                 arrivalTime: {
-                    buy: estimateArrival(buyEx),
-                    sell: estimateArrival(sellEx)
+                    buy: arrival(buyEx),
+                    sell: arrival(sellEx)
                 },
 
                 tradable: true,
 
-                history
-            });
-        }
+                history: hist
+            };
 
-        opportunities.sort((a, b) =>
-            parseFloat(b.spread) - parseFloat(a.spread)
-        );
+            opportunities.push(obj);
+        }
 
         res.json({
             count: opportunities.length,
@@ -346,63 +263,41 @@ app.get("/api/opportunities", async (req, res) => {
     }
 });
 
-/*
-========================
-DETAIL API
-========================
-*/
+/* ===================== DETAILS API ===================== */
+
 app.get("/api/opportunity/:id", (req, res) => {
 
     const id = req.params.id;
-    const history = opportunityHistory[id] || [];
+    const hist = historyStore[id] || [];
     const p = id.split("-");
-
-    const last = history[history.length - 1];
 
     res.json({
         data: {
+
             id,
             symbol: p[0],
 
             buyExchange: p[1],
             sellExchange: p[2],
 
-            buyPrice: last?.buyPrice || 0,
-            sellPrice: last?.sellPrice || 0,
+            buyPrice: hist.at(-1)?.buyPrice || 0,
+            sellPrice: hist.at(-1)?.sellPrice || 0,
 
             liquidity: "MEDIUM",
-
-            risk: getRisk(last?.spread || 0, "MEDIUM"),
-
-            trend: getTrend(history),
-
-            buySide: {
-                exchange: p[1],
-                withdrawNetworks: getBuyNetworks()
-            },
-
-            sellSide: {
-                exchange: p[2],
-                depositNetworks: getSellNetworks()
-            },
+            risk: { level: "LOW", color: "green" },
 
             arrivalTime: {
-                buy: estimateArrival(p[1]),
-                sell: estimateArrival(p[2])
+                buy: 2,
+                sell: 3
             },
 
-            history,
-
-            tradable: true
+            history: hist
         }
     });
 });
 
-/*
-========================
-PRO SUBSCRIPTION
-========================
-*/
+/* ===================== SUBSCRIPTION ===================== */
+
 app.post("/api/subscribe", (req, res) => {
 
     const { plan } = req.body;
@@ -418,16 +313,13 @@ app.post("/api/subscribe", (req, res) => {
 
     res.json({
         success: true,
-        message: `Subscribed to ${plan} plan`,
+        message: `${plan} activated`,
         price: plans[plan]
     });
 });
 
-/*
-========================
-START SERVER
-========================
-*/
+/* ===================== SERVER ===================== */
+
 app.listen(PORT, () => {
-    console.log("🚀 ArbiMine PRO FULL running on", PORT);
+    console.log("🚀 ArbiMine FIXED running on", PORT);
 });
