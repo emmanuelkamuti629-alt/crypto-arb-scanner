@@ -2,391 +2,197 @@
 <html lang="en">
 <head>
 
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>ArbiMine - Crypto Arbitrage Scanner</title>
+<meta charset="UTF-8"/>
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0"/>
+
+<title>ArbiMine</title>
 
 <style>
-
-:root {
-    --bg-main: #0a0f1e;
-    --bg-card: #111827;
-    --bg-card-hover: #1a2332;
-    --bg-elevated: #1e293b;
-    --border: #1f2937;
-    --border-light: #334155;
-    
-    --accent-primary: #00ffae;
-    --accent-secondary: #7c3aed;
-    --accent-blue: #3b82f6;
-    --accent-cyan: #06b6d4;
-    
-    --text-primary: #f1f5f9;
-    --text-secondary: #cbd5e1;
-    --text-muted: #94a3b8;
-    
-    --success: #10b981;
-    --warning: #f59e0b;
-    --danger: #ef4444;
-    
-    --gradient-1: linear-gradient(135deg, #00ffae 0%, #06b6d4 100%);
-    --gradient-2: linear-gradient(135deg, #7c3aed 0%, #3b82f6 100%);
-    --gradient-profit: linear-gradient(135deg, #10b981 0%, #00ffae 100%);
-}
 
 *{
     margin:0;
     padding:0;
     box-sizing:border-box;
-    font-family: 'Inter', Arial, sans-serif;
+    font-family:Arial,sans-serif;
 }
 
 body{
-    background: var(--bg-main);
-    background-image: 
-        radial-gradient(at 0% 0%, rgba(124, 58, 237, 0.15) 0px, transparent 50%),
-        radial-gradient(at 100% 0%, rgba(0, 255, 174, 0.1) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.1) 0px, transparent 50%);
-    color: var(--text-primary);
-    min-height: 100vh;
+    background:#0b0f19;
+    color:white;
+    padding-bottom:90px;
 }
-
-/*
-==================================================
-HEADER
-==================================================
-*/
 
 header{
-    background: rgba(17, 24, 39, 0.8);
-    backdrop-filter: blur(12px);
-    padding:15px 20px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    position:sticky;
-    top:0;
-    z-index:100;
-    border-bottom:1px solid var(--border);
-}
-
-.logo{
-    font-size:26px;
-    font-weight:800;
-    background: var(--gradient-1);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.nav-buttons{
-    display:flex;
-    gap:10px;
-}
-
-button{
-    border:none;
-    cursor:pointer;
-    transition: all 0.2s ease;
-}
-
-button:active {
-    transform: scale(0.97);
-}
-
-.refresh-btn{
-    background: var(--bg-elevated);
-    color: var(--text-primary);
-    padding:10px 18px;
-    border-radius:8px;
-    border: 1px solid var(--border-light);
-}
-
-.refresh-btn:hover{
-    background: var(--border-light);
-    border-color: var(--accent-blue);
-}
-
-.pro-btn{
-    background: var(--gradient-1);
-    color: #0a0f1e;
-    padding:10px 18px;
-    border-radius:8px;
-    font-weight:bold;
-    box-shadow: 0 4px 20px rgba(0, 255, 174, 0.3);
-}
-
-.pro-btn:hover{
-    box-shadow: 0 6px 30px rgba(0, 255, 174, 0.5);
-    transform: translateY(-1px);
-}
-
-/*
-==================================================
-HERO
-==================================================
-*/
-
-.hero{
-    padding:60px 20px 40px;
+    background:#facc15;
+    color:black;
+    padding:18px;
     text-align:center;
-    position: relative;
+    font-size:28px;
+    font-weight:bold;
 }
 
-.hero h1{
-    font-size:42px;
-    margin-bottom:16px;
-    font-weight: 800;
-    background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-cyan) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.hero p{
-    color: var(--text-secondary);
-    max-width:700px;
-    margin:auto;
-    line-height:1.7;
-    font-size: 16px;
-}
-
-/*
-==================================================
-STATS
-==================================================
-*/
-
-.stats{
-    display:grid;
-    grid-template-columns:
-    repeat(auto-fit,minmax(160px,1fr));
-    gap:15px;
+.auth-container{
     padding:20px;
 }
 
-.stat-box{
-    background: var(--bg-card);
-    padding:24px 20px;
-    border-radius:14px;
-    text-align:center;
-    border:1px solid var(--border);
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
+.auth-box{
+    background:#111827;
+    padding:30px;
+    border-radius:20px;
+    border:1px solid #1f2937;
 }
 
-.stat-box::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: var(--gradient-1);
-    opacity: 0;
-    transition: opacity 0.3s;
+.auth-box h1{
+    margin-bottom:25px;
 }
 
-.stat-box:hover::before {
-    opacity: 1;
+.auth-box input{
+    width:100%;
+    padding:16px;
+    border:none;
+    border-radius:12px;
+    margin-bottom:15px;
+    background:black;
+    color:white;
 }
 
-.stat-box:hover {
-    transform: translateY(-2px);
-    border-color: var(--border-light);
+.auth-box button{
+    width:100%;
+    padding:16px;
+    border:none;
+    border-radius:12px;
+    font-size:18px;
+    font-weight:bold;
+    margin-top:10px;
 }
 
-.stat-box h2{
-    background: var(--gradient-profit);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom:8px;
-    font-size: 32px;
-    font-weight: 700;
+.create-btn{
+    background:#facc15;
+    color:black;
 }
 
-.stat-box p {
-    color: var(--text-muted);
-    font-size: 14px;
+.login-btn{
+    background:#1f2937;
+    color:white;
 }
 
-/*
-==================================================
-SECTION
-==================================================
-*/
-
-.section-title{
-    padding:30px 20px 10px;
-    font-size:28px;
-    font-weight:700;
-    color: var(--text-primary);
+.page{
+    display:none;
 }
 
-/*
-==================================================
-CARDS
-==================================================
-*/
+.page.active{
+    display:block;
+}
 
 #opportunities{
-    padding:20px;
-    display:grid;
-    grid-template-columns:
-    repeat(auto-fit,minmax(340px,1fr));
-    gap:20px;
+    padding:15px;
 }
 
 .card{
-    background: var(--bg-card);
-    border:1px solid var(--border);
-    border-radius:16px;
-    padding:22px;
-    cursor:pointer;
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
+    background:#111827;
+    border:1px solid #1f2937;
+    border-radius:20px;
+    padding:20px;
+    margin-bottom:20px;
 }
 
-.card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: var(--gradient-1);
-    opacity: 0;
-    transition: opacity 0.3s;
-    z-index: 0;
+.buy{
+    color:#22c55e;
+    font-weight:bold;
 }
 
-.card > * {
-    position: relative;
-    z-index: 1;
+.sell{
+    color:#ef4444;
+    font-weight:bold;
 }
 
-.card:hover{
-    transform:translateY(-4px);
-    border-color: var(--accent-primary);
-    box-shadow: 0 12px 40px rgba(0, 255, 174, 0.15);
+.symbol{
+    font-size:38px;
+    font-weight:bold;
+    margin-top:15px;
 }
 
-.card:hover::before {
-    opacity: 0.03;
+.percent{
+    color:#22c55e;
+    font-size:52px;
+    font-weight:bold;
+    margin-top:10px;
 }
 
-.card-top{
-    display:flex;
-    justify-content:space-between;
-    align-items:flex-start;
-}
-
-.card-top h3{
-    margin-bottom:6px;
-    font-size: 18px;
-    color: var(--text-primary);
-}
-
-.card-top p{
-    color: var(--text-muted);
-    font-size:13px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.profit{
-    background: var(--gradient-profit);
-    color: #0a0f1e;
-    padding:10px 14px;
-    border-radius:10px;
-    font-weight:700;
-    font-size: 16px;
-    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
-}
-
-.card-middle{
-    margin-top:18px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-}
-
-.status{
-    padding:6px 12px;
+.badge{
+    background:#f59e0b;
+    color:black;
+    padding:8px 12px;
     border-radius:8px;
-    font-size:11px;
-    font-weight:700;
-    color: #0a0f1e;
-    letter-spacing: 0.5px;
+    font-size:14px;
+    font-weight:bold;
+    display:inline-block;
+    margin-top:10px;
 }
 
 .tradable{
-    background: var(--success);
-    box-shadow: 0 2px 10px rgba(16, 185, 129, 0.4);
+    background:#22c55e;
 }
 
-.unverified{
-    background: var(--warning);
-    box-shadow: 0 2px 10px rgba(245, 158, 11, 0.4);
-}
-
-.card-warning{
-    margin-top:12px;
-    color: var(--warning);
-    font-size:13px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.card-bottom{
-    margin-top:18px;
-    display:flex;
-    justify-content:space-between;
-    color: var(--text-secondary);
-    font-size:14px;
-    padding-top: 15px;
-    border-top: 1px solid var(--border);
-}
-
-.card-bottom span {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.card-bottom span::before {
-    content: attr(data-label);
-    font-size: 11px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/*
-==================================================
-EMPTY
-==================================================
-*/
-
-.empty{
+.warning{
+    margin-top:15px;
+    background:#f59e0b;
+    color:black;
+    padding:15px;
+    border-radius:12px;
+    font-weight:bold;
     text-align:center;
-    color: var(--text-muted);
-    padding:60px 40px;
-    background: var(--bg-card);
-    border-radius: 16px;
-    border: 1px solid var(--border);
 }
 
-/*
-==================================================
-MODALS
-==================================================
-*/
+.bottom-nav{
+    position:fixed;
+    bottom:0;
+    left:0;
+    width:100%;
+    background:#111827;
+    display:flex;
+    justify-content:space-around;
+    padding:15px 0;
+    border-top:1px solid #1f2937;
+}
+
+.bottom-nav button{
+    background:none;
+    border:none;
+    color:#94a3b8;
+    font-size:14px;
+}
+
+.bottom-nav button.active{
+    color:#22c55e;
+}
+
+.profile-card{
+    background:#111827;
+    margin:20px;
+    padding:25px;
+    border-radius:20px;
+}
+
+.profile-card h2{
+    margin-bottom:20px;
+}
+
+.profile-item{
+    margin-bottom:20px;
+}
+
+.logout-btn{
+    width:100%;
+    background:#ef4444;
+    color:white;
+    padding:15px;
+    border:none;
+    border-radius:12px;
+    font-weight:bold;
+}
 
 .modal{
     display:none;
@@ -396,224 +202,69 @@ MODALS
     width:100%;
     height:100%;
     background:rgba(0,0,0,0.9);
-    backdrop-filter: blur(8px);
-    justify-content:center;
-    align-items:center;
     z-index:999;
+    overflow:auto;
     padding:20px;
 }
 
 .modal-content{
-    background: var(--bg-card);
-    width:100%;
-    max-width:900px;
+    background:#111827;
+    padding:25px;
     border-radius:20px;
-    padding:30px;
-    position:relative;
-    max-height:90vh;
-    overflow:auto;
-    border: 1px solid var(--border-light);
-    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
 }
 
 .close{
-    position:absolute;
-    top:20px;
-    right:25px;
-    font-size:32px;
+    float:right;
+    font-size:30px;
     cursor:pointer;
-    color: var(--text-muted);
-    transition: all 0.2s;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 8px;
 }
 
-.close:hover {
-    color: var(--text-primary);
-    background: var(--bg-elevated);
-}
-
-/*
-==================================================
-DETAIL GRID
-==================================================
-*/
-
-.detail-grid{
-    display:grid;
-    grid-template-columns:
-    repeat(auto-fit,minmax(180px,1fr));
-    gap:15px;
-    margin-top:25px;
-}
-
-.detail-box{
-    background: var(--bg-elevated);
-    padding:18px;
+.network{
+    background:#1f2937;
+    padding:15px;
     border-radius:12px;
-    border: 1px solid var(--border);
-}
-
-.detail-box h3{
-    color: var(--accent-primary);
-    font-size:12px;
-    margin-bottom:10px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.detail-box p {
-    color: var(--text-primary);
-    font-size: 16px;
-    font-weight: 600;
-}
-
-/*
-==================================================
-NETWORKS
-==================================================
-*/
-
-.network-box{
-    background: var(--bg-elevated);
-    padding:16px;
-    border-radius:12px;
-    margin-bottom:12px;
-    border: 1px solid var(--border);
-}
-
-.network-box strong{
-    color: var(--accent-cyan);
-    font-size: 15px;
-}
-
-.network-status{
     margin-top:10px;
-    font-size:13px;
-    color: var(--text-secondary);
 }
-
-.open{
-    color: var(--success);
-    font-weight: 600;
-}
-
-.closed{
-    color: var(--danger);
-    font-weight: 600;
-}
-
-/*
-==================================================
-GRAPH
-==================================================
-*/
-
-.graph-bar{
-    display:flex;
-    align-items:center;
-    gap:12px;
-    margin-bottom:12px;
-}
-
-.graph-fill{
-    height:14px;
-    background: var(--gradient-profit);
-    border-radius:20px;
-    box-shadow: 0 2px 8px rgba(0, 255, 174, 0.3);
-}
-
-.graph-label{
-    font-size:13px;
-    color: var(--text-secondary);
-    font-weight: 600;
-    min-width: 60px;
-}
-
-/*
-==================================================
-PRO
-==================================================
-*/
 
 .plan{
-    background: var(--bg-elevated);
-    padding:24px;
-    border-radius:14px;
-    margin-top:20px;
-    border: 1px solid var(--border);
-    transition: all 0.3s;
-}
-
-.plan:hover {
-    border-color: var(--accent-primary);
-    box-shadow: 0 8px 30px rgba(0, 255, 174, 0.1);
-}
-
-.plan h3{
-    margin-bottom:10px;
-    color: var(--text-primary);
+    background:#111827;
+    margin:20px;
+    padding:25px;
+    border-radius:20px;
 }
 
 .plan p{
-    background: var(--gradient-1);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    font-size:32px;
-    font-weight:800;
-    margin-bottom:18px;
+    color:#22c55e;
+    font-size:35px;
+    font-weight:bold;
+    margin:15px 0;
+}
+
+.plan input{
+    width:100%;
+    padding:15px;
+    border:none;
+    border-radius:12px;
+    margin-bottom:15px;
+    background:black;
+    color:white;
 }
 
 .plan button{
     width:100%;
-    padding:14px;
-    border-radius:10px;
-    background: var(--gradient-1);
-    color: #0a0f1e;
-    font-weight:700;
-    font-size: 15px;
-    box-shadow: 0 4px 20px rgba(0, 255, 174, 0.3);
+    padding:15px;
+    border:none;
+    border-radius:12px;
+    background:#22c55e;
+    color:black;
+    font-weight:bold;
 }
 
-.plan button:hover {
-    box-shadow: 0 6px 30px rgba(0, 255, 174, 0.5);
-}
-
-#mpesaNumber{
-    width:100%;
-    padding:16px;
-    border:1px solid var(--border);
-    border-radius:10px;
-    background: var(--bg-elevated);
-    color: var(--text-primary);
-    margin-top:20px;
-    font-size: 15px;
-    transition: all 0.2s;
-}
-
-#mpesaNumber:focus {
-    outline: none;
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 0 3px rgba(0, 255, 174, 0.1);
-}
-
-/*
-==================================================
-FOOTER
-==================================================
-*/
-
-footer{
-    text-align:center;
-    padding:50px 40px;
-    color: var(--text-muted);
-    border-top: 1px solid var(--border);
-    margin-top: 40px;
+.graph-bar{
+    height:12px;
+    background:#22c55e;
+    margin-top:10px;
+    border-radius:20px;
 }
 
 </style>
@@ -624,197 +275,497 @@ footer{
 
 <header>
 
-    <div class="logo">
-        ArbiMine
-    </div>
-
-    <div class="nav-buttons">
-
-        <button class="refresh-btn"
-                onclick="loadOpportunities()">
-            Refresh
-        </button>
-
-        <button class="pro-btn"
-                onclick="openProModal()">
-            GO PRO
-        </button>
-
-    </div>
+🚀 ArbiMine
 
 </header>
 
-<section class="hero">
+<!-- AUTH -->
 
-    <h1>
-        Crypto Arbitrage Scanner
-    </h1>
+<div id="authPage"
+     class="auth-container">
 
-    <p>
-        Scan Binance, Bybit and MEXC
-        for real-time arbitrage opportunities,
-        network availability,
-        deposit and withdrawal status,
-        and live spread tracking.
-    </p>
+    <div class="auth-box">
 
-</section>
+        <h1>
+            Welcome to ArbiMine
+        </h1>
 
-<section class="stats">
+        <input type="text"
+               id="username"
+               placeholder="Username">
 
-    <div class="stat-box">
-        <h2 id="totalOpps">0</h2>
-        <p>Opportunities</p>
+        <input type="email"
+               id="email"
+               placeholder="Email">
+
+        <input type="text"
+               id="mpesa"
+               placeholder="M-Pesa: 2547XXXXXXXX">
+
+        <input type="password"
+               id="password"
+               placeholder="Password">
+
+        <button class="create-btn"
+                onclick="registerUser()">
+
+            Create Account
+
+        </button>
+
+        <button class="login-btn"
+                onclick="loginUser()">
+
+            Login
+
+        </button>
+
     </div>
 
-    <div class="stat-box">
-        <h2 id="highestProfit">0%</h2>
-        <p>Highest Spread</p>
-    </div>
-
-    <div class="stat-box">
-        <h2 id="tradableCount">0</h2>
-        <p>Tradable</p>
-    </div>
-
-    <div class="stat-box">
-        <h2>24/7</h2>
-        <p>Live Scanning</p>
-    </div>
-
-</section>
-
-<div class="section-title">
-    Live Opportunities
 </div>
 
-<div id="opportunities">
-    <div class="empty">
-        Loading opportunities...
-    </div>
-</div>
+<!-- MAIN -->
 
-<!-- DETAILS MODAL -->
-<div id="detailsModal" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="closeModal()">&times;</span>
-        <div id="detailsContent"></div>
-    </div>
-</div>
+<div id="mainApp"
+     style="display:none;">
 
-<!-- PRO MODAL -->
-<div id="proModal" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="closeProModal()">&times;</span>
-        <h2>Upgrade To Pro</h2>
+    <!-- HOME -->
+
+    <div id="homePage"
+         class="page active">
+
+        <div id="opportunities">
+
+        </div>
+
+    </div>
+
+    <!-- PRO -->
+
+    <div id="proPage"
+         class="page">
 
         <div class="plan">
-            <h3>Weekly Plan</h3>
-            <p>KES 100</p>
-            <button onclick="paySubscription('weekly', 100)">
+
+            <h2>
+                Weekly Plan
+            </h2>
+
+            <p>
+                KES 100
+            </p>
+
+            <input type="text"
+                   id="weeklyPhone"
+                   placeholder="2547XXXXXXXX">
+
+            <button onclick="
+                pay(
+                    'weekly',
+                    100,
+                    'weeklyPhone'
+                )
+            ">
+
                 Pay Weekly
+
             </button>
+
         </div>
 
         <div class="plan">
-            <h3>Monthly Plan</h3>
-            <p>KES 350</p>
-            <button onclick="paySubscription('monthly', 350)">
+
+            <h2>
+                Monthly Plan
+            </h2>
+
+            <p>
+                KES 350
+            </p>
+
+            <input type="text"
+                   id="monthlyPhone"
+                   placeholder="2547XXXXXXXX">
+
+            <button onclick="
+                pay(
+                    'monthly',
+                    350,
+                    'monthlyPhone'
+                )
+            ">
+
                 Pay Monthly
+
             </button>
+
         </div>
 
-        <input type="text" id="mpesaNumber" placeholder="Enter M-Pesa Number"/>
     </div>
+
+    <!-- PROFILE -->
+
+    <div id="profilePage"
+         class="page">
+
+        <div class="profile-card">
+
+            <h2>
+                My Profile
+            </h2>
+
+            <div class="profile-item">
+
+                Username:
+
+                <h3 id="pUsername"></h3>
+
+            </div>
+
+            <div class="profile-item">
+
+                Email:
+
+                <h3 id="pEmail"></h3>
+
+            </div>
+
+            <div class="profile-item">
+
+                M-Pesa:
+
+                <h3 id="pMpesa"></h3>
+
+            </div>
+
+            <button class="logout-btn"
+                    onclick="logoutUser()">
+
+                Logout
+
+            </button>
+
+        </div>
+
+    </div>
+
+    <!-- NAV -->
+
+    <div class="bottom-nav">
+
+        <button class="active"
+                onclick="
+                switchPage(
+                    'homePage',
+                    this
+                )">
+
+            Home
+
+        </button>
+
+        <button onclick="
+            switchPage(
+                'proPage',
+                this
+            )">
+
+            Pro
+
+        </button>
+
+        <button onclick="
+            switchPage(
+                'profilePage',
+                this
+            )">
+
+            Profile
+
+        </button>
+
+    </div>
+
 </div>
 
-<footer>
-    © 2026 ArbiMine. All Rights Reserved.
-</footer>
+<!-- DETAILS -->
+
+<div id="detailsModal"
+     class="modal">
+
+    <div class="modal-content">
+
+        <span class="close"
+              onclick="closeModal()">
+
+            ×
+
+        </span>
+
+        <div id="detailsContent"></div>
+
+    </div>
+
+</div>
 
 <script>
 
-const API = "https://crypto-arb-scanner-1.onrender.com";
+const API =
+'https://crypto-arb-scanner-1.onrender.com';
 
 /*
 ==================================================
-LOAD
+REGISTER
 ==================================================
 */
 
-async function loadOpportunities(){
-    try{
-        const res = await fetch(`${API}/api/opportunities`);
-        const json = await res.json();
-        renderOpportunities(json.opportunities || []);
-    }catch(err){
-        console.log(err);
-        document.getElementById("opportunities").innerHTML = `
-            <div class="empty">
-                Failed to load opportunities
-            </div>
-        `;
-    }
+function registerUser(){
+
+    const user = {
+
+        username:
+            document.getElementById(
+                'username'
+            ).value,
+
+        email:
+            document.getElementById(
+                'email'
+            ).value,
+
+        mpesa:
+            document.getElementById(
+                'mpesa'
+            ).value,
+
+        password:
+            document.getElementById(
+                'password'
+            ).value
+    };
+
+    localStorage.setItem(
+        'arbimine_user',
+        JSON.stringify(user)
+    );
+
+    loginUser();
 }
 
 /*
 ==================================================
-RENDER
+LOGIN
 ==================================================
 */
 
-function renderOpportunities(opps){
-    const container = document.getElementById("opportunities");
+function loginUser(){
 
-    if(!opps.length){
-        container.innerHTML = `
-            <div class="empty">
-                No opportunities found
-            </div>
-        `;
+    const user =
+        JSON.parse(
+            localStorage.getItem(
+                'arbimine_user'
+            )
+        );
+
+    if(!user){
+
+        alert(
+            'Create account first'
+        );
+
         return;
     }
 
-    opps.sort((a,b) => b.spread - a.spread);
+    document.getElementById(
+        'authPage'
+    ).style.display = 'none';
 
-    document.getElementById("totalOpps").innerText = opps.length;
-    document.getElementById("highestProfit").innerText = opps[0].spread.toFixed(2) + "%";
-    const tradable = opps.filter(x => x.tradable).length;
-    document.getElementById("tradableCount").innerText = tradable;
+    document.getElementById(
+        'mainApp'
+    ).style.display = 'block';
 
-    container.innerHTML = opps.map(item => `
-        <div class="card" onclick='openOpportunity(${JSON.stringify(item)})'>
-            <div class="card-top">
-                <div>
-                    <h3>${item.symbol}</h3>
-                    <p>${item.buyExchange} → ${item.sellExchange}</p>
-                </div>
-                <div class="profit">
-                    ${item.spread.toFixed(2)}%
-                </div>
+    document.getElementById(
+        'pUsername'
+    ).innerText =
+        user.username;
+
+    document.getElementById(
+        'pEmail'
+    ).innerText =
+        user.email;
+
+    document.getElementById(
+        'pMpesa'
+    ).innerText =
+        user.mpesa;
+
+    loadOpportunities();
+}
+
+/*
+==================================================
+AUTO LOGIN
+==================================================
+*/
+
+window.onload = ()=>{
+
+    if(
+        localStorage.getItem(
+            'arbimine_user'
+        )
+    ){
+        loginUser();
+    }
+};
+
+/*
+==================================================
+LOGOUT
+==================================================
+*/
+
+function logoutUser(){
+
+    localStorage.removeItem(
+        'arbimine_user'
+    );
+
+    location.reload();
+}
+
+/*
+==================================================
+PAGES
+==================================================
+*/
+
+function switchPage(
+    pageId,
+    btn
+){
+
+    document
+    .querySelectorAll('.page')
+    .forEach(page=>{
+
+        page.classList.remove(
+            'active'
+        );
+    });
+
+    document
+    .getElementById(pageId)
+    .classList.add('active');
+
+    document
+    .querySelectorAll(
+        '.bottom-nav button'
+    )
+    .forEach(button=>{
+
+        button.classList.remove(
+            'active'
+        );
+    });
+
+    btn.classList.add('active');
+}
+
+/*
+==================================================
+LOAD OPPS
+==================================================
+*/
+
+async function loadOpportunities(){
+
+    const res =
+        await fetch(
+            `${API}/api/opportunities`
+        );
+
+    const json =
+        await res.json();
+
+    const opps =
+        json.opportunities || [];
+
+    const container =
+        document.getElementById(
+            'opportunities'
+        );
+
+    container.innerHTML =
+        opps.map(item=>`
+
+        <div class="card"
+             onclick='openDetails(
+                ${JSON.stringify(item)}
+             )'>
+
+            <div>
+
+                <span class="buy">
+
+                    BUY
+
+                </span>
+
+                ${item.buyExchange}
+
+                $${item.buyPrice}
+
             </div>
 
-            <div class="card-middle">
-                <div class="status ${item.tradable? 'tradable' : 'unverified'}">
-                    ${item.tradable? 'TRADABLE' : 'UNVERIFIED'}
-                </div>
-                <div style="color:var(--text-muted); font-size:13px;">
-                    ${item.coin}
-                </div>
+            <div style="
+                margin-top:8px;
+            ">
+
+                <span class="sell">
+
+                    SELL
+
+                </span>
+
+                ${item.sellExchange}
+
+                $${item.sellPrice}
+
             </div>
 
-            ${!item.tradable? `
-                <div class="card-warning">
-                    ⚠ Check manually
-                </div>
-            ` : ""}
+            <div class="symbol">
 
-            <div class="card-bottom">
-                <span data-label="Buy">${item.buyPrice}</span>
-                <span data-label="Sell">${item.sellPrice}</span>
+                ${item.symbol}
+
             </div>
+
+            <div class="
+                badge
+                ${
+                    item.tradable
+                    ? 'tradable'
+                    : ''
+                }
+            ">
+
+                ${
+                    item.tradable
+                    ? 'TRADABLE'
+                    : 'UNVERIFIED'
+                }
+
+            </div>
+
+            <div class="percent">
+
+                ${item.spread}%
+
+            </div>
+
         </div>
-    `).join("");
+
+    `).join('');
 }
 
 /*
@@ -823,199 +774,193 @@ DETAILS
 ==================================================
 */
 
-async function openOpportunity(item){
-    try{
-        const res = await fetch(`${API}/api/opportunity/${item.id}`);
-        const json = await res.json();
-        const data = json.data;
-        if(!data) return;
+async function openDetails(item){
 
-        document.getElementById("detailsModal").style.display = "flex";
+    const res =
+        await fetch(
+            `${API}/api/opportunity/${item.id}`
+        );
 
-        let trend = "Stable";
-        if(data.history && data.history.length >= 2){
-            const first = data.history[0].spread;
-            const last = data.history[data.history.length - 1].spread;
-            if(last > first) trend = "Increasing";
-            else if(last < first) trend = "Decreasing";
-        }
+    const json =
+        await res.json();
 
-        const buyNetworks = data.networks?.buy || [];
-        const sellNetworks = data.networks?.sell || [];
+    const data =
+        json.data;
 
-        const buyHTML = buyNetworks.map(net => `
-            <div class="network-box">
-                <strong>${net.network}</strong>
-                <div class="network-status">
-                    Deposit: <span class="${net.depositEnable? 'open' : 'closed'}">
-                        ${net.depositEnable? 'Open' : 'Suspended'}
-                    </span>
-                </div>
-                <div class="network-status">
-                    Withdraw: <span class="${net.withdrawEnable? 'open' : 'closed'}">
-                        ${net.withdrawEnable? 'Open' : 'Suspended'}
-                    </span>
-                </div>
-                <div class="network-status">
-                    Fee: ${net.withdrawFee || 'Unknown'}
-                </div>
-            </div>
-        `).join("");
+    document.getElementById(
+        'detailsModal'
+    ).style.display = 'block';
 
-        const sellHTML = sellNetworks.map(net => `
-            <div class="network-box">
-                <strong>${net.network}</strong>
-                <div class="network-status">
-                    Deposit: <span class="${net.depositEnable? 'open' : 'closed'}">
-                        ${net.depositEnable? 'Open' : 'Suspended'}
-                    </span>
-                </div>
-                <div class="network-status">
-                    Withdraw: <span class="${net.withdrawEnable? 'open' : 'closed'}">
-                        ${net.withdrawEnable? 'Open' : 'Suspended'}
-                    </span>
-                </div>
-                <div class="network-status">
-                    Fee: ${net.withdrawFee || 'Unknown'}
-                </div>
-            </div>
-        `).join("");
+    document.getElementById(
+        'detailsContent'
+    ).innerHTML = `
 
-        const graph = data.history.map(point => `
-            <div class="graph-bar">
-                <div class="graph-fill" style="width: ${point.spread * 12}px;"></div>
-                <div class="graph-label">${point.spread}%</div>
-            </div>
-        `).join("");
+        <h1>
 
-        document.getElementById("detailsContent").innerHTML = `
-            <h2>${data.symbol}</h2>
-            <div style="margin-top:15px;">
-                <span class="status ${data.tradable? 'tradable' : 'unverified'}">
-                    ${data.tradable? 'TRADABLE' : 'UNVERIFIED'}
-                </span>
-            </div>
-            ${!data.tradable? `
-                <div style="margin-top:15px; color:var(--warning);">
-                    ⚠ Unverified, check manually
-                </div>
-            ` : ""}
+            ${data.symbol}
 
-            <div class="detail-grid">
-                <div class="detail-box">
-                    <h3>Buy Exchange</h3>
-                    <p>${data.buyExchange}</p>
-                </div>
-                <div class="detail-box">
-                    <h3>Sell Exchange</h3>
-                    <p>${data.sellExchange}</p>
-                </div>
-                <div class="detail-box">
-                    <h3>Spread</h3>
-                    <p>${data.spread}%</p>
-                </div>
-                <div class="detail-box">
-                    <h3>Estimated Profit</h3>
-                    <p>$${data.estimatedProfit}</p>
-                </div>
-                <div class="detail-box">
-                    <h3>Buy Price</h3>
-                    <p>${data.buyPrice}</p>
-                </div>
-                <div class="detail-box">
-                    <h3>Sell Price</h3>
-                    <p>${data.sellPrice}</p>
-                </div>
-                <div class="detail-box">
-                    <h3>Trend</h3>
-                    <p>${trend}</p>
-                </div>
-                <div class="detail-box">
-                    <h3>History Points</h3>
-                    <p>${data.history?.length || 0}</p>
-                </div>
-            </div>
+        </h1>
 
-            <div style="margin-top:30px;">
-                <h3 style="color:var(--accent-primary); margin-bottom:15px;">
-                    Buy Exchange Networks
-                </h3>
-                ${buyHTML || "No networks found"}
-            </div>
+        <div style="
+            margin-top:20px;
+        ">
 
-            <div style="margin-top:30px;">
-                <h3 style="color:var(--accent-primary); margin-bottom:15px;">
-                    Sell Exchange Networks
-                </h3>
-                ${sellHTML || "No networks found"}
-            </div>
+            <h2>
+                Buy:
+                ${data.buyExchange}
+            </h2>
 
-            <div style="margin-top:30px;">
-                <h3 style="color:var(--accent-primary); margin-bottom:15px;">
-                    Opportunity History
-                </h3>
-                ${graph || "No history data"}
-            </div>
-        `;
-    }catch(err){
-        console.log(err);
-        alert("Failed to load details");
-    }
+            <p>
+                Price:
+                $${data.buyPrice}
+            </p>
+
+        </div>
+
+        <div style="
+            margin-top:20px;
+        ">
+
+            <h2>
+                Sell:
+                ${data.sellExchange}
+            </h2>
+
+            <p>
+                Price:
+                $${data.sellPrice}
+            </p>
+
+        </div>
+
+        <div style="
+            margin-top:20px;
+        ">
+
+            <h2>
+                Networks
+            </h2>
+
+            ${
+                data.networks.buy.map(net=>`
+
+                <div class="network">
+
+                    <strong>
+                        ${net.network}
+                    </strong>
+
+                    <p>
+
+                        Deposit:
+                        ${
+                            net.depositEnable
+                            ? 'Open'
+                            : 'Closed'
+                        }
+
+                    </p>
+
+                    <p>
+
+                        Withdraw:
+                        ${
+                            net.withdrawEnable
+                            ? 'Open'
+                            : 'Closed'
+                        }
+
+                    </p>
+
+                </div>
+
+                `).join('')
+            }
+
+        </div>
+
+        <div style="
+            margin-top:25px;
+        ">
+
+            <h2>
+                Spread History
+            </h2>
+
+            ${
+                data.history.map(h=>`
+
+                <div class="graph-bar"
+                     style="
+                     width:
+                     ${h.spread * 10}px;
+                     ">
+                </div>
+
+                `).join('')
+            }
+
+        </div>
+
+    `;
 }
-
-/*
-==================================================
-MODALS
-==================================================
-*/
 
 function closeModal(){
-    document.getElementById("detailsModal").style.display = "none";
-}
 
-function openProModal(){
-    document.getElementById("proModal").style.display = "flex";
-}
-
-function closeProModal(){
-    document.getElementById("proModal").style.display = "none";
+    document.getElementById(
+        'detailsModal'
+    ).style.display = 'none';
 }
 
 /*
 ==================================================
-PAYMENT
+PAY
 ==================================================
 */
 
-async function paySubscription(plan, amount){
-    const phone = document.getElementById("mpesaNumber").value;
-    if(!phone){
-        alert("Enter M-Pesa number");
-        return;
-    }
+async function pay(
+    plan,
+    amount,
+    inputId
+){
 
-    try{
-        const res = await fetch(`${API}/api/pesapal/pay`, {
-            method:"POST",
-            headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({phone, amount, plan})
-        });
-        const data = await res.json();
-        alert(data.message || "STK Push Sent");
-    }catch(err){
-        console.log(err);
-        alert("Payment failed");
-    }
+    const phone =
+        document.getElementById(
+            inputId
+        ).value;
+
+    const res =
+        await fetch(
+            `${API}/api/pesapal/pay`,
+            {
+                method:'POST',
+
+                headers:{
+                    'Content-Type':
+                    'application/json'
+                },
+
+                body:JSON.stringify({
+
+                    phone,
+                    amount,
+                    plan
+                })
+            }
+        );
+
+    const data =
+        await res.json();
+
+    alert(
+        data.message
+    );
 }
 
-/*
-==================================================
-AUTO LOAD
-==================================================
-*/
-
-loadOpportunities();
-setInterval(loadOpportunities, 10000);
+setInterval(
+    loadOpportunities,
+    10000
+);
 
 </script>
 
