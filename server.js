@@ -8,23 +8,40 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 
-/**
- * ---------------------------
- * EXCHANGE ADAPTERS
- * ---------------------------
- * Each exchange has different API structure.
- * We ONLY map real API responses.
- */
+// ---------- ANSI Color Codes ----------
+const colors = {
+  reset: "\x1b[0m",
+  bright: "\x1b[1m",
+  green: "\x1b[32m",
+  red: "\x1b[31m",
+  yellow: "\x1b[33m",
+  cyan: "\x1b[36m",
+  magenta: "\x1b[35m"
+};
+
+function logSuccess(msg) {
+  console.log(`${colors.green}✅ ${msg}${colors.reset}`);
+}
+function logError(msg) {
+  console.log(`${colors.red}❌ ${msg}${colors.reset}`);
+}
+function logInfo(msg) {
+  console.log(`${colors.cyan}ℹ️ ${msg}${colors.reset}`);
+}
+function logWarn(msg) {
+  console.log(`${colors.yellow}⚠️ ${msg}${colors.reset}`);
+}
 
 /* =========================
    BINANCE STYLE (if needed later)
 ========================= */
 async function getBinanceAssets() {
   try {
+    logInfo("Fetching Binance assets...");
     const res = await axios.get(
       "https://api.binance.com/sapi/v1/capital/config/getall"
     );
-
+    logSuccess(`Binance: ${res.data.length} assets loaded`);
     return res.data.map(asset => ({
       exchange: "binance",
       coin: asset.coin,
@@ -38,6 +55,7 @@ async function getBinanceAssets() {
       }))
     }));
   } catch (err) {
+    logError(`Binance failed: ${err.message}`);
     return [];
   }
 }
@@ -47,11 +65,13 @@ async function getBinanceAssets() {
 ========================= */
 async function getHuobiAssets() {
   try {
+    logInfo("Fetching Huobi assets...");
     const res = await axios.get(
       "https://api.huobi.pro/v2/reference/currencies"
     );
-
-    return res.data.data.map(c => ({
+    const data = res.data.data;
+    logSuccess(`Huobi: ${data.length} assets loaded`);
+    return data.map(c => ({
       exchange: "huobi",
       coin: c.currency,
       deposit: c.deposit_status === "allowed",
@@ -63,20 +83,21 @@ async function getHuobiAssets() {
       }))
     }));
   } catch (err) {
+    logError(`Huobi failed: ${err.message}`);
     return [];
   }
 }
 
 /* =========================
    BITFINEX
-   (limited network data publicly)
 ========================= */
 async function getBitfinexAssets() {
   try {
+    logInfo("Fetching Bitfinex assets...");
     const res = await axios.get("https://api-pub.bitfinex.com/v2/conf/pub:info:tx:stat");
-
-    // Bitfinex is limited → normalize safely
-    return Object.keys(res.data[0] || {}).map(coin => ({
+    const coins = Object.keys(res.data[0] || {});
+    logSuccess(`Bitfinex: ${coins.length} assets loaded (limited data)`);
+    return coins.map(coin => ({
       exchange: "bitfinex",
       coin,
       deposit: true,
@@ -84,6 +105,7 @@ async function getBitfinexAssets() {
       networks: []
     }));
   } catch (err) {
+    logError(`Bitfinex failed: ${err.message}`);
     return [];
   }
 }
@@ -93,9 +115,11 @@ async function getBitfinexAssets() {
 ========================= */
 async function getPoloniexAssets() {
   try {
+    logInfo("Fetching Poloniex assets...");
     const res = await axios.get("https://api.poloniex.com/markets/currencies");
-
-    return res.data.map(c => ({
+    const data = res.data;
+    logSuccess(`Poloniex: ${data.length} assets loaded`);
+    return data.map(c => ({
       exchange: "poloniex",
       coin: c.currency,
       deposit: c.depositStatus === "ENABLED",
@@ -107,6 +131,7 @@ async function getPoloniexAssets() {
       }))
     }));
   } catch (err) {
+    logError(`Poloniex failed: ${err.message}`);
     return [];
   }
 }
@@ -116,9 +141,11 @@ async function getPoloniexAssets() {
 ========================= */
 async function getUpbitAssets() {
   try {
+    logInfo("Fetching Upbit assets...");
     const res = await axios.get("https://api.upbit.com/v1/withdraws/chance");
-
-    return (res.data.currency || []).map(c => ({
+    const data = res.data.currency || [];
+    logSuccess(`Upbit: ${data.length} assets loaded`);
+    return data.map(c => ({
       exchange: "upbit",
       coin: c.code,
       deposit: c.deposit_status === "working",
@@ -130,20 +157,23 @@ async function getUpbitAssets() {
       }))
     }));
   } catch (err) {
+    logError(`Upbit failed: ${err.message}`);
     return [];
   }
 }
 
 /* =========================
-   CRYPTO.COM (simplified public endpoint)
+   CRYPTO.COM
 ========================= */
 async function getCryptoComAssets() {
   try {
+    logInfo("Fetching Crypto.com assets...");
     const res = await axios.get(
       "https://crypto.com/exchange/api/v1/public/get-instruments"
     );
-
-    return (res.data.result?.instruments || []).map(i => ({
+    const data = res.data.result?.instruments || [];
+    logSuccess(`Crypto.com: ${data.length} assets loaded`);
+    return data.map(i => ({
       exchange: "crypto.com",
       coin: i.base_ccy,
       deposit: true,
@@ -151,6 +181,7 @@ async function getCryptoComAssets() {
       networks: []
     }));
   } catch (err) {
+    logError(`Crypto.com failed: ${err.message}`);
     return [];
   }
 }
@@ -161,6 +192,8 @@ async function getCryptoComAssets() {
  * ---------------------------
  */
 app.get("/api/exchanges/assets", async (req, res) => {
+  const start = Date.now();
+  logInfo("Starting full asset scan...");
   try {
     const results = await Promise.all([
       getHuobiAssets(),
@@ -171,6 +204,8 @@ app.get("/api/exchanges/assets", async (req, res) => {
     ]);
 
     const merged = results.flat();
+    const duration = ((Date.now() - start) / 1000).toFixed(2);
+    logSuccess(`Scan completed in ${duration}s → ${merged.length} asset entries`);
 
     res.json({
       success: true,
@@ -178,6 +213,7 @@ app.get("/api/exchanges/assets", async (req, res) => {
       data: merged
     });
   } catch (err) {
+    logError(`Master scan failed: ${err.message}`);
     res.status(500).json({
       success: false,
       error: err.message
@@ -189,10 +225,10 @@ app.get("/api/exchanges/assets", async (req, res) => {
  * ---------------------------
  * OPPORTUNITIES (FIXED FORMAT)
  * ---------------------------
- * Ensures frontend never sees [object Object]
  */
 app.get("/api/opportunities", async (req, res) => {
   try {
+    logInfo("Generating opportunities...");
     const data = await axios.get(
       `http://localhost:${PORT}/api/exchanges/assets`
     );
@@ -215,12 +251,15 @@ app.get("/api/opportunities", async (req, res) => {
         arbitrage: "calculated_client_side"
       }));
 
+    logSuccess(`Found ${opportunities.length} coins with multiple exchanges`);
+
     res.json({
       success: true,
       count: opportunities.length,
       opportunities
     });
   } catch (err) {
+    logError(`Opportunities endpoint error: ${err.message}`);
     res.status(500).json({
       success: false,
       error: err.message
@@ -234,6 +273,7 @@ app.get("/api/opportunities", async (req, res) => {
  * ---------------------------
  */
 app.get("/", (req, res) => {
+  logInfo("Health check hit");
   res.json({
     status: "Arbimine API Live (REAL DATA MODE)",
     time: new Date().toISOString()
@@ -241,5 +281,5 @@ app.get("/", (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`\n${colors.bright}${colors.magenta}🚀 Server running on port ${PORT}${colors.reset}\n`);
 });
