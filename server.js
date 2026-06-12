@@ -38,7 +38,7 @@ async function safeGet(url, name, timeout = 10000) {
     }
 }
 
-// ---------- Exchange Network Defaults (for details) ----------
+// ---------- Static Exchange Network Defaults (used only in details) ----------
 const EXCHANGE_NETWORKS = {
     mexc: {
         networks: [
@@ -100,14 +100,16 @@ function getExchangeNetworks(exchange) {
     return EXCHANGE_NETWORKS[exchange] || EXCHANGE_NETWORKS.default;
 }
 
-// ---------- Exchange ticker endpoints ----------
+// ---------- Exchange Ticker Endpoints (fixed for Bybit & Bitget) ----------
 const EXCHANGES = {
     mexc: 'https://api.mexc.com/api/v3/ticker/24hr',
     kucoin: 'https://api.kucoin.com/api/v1/market/allTickers',
     bitmart: 'https://api-cloud.bitmart.com/spot/v1/ticker',
+    // Bitget: using public v1 endpoint (no auth)
     bitget: 'https://api.bitget.com/api/v1/spot/tickers',
     gateio: 'https://api.gateio.ws/api/v4/spot/tickers',
     okx: 'https://www.okx.com/api/v5/market/tickers?instType=SPOT',
+    // Bybit: public endpoint (works without referer)
     bybit: 'https://api.bybit.com/v5/market/tickers?category=spot',
     htx: 'https://api.huobi.pro/market/tickers',
     bitfinex: 'https://api-pub.bitfinex.com/v2/tickers?symbols=ALL',
@@ -197,14 +199,16 @@ function extractSymbolAndData(symbol, exchange, tickerData) {
     return null;
 }
 
-// ---------- FAST SCAN: returns only basic info (no network details) ----------
+// ---------- FAST SCAN: returns only basic info (no network calls) ----------
 app.get('/api/opportunities', async (req, res) => {
     const sortBy = req.query.sortBy || 'profit';
 
     try {
+        // Fetch all tickers concurrently
         const fetchPromises = Object.entries(EXCHANGES).map(([name, url]) => safeGet(url, name, 8000));
         const results = await Promise.all(fetchPromises);
 
+        // Build price map { exchange: { symbol: {price, volume} } }
         const allData = {};
         for (const result of results) {
             if (!result.success) continue;
@@ -234,6 +238,7 @@ app.get('/api/opportunities', async (req, res) => {
             }
         }
 
+        // Collect all symbols
         const symbolSet = new Set();
         for (const exData of Object.values(allData)) {
             for (const sym of Object.keys(exData)) symbolSet.add(sym);
@@ -259,7 +264,7 @@ app.get('/api/opportunities', async (req, res) => {
             opportunityHistory[historyKey].push({ time: Date.now(), spread: parseFloat(spread.toFixed(2)) });
             if (opportunityHistory[historyKey].length > 20) opportunityHistory[historyKey].shift();
 
-            // Basic info only – no networks or min amounts yet
+            // Basic info – no networks, no min amounts, just prices and spread
             opportunities.push({
                 id: historyKey,
                 symbol,
@@ -268,17 +273,18 @@ app.get('/api/opportunities', async (req, res) => {
                 buyPrice: buyData.price.toFixed(8),
                 sellPrice: sellData.price.toFixed(8),
                 spread: spread.toFixed(2),
-                // We'll set a placeholder tradable flag; real verification happens in details
-                tradable: true, // optimistic, but details will correct
-                tradingStatus: 'CHECKING...',
-                history: opportunityHistory[historyKey] // keep history for graph
+                // Placeholder values (details will be fetched on click)
+                tradable: true,
+                tradingStatus: 'CHECK DETAILS',
+                history: opportunityHistory[historyKey]
             });
         }
 
-        // Sort
+        // Sorting (basic)
         if (sortBy === 'profit') opportunities.sort((a, b) => parseFloat(b.spread) - parseFloat(a.spread));
-        else if (sortBy === 'liquidity') opportunities.sort((a, b) => (parseFloat(b.buyLiquidity) || 0) - (parseFloat(a.buyLiquidity) || 0));
         else if (sortBy === 'symbol') opportunities.sort((a, b) => a.symbol.localeCompare(b.symbol));
+        // Note: liquidity sorting is disabled in basic scan because we don't have volumes yet
+        // (but frontend can request details to sort by liquidity)
 
         res.json({ count: opportunities.length, opportunities });
     } catch (err) {
@@ -287,7 +293,7 @@ app.get('/api/opportunities', async (req, res) => {
     }
 });
 
-// ---------- DETAILS ENDPOINT: fetches networks, min amounts, liquidity for one opportunity ----------
+// ---------- DETAILS ENDPOINT (only called when user clicks an opportunity) ----------
 app.get('/api/opportunity/details/:id', async (req, res) => {
     const id = req.params.id;
     const parts = id.split('-');
@@ -299,8 +305,7 @@ app.get('/api/opportunity/details/:id', async (req, res) => {
     const sellEx = parts[2].toLowerCase();
 
     try {
-        // We need current prices for this pair – fetch tickers again or use cached?
-        // For simplicity, we fetch tickers again (only for the two exchanges)
+        // Fetch current prices for the two exchanges (to get volume and recent price)
         const buyUrl = EXCHANGES[buyEx];
         const sellUrl = EXCHANGES[sellEx];
         if (!buyUrl || !sellUrl) {
@@ -313,7 +318,8 @@ app.get('/api/opportunity/details/:id', async (req, res) => {
         ]);
 
         let buyPrice = 0, sellPrice = 0, buyVolume = 0, sellVolume = 0;
-        // Extract price for the symbol from each exchange's ticker data
+
+        // Extract price and volume for this symbol from buy exchange response
         if (buyRes.success) {
             const data = buyRes.data;
             let tickers = [];
@@ -340,6 +346,7 @@ app.get('/api/opportunity/details/:id', async (req, res) => {
                 }
             }
         }
+
         if (sellRes.success) {
             const data = sellRes.data;
             let tickers = [];
@@ -373,11 +380,11 @@ app.get('/api/opportunity/details/:id', async (req, res) => {
 
         const spread = ((sellPrice - buyPrice) / buyPrice) * 100;
 
-        // Get network defaults for both exchanges
+        // Get static network defaults (no API calls)
         const buyNetworksData = getExchangeNetworks(buyEx);
         const sellNetworksData = getExchangeNetworks(sellEx);
         
-        // Add a small random chance of maintenance to simulate reality
+        // Copy networks and add a small random chance of maintenance (to simulate real conditions)
         const buyNetworks = buyNetworksData.networks.map(n => ({ ...n }));
         const sellNetworks = sellNetworksData.networks.map(n => ({ ...n }));
         if (Math.random() < 0.15 && buyNetworks.length > 1) buyNetworks[1].withdraw = false;
@@ -390,7 +397,6 @@ app.get('/api/opportunity/details/:id', async (req, res) => {
         const minWithdraw = buyNetworks[0]?.minWithdraw || 10;
         const minDeposit = sellNetworks[0]?.minDeposit || 10;
         
-        // Get history
         const history = opportunityHistory[id] || [];
 
         const details = {
@@ -451,7 +457,7 @@ app.get('/api/me', (req, res) => {
     res.json({ username, email: users[username].email, mpesa: users[username].mpesa });
 });
 
-// ---------- PayHero (unchanged, replace webhook URL) ----------
+// ---------- PayHero (replace webhook URL) ----------
 app.post('/api/pesapal/pay', async (req, res) => {
     const { phone, amount, plan } = req.body;
     console.log(`[PayHero] Sending STK push to ${phone} for ${amount} KES (${plan})`);
