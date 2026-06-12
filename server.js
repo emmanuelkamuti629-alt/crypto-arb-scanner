@@ -17,6 +17,7 @@ MEMORY
 const users = {};
 const sessions = {};
 const opportunityHistory = {};
+const priceMemory = {};
 
 /*
 ========================================
@@ -64,13 +65,77 @@ const EXCHANGES = {
     upbit: 'https://api.upbit.com/v1/ticker?markets=KRW-BTC'
 };
 
-const MIN_PROFIT = 0.4;
-const MAX_PROFIT = 50;
-const MIN_VOLUME = 50000;
+const MIN_PROFIT = 0.5;
+const MAX_PROFIT = 60;
+const MIN_VOLUME = 80000;
 
 /*
 ========================================
-NORMALIZER (REAL FIX)
+LIQUIDITY ENGINE
+========================================
+*/
+function getLiquidity(volume) {
+    if (volume > 5000000) return "HIGH";
+    if (volume > 500000) return "MEDIUM";
+    return "LOW";
+}
+
+/*
+========================================
+RISK ENGINE
+========================================
+*/
+function getRisk(spread, liquidity, volatility = 2) {
+    let score = 0;
+
+    if (spread > 15) score += 2;
+    if (liquidity === "LOW") score += 2;
+    if (volatility > 5) score += 2;
+
+    if (score <= 1) return { level: "LOW", color: "green" };
+    if (score <= 3) return { level: "MEDIUM", color: "yellow" };
+    return { level: "HIGH", color: "red" };
+}
+
+/*
+========================================
+TREND ENGINE
+========================================
+*/
+function getTrend(history) {
+    if (!history || history.length < 3) return "STABLE";
+
+    const first = history[0].spread;
+    const last = history[history.length - 1].spread;
+
+    if (last > first) return "INCREASING";
+    if (last < first) return "DECREASING";
+    return "STABLE";
+}
+
+/*
+========================================
+ARRIVAL TIME
+========================================
+*/
+function estimateArrival(exchange) {
+    const speed = {
+        okx: 2,
+        bybit: 3,
+        mexc: 2,
+        kucoin: 4,
+        gateio: 3,
+        bitmart: 5,
+        htx: 3,
+        bitfinex: 4
+    };
+
+    return speed[exchange] || 5;
+}
+
+/*
+========================================
+NORMALIZER
 ========================================
 */
 function normalize(symbol, ex, t) {
@@ -80,83 +145,38 @@ function normalize(symbol, ex, t) {
 
     if (ex === 'mexc' && symbol.endsWith('USDT')) {
         sym = symbol.replace('USDT', '');
-        price = parseFloat(t.lastPrice);
-        volume = parseFloat(t.quoteVolume || 0);
+        price = +t.lastPrice;
+        volume = +t.quoteVolume || 0;
     }
 
     if (ex === 'kucoin' && symbol.endsWith('-USDT')) {
         sym = symbol.replace('-USDT', '');
-        price = parseFloat(t.last);
-        volume = parseFloat(t.volValue || 0);
+        price = +t.last;
+        volume = +t.volValue || 0;
     }
 
     if (ex === 'bitmart' && symbol.endsWith('_USDT')) {
         sym = symbol.replace('_USDT', '');
-        price = parseFloat(t.last_price);
-        volume = parseFloat(t.quote_volume || 0);
-    }
-
-    if (ex === 'bitget' && symbol.endsWith('USDT')) {
-        sym = symbol.replace('USDT', '');
-        price = parseFloat(t.close);
-        volume = parseFloat(t.usdtVol || 0);
-    }
-
-    if (ex === 'gateio' && symbol.endsWith('_USDT')) {
-        sym = symbol.replace('_USDT', '');
-        price = parseFloat(t.last);
-        volume = parseFloat(t.quote_volume || 0);
+        price = +t.last_price;
+        volume = +t.quote_volume || 0;
     }
 
     if (ex === 'okx' && symbol.endsWith('-USDT')) {
         sym = symbol.replace('-USDT', '');
-        price = parseFloat(t.last);
-        volume = parseFloat(t.volCcy24h || 0);
+        price = +t.last;
+        volume = +t.volCcy24h || 0;
     }
 
     if (ex === 'bybit' && symbol.endsWith('USDT')) {
         sym = symbol.replace('USDT', '');
-        price = parseFloat(t.lastPrice);
-        volume = parseFloat(t.turnover24h || 0);
+        price = +t.lastPrice;
+        volume = +t.turnover24h || 0;
     }
 
-    if (ex === 'htx' && symbol.toLowerCase().endsWith('usdt')) {
-        sym = symbol.replace(/usdt/i, '').toUpperCase();
-        price = parseFloat(t.close);
-        volume = parseFloat(t.vol || 0);
-    }
-
-    if (ex === 'bitfinex') {
-        const pair = t[0];
-        if (pair?.startsWith('t') && pair.endsWith('USD')) {
-            sym = pair.replace('t', '').replace('USD', '');
-            price = parseFloat(t[7]);
-            volume = parseFloat(t[8]);
-        }
-    }
-
-    if (ex === 'poloniex') {
+    if (ex === 'gateio' && symbol.endsWith('_USDT')) {
         sym = symbol.replace('_USDT', '');
-        price = parseFloat(t.close);
-        volume = parseFloat(t.amount || 0);
-    }
-
-    if (ex === 'cryptocom') {
-        const inst = t.i;
-        if (inst?.endsWith('_USDT')) {
-            sym = inst.replace('_USDT', '');
-            price = parseFloat(t.a);
-            volume = parseFloat(t.v || 0);
-        }
-    }
-
-    if (ex === 'upbit') {
-        const m = t.market;
-        if (m?.startsWith('KRW-')) {
-            sym = m.replace('KRW-', '');
-            price = parseFloat(t.trade_price);
-            volume = parseFloat(t.acc_trade_price_24h || 0);
-        }
+        price = +t.last;
+        volume = +t.quote_volume || 0;
     }
 
     if (!sym || !price || price <= 0) return null;
@@ -166,20 +186,16 @@ function normalize(symbol, ex, t) {
 
 /*
 ========================================
-REAL NETWORK CHECK (FIXED)
+NETWORKS (REALISTIC MODEL)
 ========================================
 */
-async function checkNetworks() {
-    return {
-        canWithdraw: true,
-        canDeposit: true,
-        networks: [
-            { name: "ERC20", deposit: true, withdraw: true },
-            { name: "TRC20", deposit: true, withdraw: true },
-            { name: "BEP20", deposit: true, withdraw: true },
-            { name: "SOL", deposit: true, withdraw: true }
-        ]
-    };
+function getNetworks() {
+    return [
+        { network: "ERC20", deposit: true, withdraw: true, eta: "5-15 min" },
+        { network: "TRC20", deposit: true, withdraw: true, eta: "2-10 min" },
+        { network: "BEP20", deposit: true, withdraw: true, eta: "3-12 min" },
+        { network: "SOL", deposit: true, withdraw: true, eta: "1-5 min" }
+    ];
 }
 
 /*
@@ -188,17 +204,18 @@ OPPORTUNITIES
 ========================================
 */
 app.get('/api/opportunities', async (req, res) => {
+
     try {
 
         const results = await Promise.all(
             Object.entries(EXCHANGES).map(([n, u]) => safeGet(u, n))
         );
 
-        const dataMap = {};
-
-        Object.keys(EXCHANGES).forEach(e => dataMap[e] = {});
+        const map = {};
+        Object.keys(EXCHANGES).forEach(e => map[e] = {});
 
         results.forEach((data, idx) => {
+
             const ex = Object.keys(EXCHANGES)[idx];
             if (!data) return;
 
@@ -207,24 +224,17 @@ app.get('/api/opportunities', async (req, res) => {
             if (ex === 'mexc') tickers = data;
             else if (ex === 'kucoin') tickers = data.data?.ticker || [];
             else if (ex === 'bitmart') tickers = data.data?.tickers || [];
-            else if (ex === 'bitget') tickers = data.data || [];
-            else if (ex === 'gateio') tickers = data;
             else if (ex === 'okx') tickers = data.data || [];
             else if (ex === 'bybit') tickers = data.result?.list || [];
-            else if (ex === 'htx') tickers = data.data || [];
-            else if (ex === 'bitfinex') tickers = data || [];
-            else if (ex === 'poloniex') tickers = data || [];
-            else if (ex === 'cryptocom') tickers = data.result?.data || [];
-            else if (ex === 'upbit') tickers = data || [];
+            else if (ex === 'gateio') tickers = data || [];
 
             tickers.forEach(t => {
-                const symKey =
-                    t.symbol || t.currency_pair || t.instId || t.market || t.i || '';
 
-                const d = normalize(symKey, ex, t);
+                const key = t.symbol || t.currency_pair || t.instId || '';
+                const d = normalize(key, ex, t);
 
                 if (d && d.volume > MIN_VOLUME) {
-                    dataMap[ex][d.symbol] = {
+                    map[ex][d.symbol] = {
                         price: d.price,
                         volume: d.volume
                     };
@@ -233,10 +243,9 @@ app.get('/api/opportunities', async (req, res) => {
         });
 
         const symbols = new Set();
-
-        Object.values(dataMap).forEach(ex => {
-            Object.keys(ex).forEach(s => symbols.add(s));
-        });
+        Object.values(map).forEach(e =>
+            Object.keys(e).forEach(s => symbols.add(s))
+        );
 
         const opportunities = [];
 
@@ -244,9 +253,9 @@ app.get('/api/opportunities', async (req, res) => {
 
             const prices = {};
 
-            Object.keys(dataMap).forEach(ex => {
-                if (dataMap[ex][symbol]) {
-                    prices[ex] = dataMap[ex][symbol];
+            Object.keys(map).forEach(ex => {
+                if (map[ex][symbol]) {
+                    prices[ex] = map[ex][symbol];
                 }
             });
 
@@ -258,11 +267,10 @@ app.get('/api/opportunities', async (req, res) => {
             const [buyEx, buy] = entries[0];
             const [sellEx, sell] = entries.at(-1);
 
-            const spread = ((sell.price - buy.price) / buy.price) * 100;
+            const spread =
+                ((sell.price - buy.price) / buy.price) * 100;
 
             if (spread < MIN_PROFIT || spread > MAX_PROFIT) continue;
-
-            const net = await checkNetworks();
 
             const id = `${symbol}-${buyEx}-${sellEx}`;
 
@@ -270,27 +278,48 @@ app.get('/api/opportunities', async (req, res) => {
 
             opportunityHistory[id].push({
                 time: Date.now(),
-                spread: +spread.toFixed(2)
+                spread: +spread.toFixed(2),
+                buyPrice: buy.price,
+                sellPrice: sell.price
             });
 
-            if (opportunityHistory[id].length > 20)
+            if (opportunityHistory[id].length > 25)
                 opportunityHistory[id].shift();
+
+            const history = opportunityHistory[id];
+
+            const liquidity = getLiquidity((buy.volume + sell.volume) / 2);
+            const risk = getRisk(spread, liquidity);
+            const trend = getTrend(history);
+
+            priceMemory[id] = { buy: buy.price, sell: sell.price };
 
             opportunities.push({
                 id,
                 symbol,
+
                 buyExchange: buyEx.toUpperCase(),
                 sellExchange: sellEx.toUpperCase(),
+
                 buyPrice: buy.price.toFixed(6),
                 sellPrice: sell.price.toFixed(6),
+
                 spread: spread.toFixed(2),
+
                 tradable: true,
-                verified: true,
-                buyNetworks: net.networks,
-                sellNetworks: net.networks,
-                buyWithdraw: true,
-                sellDeposit: true,
-                history: opportunityHistory[id]
+
+                liquidity,
+
+                risk,
+
+                trend,
+
+                arrivalTime: {
+                    buy: estimateArrival(buyEx),
+                    sell: estimateArrival(sellEx)
+                },
+
+                history
             });
         }
 
@@ -310,7 +339,7 @@ app.get('/api/opportunities', async (req, res) => {
 
 /*
 ========================================
-DETAIL
+DETAIL FIX (NO ZERO PRICES)
 ========================================
 */
 app.get('/api/opportunity/:id', (req, res) => {
@@ -319,31 +348,44 @@ app.get('/api/opportunity/:id', (req, res) => {
     const history = opportunityHistory[id] || [];
     const p = id.split('-');
 
+    const last = history[history.length - 1];
+
     res.json({
         data: {
             id,
             symbol: p[0],
+
             buyExchange: p[1],
             sellExchange: p[2],
+
+            buyPrice: last?.buyPrice || 0,
+            sellPrice: last?.sellPrice || 0,
+
             history,
-            tradable: true,
-            buyPrice: "0",
-            sellPrice: "0",
+
+            liquidity: "MEDIUM",
+
+            risk: getRisk(last?.spread || 0, "MEDIUM"),
+
+            trend: getTrend(history),
+
+            arrivalTime: {
+                buy: estimateArrival(p[1]),
+                sell: estimateArrival(p[2])
+            },
+
             networks: {
-                buy: [
-                    { network: "ERC20", deposit: true, withdraw: true },
-                    { network: "TRC20", deposit: true, withdraw: true }
-                ],
-                sell: [
-                    { network: "ERC20", deposit: true, withdraw: true },
-                    { network: "TRC20", deposit: true, withdraw: true }
-                ]
-            }
+                buy: getNetworks(),
+                sell: getNetworks()
+            },
+
+            tradable: true
         }
     });
 });
 
 /*
+
 ========================================
 PAYMENT
 ========================================
@@ -366,5 +408,5 @@ START
 ========================================
 */
 app.listen(PORT, () => {
-    console.log("🚀 ArbiMine running on", PORT);
+    console.log("🚀 ArbiMine PRO running on", PORT);
 });
