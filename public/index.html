@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
     <title>ArbiMine – Crypto Arbitrage Scanner</title>
     <style>
         * {
@@ -19,38 +19,30 @@
         header {
             background: #facc15;
             color: black;
-            padding: 18px;
-            text-align: center;
-            font-size: 28px;
-            font-weight: bold;
-            position: relative;
+            padding: 12px 16px;
             display: flex;
-            justify-content: space-between;
+            flex-wrap: wrap;
             align-items: center;
-            padding-left: 20px;
-            padding-right: 20px;
-        }
-        .header-left {
-            flex: 1;
-            text-align: left;
+            justify-content: space-between;
+            gap: 10px;
         }
         .header-title {
-            flex: 2;
-            text-align: center;
-        }
-        .header-right {
+            font-size: 24px;
+            font-weight: bold;
             flex: 1;
+        }
+        .header-controls {
             display: flex;
-            justify-content: flex-end;
-            gap: 10px;
+            gap: 8px;
+            align-items: center;
         }
         .refresh-btn, .sort-select {
             background: black;
             color: #facc15;
             border: none;
-            padding: 8px 16px;
+            padding: 6px 12px;
             border-radius: 20px;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: bold;
             cursor: pointer;
         }
@@ -308,20 +300,23 @@
             font-weight: bold;
             cursor: pointer;
         }
+        @media (max-width: 500px) {
+            .header-title { font-size: 20px; }
+            .refresh-btn, .sort-select { font-size: 11px; padding: 5px 10px; }
+        }
     </style>
 </head>
 <body>
 
 <header>
-    <div class="header-left"></div>
     <div class="header-title">🚀 ArbiMine</div>
-    <div class="header-right">
-        <select id="sortSelect" class="sort-select" onchange="loadOpportunities()">
-            <option value="profit">Sort by: Highest Profit</option>
-            <option value="liquidity">Sort by: Highest Liquidity</option>
-            <option value="symbol">Sort by: Symbol A-Z</option>
+    <div class="header-controls">
+        <select id="sortSelect" class="sort-select">
+            <option value="profit">Highest Profit</option>
+            <option value="liquidity">Highest Liquidity</option>
+            <option value="symbol">Symbol A-Z</option>
         </select>
-        <button class="refresh-btn" onclick="loadOpportunities()">🔄 Refresh</button>
+        <button class="refresh-btn" onclick="loadOpportunities()">🔄</button>
     </div>
 </header>
 
@@ -340,12 +335,9 @@
 
 <!-- MAIN APP (hidden after login) -->
 <div id="mainApp" style="display:none;">
-    <!-- HOME PAGE -->
     <div id="homePage" class="page active">
         <div id="opportunities"></div>
     </div>
-
-    <!-- PRO PAGE -->
     <div id="proPage" class="page">
         <div class="plan">
             <h2>Weekly Plan</h2>
@@ -360,8 +352,6 @@
             <button onclick="pay('monthly', 350, 'monthlyPhone')">Pay Monthly</button>
         </div>
     </div>
-
-    <!-- PROFILE PAGE -->
     <div id="profilePage" class="page">
         <div class="profile-card">
             <h2>My Profile</h2>
@@ -371,8 +361,6 @@
             <button class="logout-btn" onclick="logoutUser()">Logout</button>
         </div>
     </div>
-
-    <!-- BOTTOM NAVIGATION -->
     <div class="bottom-nav">
         <button class="active" onclick="switchPage('homePage', this)">🏠 Home</button>
         <button onclick="switchPage('proPage', this)">💎 Pro</button>
@@ -380,7 +368,6 @@
     </div>
 </div>
 
-<!-- DETAILS OVERLAY -->
 <div id="detailsPage" class="details-page">
     <button class="back-btn" onclick="closeDetails()">← Back</button>
     <div id="detailsBody"></div>
@@ -388,8 +375,9 @@
 
 <script>
     const API = 'https://crypto-arb-scanner-1.onrender.com';
+    let rawOpportunities = []; // store last fetched data for local sorting
 
-    // ----------------------------- AUTH (localStorage) -----------------------------
+    // ----------------------------- AUTH -----------------------------
     function registerUser() {
         const user = {
             username: document.getElementById('username').value,
@@ -437,54 +425,82 @@
         btn.classList.add('active');
     }
 
-    // ----------------------------- LOAD OPPORTUNITIES (with sorting) -----------------------------
+    // ----------------------------- SORTING (local fallback) -----------------------------
+    function sortOpportunities(opportunities, sortBy) {
+        const sorted = [...opportunities];
+        if (sortBy === 'profit') {
+            sorted.sort((a, b) => parseFloat(b.spread) - parseFloat(a.spread));
+        } else if (sortBy === 'liquidity') {
+            sorted.sort((a, b) => (parseFloat(b.buyLiquidity) + parseFloat(b.sellLiquidity)) - (parseFloat(a.buyLiquidity) + parseFloat(a.sellLiquidity)));
+        } else if (sortBy === 'symbol') {
+            sorted.sort((a, b) => a.symbol.localeCompare(b.symbol));
+        }
+        return sorted;
+    }
+
+    function renderOpportunities(opportunities) {
+        const container = document.getElementById('opportunities');
+        if (!opportunities || opportunities.length === 0) {
+            container.innerHTML = `
+                <div class="loading-screen">
+                    <div class="loading-text">No opportunities found</div>
+                    <div class="loading-sub">Try adjusting filters or refresh later</div>
+                </div>`;
+            return;
+        }
+        container.innerHTML = opportunities.map(item => `
+            <div class="card" onclick='openDetails(${JSON.stringify(item)})'>
+                <div><span class="buy">BUY</span> ${item.buyExchange} $${item.buyPrice}</div>
+                <div style="margin-top:8px;"><span class="sell">SELL</span> ${item.sellExchange} $${item.sellPrice}</div>
+                <div class="symbol">${item.symbol}</div>
+                <div class="badge ${item.tradable ? 'tradable' : 'unverified'}">
+                    ${item.tradable ? 'TRADABLE ✅' : 'UNVERIFIED ⚠️'}
+                </div>
+                <div class="percent">${item.spread}%</div>
+            </div>
+        `).join('');
+    }
+
     async function loadOpportunities() {
         const container = document.getElementById('opportunities');
-        const sortBy = document.getElementById('sortSelect').value;
         container.innerHTML = `
             <div class="loading-screen">
                 <div class="rocket-area"><div class="rocket">🚀</div><div class="rocket">🚀</div><div class="rocket">🚀</div></div>
                 <div class="loading-text">Scanning Markets...</div>
-                <div class="loading-sub">Please wait while ArbiMine finds opportunities</div>
+                <div class="loading-sub">Please wait</div>
             </div>
         `;
         try {
-            const res = await fetch(`${API}/api/opportunities?sortBy=${sortBy}`);
+            // First try to get from server (without sortBy param to avoid old server crash)
+            const res = await fetch(`${API}/api/opportunities`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const json = await res.json();
             const opps = json.opportunities || [];
-            if (opps.length === 0) {
-                container.innerHTML = `
-                    <div class="loading-screen">
-                        <div class="rocket-area"><div class="rocket">🔍</div></div>
-                        <div class="loading-text">No arbitrage opportunities</div>
-                        <div class="loading-sub">Try again later</div>
-                    </div>
-                `;
-                return;
-            }
-            container.innerHTML = opps.map(item => `
-                <div class="card" onclick='openDetails(${JSON.stringify(item)})'>
-                    <div><span class="buy">BUY</span> ${item.buyExchange} $${item.buyPrice}</div>
-                    <div style="margin-top:8px;"><span class="sell">SELL</span> ${item.sellExchange} $${item.sellPrice}</div>
-                    <div class="symbol">${item.symbol}</div>
-                    <div class="badge ${item.tradable ? 'tradable' : 'unverified'}">
-                        ${item.tradable ? 'TRADABLE ✅' : 'UNVERIFIED ⚠️'}
-                    </div>
-                    <div class="percent">${item.spread}%</div>
-                </div>
-            `).join('');
+            rawOpportunities = opps;
+            // Apply local sorting based on dropdown
+            const sortBy = document.getElementById('sortSelect').value;
+            const sorted = sortOpportunities(rawOpportunities, sortBy);
+            renderOpportunities(sorted);
         } catch (err) {
             console.error('Load error:', err);
             container.innerHTML = `
                 <div class="loading-screen">
                     <div class="loading-text">❌ Failed To Load</div>
-                    <div class="loading-sub">Check your internet or try again later</div>
-                </div>
-            `;
+                    <div class="loading-sub">Check your internet or server may be down</div>
+                </div>`;
         }
     }
 
-    // ----------------------------- OPEN DETAILS (unchanged) -----------------------------
+    // Re-sort when dropdown changes (without refetch)
+    document.getElementById('sortSelect').addEventListener('change', () => {
+        if (rawOpportunities.length) {
+            const sortBy = document.getElementById('sortSelect').value;
+            const sorted = sortOpportunities(rawOpportunities, sortBy);
+            renderOpportunities(sorted);
+        }
+    });
+
+    // ----------------------------- DETAILS (unchanged) -----------------------------
     function openDetails(item) {
         const page = document.getElementById('detailsPage');
         const body = document.getElementById('detailsBody');
@@ -586,7 +602,6 @@
         document.getElementById('detailsPage').style.display = 'none';
     }
 
-    // ----------------------------- PAYMENT (unchanged) -----------------------------
     async function pay(plan, amount, inputId) {
         const phone = document.getElementById(inputId).value;
         if (!phone) {
@@ -606,9 +621,8 @@
         }
     }
 
-    // Auto-refresh every 60 seconds (1 minute)
+    // Auto-refresh every 60 seconds
     setInterval(loadOpportunities, 60000);
 </script>
-
 </body>
 </html>
