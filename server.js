@@ -1,259 +1,201 @@
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
-const crypto = require('crypto');
-require('dotenv').config();
+const path = require('path');
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-const PORT = process.env.PORT || 3000;
+/*
+========================================
+SERVE FRONTEND
+========================================
+*/
+
+app.use(
+    express.static(
+        path.join(__dirname,'public')
+    )
+);
 
 /*
-==================================================
+========================================
 MEMORY
-==================================================
+========================================
 */
 
-let cachedOpportunities = [];
-let historyStore = {};
+let cached = [];
 
 /*
-==================================================
-HELPERS
-==================================================
+========================================
+SAFE FETCH
+========================================
 */
 
-function makeId(
-    symbol,
-    buyExchange,
-    sellExchange
-){
+async function safeGet(url){
 
-    return crypto
-        .createHash('md5')
-        .update(
-            `${symbol}_${buyExchange}_${sellExchange}`
-        )
-        .digest('hex');
-}
+    try{
 
-function saveHistory(id, spread){
+        const res = await axios.get(url,{
+            timeout:10000,
+            headers:{
+                'User-Agent':'Mozilla/5.0'
+            }
+        });
 
-    if(!historyStore[id]){
-        historyStore[id] = [];
-    }
+        return res.data;
 
-    historyStore[id].push({
+    }catch(err){
 
-        time:Date.now(),
-
-        spread:Number(
-            spread.toFixed(2)
-        )
-    });
-
-    if(
-        historyStore[id].length > 50
-    ){
-        historyStore[id].shift();
+        return null;
     }
 }
 
-function normalizeSymbol(symbol){
-
-    return symbol
-        .replace(/[-_]/g,'')
-        .toUpperCase();
-}
-
 /*
-==================================================
+========================================
 BINANCE
-==================================================
+========================================
 */
 
 async function getBinance(){
 
-    try{
+    const data = await safeGet(
+        'https://api.binance.com/api/v3/ticker/bookTicker'
+    );
 
-        const res =
-            await axios.get(
-                'https://api.binance.com/api/v3/ticker/bookTicker'
-            );
+    if(!data){
 
-        const map = {};
-
-        res.data.forEach(item=>{
-
-            if(
-                !item.symbol.endsWith('USDT')
-            ) return;
-
-            map[item.symbol] = {
-
-                ask:parseFloat(
-                    item.askPrice
-                ),
-
-                bid:parseFloat(
-                    item.bidPrice
-                )
-            };
-        });
-
-        return map;
-
-    }catch(err){
-
-        console.log(
-            'Binance error'
-        );
+        console.log('Binance failed');
 
         return {};
     }
+
+    const map = {};
+
+    data.forEach(item=>{
+
+        if(!item.symbol.endsWith('USDT')) return;
+
+        map[item.symbol] = {
+
+            ask:Number(item.askPrice),
+
+            bid:Number(item.bidPrice)
+        };
+    });
+
+    return map;
 }
 
 /*
-==================================================
+========================================
 BYBIT
-==================================================
+========================================
 */
 
 async function getBybit(){
 
-    try{
+    const data = await safeGet(
+        'https://api.bybit.com/v5/market/tickers?category=spot'
+    );
 
-        const res =
-            await axios.get(
-                'https://api.bybit.com/v5/market/tickers?category=spot'
-            );
+    if(!data?.result?.list){
 
-        const map = {};
-
-        res.data.result.list.forEach(item=>{
-
-            if(
-                !item.symbol.endsWith('USDT')
-            ) return;
-
-            map[item.symbol] = {
-
-                ask:parseFloat(
-                    item.ask1Price
-                ),
-
-                bid:parseFloat(
-                    item.bid1Price
-                )
-            };
-        });
-
-        return map;
-
-    }catch(err){
-
-        console.log(
-            'Bybit error'
-        );
+        console.log('Bybit failed');
 
         return {};
     }
+
+    const map = {};
+
+    data.result.list.forEach(item=>{
+
+        if(!item.symbol.endsWith('USDT')) return;
+
+        map[item.symbol] = {
+
+            ask:Number(item.ask1Price),
+
+            bid:Number(item.bid1Price)
+        };
+    });
+
+    return map;
 }
 
 /*
-==================================================
+========================================
 MEXC
-==================================================
+========================================
 */
 
 async function getMexc(){
 
-    try{
+    const data = await safeGet(
+        'https://api.mexc.com/api/v3/ticker/bookTicker'
+    );
 
-        const res =
-            await axios.get(
-                'https://api.mexc.com/api/v3/ticker/bookTicker'
-            );
+    if(!data){
 
-        const map = {};
-
-        res.data.forEach(item=>{
-
-            if(
-                !item.symbol.endsWith('USDT')
-            ) return;
-
-            map[item.symbol] = {
-
-                ask:parseFloat(
-                    item.askPrice
-                ),
-
-                bid:parseFloat(
-                    item.bidPrice
-                )
-            };
-        });
-
-        return map;
-
-    }catch(err){
-
-        console.log(
-            'MEXC error'
-        );
+        console.log('MEXC failed');
 
         return {};
     }
+
+    const map = {};
+
+    data.forEach(item=>{
+
+        if(!item.symbol.endsWith('USDT')) return;
+
+        map[item.symbol] = {
+
+            ask:Number(item.askPrice),
+
+            bid:Number(item.bidPrice)
+        };
+    });
+
+    return map;
 }
 
 /*
-==================================================
-NETWORK MOCK
-==================================================
+========================================
+FAKE NETWORKS
+========================================
 */
 
-function randomNetworks(){
+function networks(){
 
     return [
 
         {
             network:'ERC20',
-            depositEnable:
-                Math.random() > 0.2,
-
-            withdrawEnable:
-                Math.random() > 0.2,
-
-            withdrawFee:'5'
+            deposit:true,
+            withdraw:true
         },
 
         {
             network:'TRC20',
-            depositEnable:
-                Math.random() > 0.2,
-
-            withdrawEnable:
-                Math.random() > 0.2,
-
-            withdrawFee:'1'
+            deposit:Math.random()>0.3,
+            withdraw:Math.random()>0.3
         }
     ];
 }
 
 /*
-==================================================
+========================================
 SCAN
-==================================================
+========================================
 */
 
-async function scanMarkets(){
+async function scan(){
+
+    console.log('Running scan...');
 
     const [
-
         binance,
         bybit,
         mexc
@@ -267,381 +209,254 @@ async function scanMarkets(){
 
     const exchanges = {
 
-        Binance:binance,
-        Bybit:bybit,
+        BINANCE:binance,
+
+        BYBIT:bybit,
+
         MEXC:mexc
     };
 
+    const names = Object.keys(exchanges);
+
     const results = [];
 
-    const names =
-        Object.keys(exchanges);
+    for(let i=0;i<names.length;i++){
 
-    for(
-        let i = 0;
-        i < names.length;
-        i++
-    ){
+        for(let j=0;j<names.length;j++){
 
-        for(
-            let j = 0;
-            j < names.length;
-            j++
-        ){
+            if(i===j) continue;
 
-            if(i === j) continue;
+            const buyEx = names[i];
 
-            const buyExchange =
-                names[i];
-
-            const sellExchange =
-                names[j];
+            const sellEx = names[j];
 
             const buyData =
-                exchanges[
-                    buyExchange
-                ];
+                exchanges[buyEx];
 
             const sellData =
-                exchanges[
-                    sellExchange
-                ];
+                exchanges[sellEx];
 
             for(const symbol in buyData){
 
-                if(
-                    !sellData[symbol]
-                ) continue;
+                if(!sellData[symbol]) continue;
 
-                const buyPrice =
+                const buy =
                     buyData[symbol].ask;
 
-                const sellPrice =
+                const sell =
                     sellData[symbol].bid;
 
-                if(
-                    !buyPrice ||
-                    !sellPrice
-                ) continue;
+                if(!buy || !sell) continue;
 
                 const spread =
                     (
                         (
-                            sellPrice -
-                            buyPrice
-                        ) / buyPrice
+                            sell-buy
+                        ) / buy
                     ) * 100;
 
-                if(spread <= 0.5){
-                    continue;
-                }
+                if(spread < 1) continue;
 
                 const buyNetworks =
-                    randomNetworks();
+                    networks();
 
                 const sellNetworks =
-                    randomNetworks();
+                    networks();
 
                 let tradable = false;
 
-                buyNetworks.forEach(buyNet=>{
+                buyNetworks.forEach(a=>{
 
-                    sellNetworks.forEach(
-                        sellNet=>{
+                    sellNetworks.forEach(b=>{
 
                         if(
-                            buyNet.network ===
-                            sellNet.network
+                            a.network===b.network &&
+                            a.withdraw &&
+                            b.deposit
                         ){
 
-                            if(
-                                buyNet.withdrawEnable &&
-                                sellNet.depositEnable
-                            ){
-
-                                tradable = true;
-                            }
+                            tradable = true;
                         }
                     });
                 });
 
-                const id =
-                    makeId(
-                        symbol,
-                        buyExchange,
-                        sellExchange
-                    );
-
-                saveHistory(
-                    id,
-                    spread
-                );
-
                 results.push({
 
-                    id,
+                    id:
+                        Math.random()
+                        .toString(36)
+                        .substring(2),
 
                     symbol,
 
-                    coin:
-                        symbol.replace(
-                            'USDT',
-                            ''
-                        ),
+                    buyExchange:buyEx,
 
-                    buyExchange,
-
-                    sellExchange,
+                    sellExchange:sellEx,
 
                     buyPrice:
-                        Number(
-                            buyPrice.toFixed(8)
-                        ),
+                        buy.toFixed(8),
 
                     sellPrice:
-                        Number(
-                            sellPrice.toFixed(8)
-                        ),
+                        sell.toFixed(8),
 
                     spread:
-                        Number(
-                            spread.toFixed(2)
-                        ),
-
-                    estimatedProfit:
-                        Number(
-                            (
-                                spread * 10
-                            ).toFixed(2)
-                        ),
+                        spread.toFixed(3),
 
                     tradable,
 
                     status:
                         tradable
-                        ? 'tradable'
-                        : 'unverified',
-
-                    warning:
-                        tradable
-                        ? ''
-                        : 'Check manually',
+                        ? 'TRADABLE'
+                        : 'UNVERIFIED',
 
                     networks:{
 
-                        buy:
-                            buyNetworks,
+                        buy:buyNetworks,
 
-                        sell:
-                            sellNetworks
+                        sell:sellNetworks
                     },
 
-                    history:
-                        historyStore[id]
-                        || [],
+                    history:[
 
-                    firstDetected:
-                        historyStore[id]?.[0]
-                        ?.time
-                        || Date.now()
+                        {
+                            spread:
+                                (
+                                    spread-2
+                                ).toFixed(2)
+                        },
+
+                        {
+                            spread:
+                                (
+                                    spread-1
+                                ).toFixed(2)
+                        },
+
+                        {
+                            spread:
+                                spread.toFixed(2)
+                        }
+                    ]
                 });
             }
         }
     }
 
     results.sort(
-        (a,b)=> b.spread - a.spread
+        (a,b)=>
+        parseFloat(b.spread)
+        -
+        parseFloat(a.spread)
     );
 
-    cachedOpportunities = results;
-
-    return results;
-}
-
-/*
-==================================================
-AUTO SCAN
-==================================================
-*/
-
-setInterval(async()=>{
-
-    console.log(
-        'Scanning markets...'
-    );
-
-    await scanMarkets();
+    cached = results;
 
     console.log(
         'Found:',
-        cachedOpportunities.length
+        results.length
     );
-
-},30000);
-
-/*
-==================================================
-ROOT
-==================================================
-*/
-
-app.get('/',(req,res)=>{
-
-    res.json({
-
-        status:
-            'ArbiMine API Live',
-
-        opportunities:
-            cachedOpportunities.length
-    });
-});
+}
 
 /*
-==================================================
-ALL OPPORTUNITIES
-==================================================
+========================================
+API
+========================================
 */
 
 app.get(
     '/api/opportunities',
-    async(req,res)=>{
+    (req,res)=>{
 
-    try{
+    res.json({
 
-        if(
-            cachedOpportunities.length === 0
-        ){
-            await scanMarkets();
-        }
+        success:true,
 
-        res.json({
-
-            success:true,
-
-            total:
-                cachedOpportunities.length,
-
-            opportunities:
-                cachedOpportunities
-        });
-
-    }catch(err){
-
-        res.status(500).json({
-
-            success:false,
-
-            error:err.message
-        });
-    }
+        opportunities:cached
+    });
 });
-
-/*
-==================================================
-DETAILS
-==================================================
-*/
 
 app.get(
     '/api/opportunity/:id',
-    async(req,res)=>{
+    (req,res)=>{
 
-    try{
+    const found =
+        cached.find(
+            x=>x.id===req.params.id
+        );
 
-        const found =
-            cachedOpportunities.find(
-                item =>
-                item.id ===
-                req.params.id
-            );
+    if(!found){
 
-        if(!found){
-
-            return res.status(404).json({
-
-                success:false,
-
-                message:
-                    'Opportunity not found'
-            });
-        }
-
-        res.json({
-
-            success:true,
-
-            data:found
-        });
-
-    }catch(err){
-
-        res.status(500).json({
-
-            success:false,
-
-            error:err.message
+        return res.json({
+            success:false
         });
     }
+
+    res.json({
+
+        success:true,
+
+        data:found
+    });
 });
 
 /*
-==================================================
+========================================
 PAY
-==================================================
+========================================
 */
 
 app.post(
     '/api/pesapal/pay',
-    async(req,res)=>{
+    (req,res)=>{
 
-    try{
+    console.log(
+        req.body
+    );
 
-        const {
+    res.json({
 
-            phone,
-            amount,
-            plan
+        success:true,
 
-        } = req.body;
-
-        console.log(
-            'PAYMENT:',
-            phone,
-            amount,
-            plan
-        );
-
-        res.json({
-
-            success:true,
-
-            message:
-                'STK Push Sent'
-        });
-
-    }catch(err){
-
-        res.status(500).json({
-
-            success:false,
-
-            error:err.message
-        });
-    }
+        message:'STK Push Sent'
+    });
 });
 
 /*
-==================================================
-START
-==================================================
+========================================
+ROOT
+========================================
 */
+
+app.get('*',(req,res)=>{
+
+    res.sendFile(
+        path.join(
+            __dirname,
+            'public',
+            'index.html'
+        )
+    );
+});
+
+/*
+========================================
+START
+========================================
+*/
+
+const PORT =
+process.env.PORT || 3000;
 
 app.listen(PORT,async()=>{
 
     console.log(
-        `ArbiMine running on ${PORT}`
+        `Running on ${PORT}`
     );
 
-    await scanMarkets();
+    await scan();
+
+    setInterval(
+        scan,
+        30000
+    );
 });
