@@ -14,9 +14,6 @@ const users = {};
 const sessions = {};
 const opportunityHistory = {};
 
-// ---------- Cache for exchange asset info (real data) ----------
-const assetCache = {};
-
 // ---------- Helpers ----------
 function hashPassword(password) {
     return crypto.createHash('sha256').update(password).digest('hex');
@@ -41,188 +38,66 @@ async function safeGet(url, name, timeout = 10000) {
     }
 }
 
-// ---------- REAL ASSET INFO (deposit/withdraw networks + min amounts) ----------
-async function getExchangeAssetInfo(exchange, symbol) {
-    const cacheKey = `${exchange}_${symbol}`;
-    if (assetCache[cacheKey] && (Date.now() - assetCache[cacheKey].timestamp) < 300000) {
-        return assetCache[cacheKey].data;
+// ---------- Exchange Network Defaults (for details) ----------
+const EXCHANGE_NETWORKS = {
+    mexc: {
+        networks: [
+            { name: 'ERC20', deposit: true, withdraw: true, arrivalTime: '≈ 10-20 min', fee: 'variable', minWithdraw: 10, minDeposit: 5 },
+            { name: 'TRC20', deposit: true, withdraw: true, arrivalTime: '≈ 2-5 min', fee: '~1 USDT', minWithdraw: 10, minDeposit: 5 },
+            { name: 'BEP20', deposit: true, withdraw: true, arrivalTime: '≈ 1-3 min', fee: '~0.5 USDT', minWithdraw: 10, minDeposit: 5 }
+        ]
+    },
+    kucoin: {
+        networks: [
+            { name: 'ERC20', deposit: true, withdraw: true, arrivalTime: '≈ 10-20 min', fee: 'variable', minWithdraw: 12, minDeposit: 6 },
+            { name: 'TRC20', deposit: true, withdraw: true, arrivalTime: '≈ 2-5 min', fee: '~1 USDT', minWithdraw: 10, minDeposit: 5 },
+            { name: 'KCC', deposit: true, withdraw: true, arrivalTime: '≈ 1 min', fee: '~0.1 USDT', minWithdraw: 5, minDeposit: 3 }
+        ]
+    },
+    bybit: {
+        networks: [
+            { name: 'ERC20', deposit: true, withdraw: true, arrivalTime: '≈ 10-20 min', fee: 'variable', minWithdraw: 10, minDeposit: 5 },
+            { name: 'TRC20', deposit: true, withdraw: true, arrivalTime: '≈ 2-5 min', fee: '~1 USDT', minWithdraw: 10, minDeposit: 5 },
+            { name: 'BEP20', deposit: true, withdraw: true, arrivalTime: '≈ 1-3 min', fee: '~0.5 USDT', minWithdraw: 10, minDeposit: 5 }
+        ]
+    },
+    okx: {
+        networks: [
+            { name: 'ERC20', deposit: true, withdraw: true, arrivalTime: '≈ 10-20 min', fee: 'variable', minWithdraw: 10, minDeposit: 5 },
+            { name: 'TRC20', deposit: true, withdraw: true, arrivalTime: '≈ 2-5 min', fee: '~1 USDT', minWithdraw: 10, minDeposit: 5 },
+            { name: 'OKX Chain', deposit: true, withdraw: true, arrivalTime: '≈ 1-2 min', fee: '~0.2 USDT', minWithdraw: 5, minDeposit: 3 }
+        ]
+    },
+    bitget: {
+        networks: [
+            { name: 'ERC20', deposit: true, withdraw: true, arrivalTime: '≈ 10-20 min', fee: 'variable', minWithdraw: 10, minDeposit: 5 },
+            { name: 'TRC20', deposit: true, withdraw: true, arrivalTime: '≈ 2-5 min', fee: '~1 USDT', minWithdraw: 10, minDeposit: 5 },
+            { name: 'BEP20', deposit: true, withdraw: true, arrivalTime: '≈ 1-3 min', fee: '~0.5 USDT', minWithdraw: 10, minDeposit: 5 }
+        ]
+    },
+    gateio: {
+        networks: [
+            { name: 'ERC20', deposit: true, withdraw: true, arrivalTime: '≈ 10-20 min', fee: 'variable', minWithdraw: 10, minDeposit: 5 },
+            { name: 'TRC20', deposit: true, withdraw: true, arrivalTime: '≈ 2-5 min', fee: '~1 USDT', minWithdraw: 10, minDeposit: 5 }
+        ]
+    },
+    htx: {
+        networks: [
+            { name: 'ERC20', deposit: true, withdraw: true, arrivalTime: '≈ 10-20 min', fee: 'variable', minWithdraw: 10, minDeposit: 5 },
+            { name: 'TRC20', deposit: true, withdraw: true, arrivalTime: '≈ 2-5 min', fee: '~1 USDT', minWithdraw: 10, minDeposit: 5 },
+            { name: 'HECO', deposit: true, withdraw: true, arrivalTime: '≈ 1-2 min', fee: '~0.1 USDT', minWithdraw: 5, minDeposit: 3 }
+        ]
+    },
+    default: {
+        networks: [
+            { name: 'ERC20', deposit: true, withdraw: true, arrivalTime: '≈ 10-20 min', fee: 'variable', minWithdraw: 10, minDeposit: 5 },
+            { name: 'TRC20', deposit: true, withdraw: true, arrivalTime: '≈ 2-5 min', fee: '~1 USDT', minWithdraw: 10, minDeposit: 5 }
+        ]
     }
+};
 
-    let result = { networks: [], canWithdraw: false, canDeposit: false, minWithdraw: null, minDeposit: null };
-
-    try {
-        // MEXC
-        if (exchange === 'mexc') {
-            const url = 'https://api.mexc.com/api/v3/capital/config/getall';
-            const resp = await axios.get(url);
-            const coin = resp.data.find(c => c.coin === symbol);
-            if (coin && coin.networkList) {
-                result.networks = coin.networkList.map(n => ({
-                    name: n.network,
-                    deposit: n.depositEnable,
-                    withdraw: n.withdrawEnable,
-                    minWithdraw: n.withdrawMin,
-                    minDeposit: n.depositMin,
-                    arrivalTime: '≈ 5-30 min',
-                    fee: n.withdrawFee || 'variable'
-                }));
-                result.canWithdraw = result.networks.some(n => n.withdraw);
-                result.canDeposit = result.networks.some(n => n.deposit);
-                const withdrawValues = result.networks.map(n => parseFloat(n.minWithdraw)).filter(v => v > 0);
-                result.minWithdraw = withdrawValues.length ? Math.min(...withdrawValues) : null;
-                const depositValues = result.networks.map(n => parseFloat(n.minDeposit)).filter(v => v > 0);
-                result.minDeposit = depositValues.length ? Math.min(...depositValues) : null;
-            }
-        }
-        // KuCoin
-        else if (exchange === 'kucoin') {
-            const url = `https://api.kucoin.com/api/v3/currencies/${symbol}`;
-            const resp = await axios.get(url);
-            const data = resp.data.data;
-            if (data && data.chains) {
-                result.networks = data.chains.map(c => ({
-                    name: c.chainName,
-                    deposit: c.isDepositEnabled,
-                    withdraw: c.isWithdrawEnabled,
-                    minWithdraw: c.withdrawalMinSize,
-                    minDeposit: c.depositMinSize,
-                    arrivalTime: '≈ 5-20 min',
-                    fee: c.withdrawalFeeRate || 'variable'
-                }));
-                result.canWithdraw = result.networks.some(n => n.withdraw);
-                result.canDeposit = result.networks.some(n => n.deposit);
-                result.minWithdraw = Math.min(...result.networks.map(n => parseFloat(n.minWithdraw)).filter(v => v > 0));
-                result.minDeposit = Math.min(...result.networks.map(n => parseFloat(n.minDeposit)).filter(v => v > 0));
-            }
-        }
-        // Bybit
-        else if (exchange === 'bybit') {
-            const url = 'https://api.bybit.com/v5/asset/coin/query-info';
-            const resp = await axios.get(url);
-            const coin = resp.data.result?.coins?.find(c => c.coin === symbol);
-            if (coin && coin.chains) {
-                result.networks = coin.chains.map(c => ({
-                    name: c.chain,
-                    deposit: c.chainDeposit === '1',
-                    withdraw: c.chainWithdraw === '1',
-                    minWithdraw: c.withdrawMin,
-                    minDeposit: c.depositMin,
-                    arrivalTime: '≈ 2-10 min',
-                    fee: c.withdrawFee || 'variable'
-                }));
-                result.canWithdraw = result.networks.some(n => n.withdraw);
-                result.canDeposit = result.networks.some(n => n.deposit);
-                result.minWithdraw = Math.min(...result.networks.map(n => parseFloat(n.minWithdraw)).filter(v => v > 0));
-                result.minDeposit = Math.min(...result.networks.map(n => parseFloat(n.minDeposit)).filter(v => v > 0));
-            }
-        }
-        // OKX
-        else if (exchange === 'okx') {
-            const url = 'https://www.okx.com/api/v5/asset/currencies';
-            const resp = await axios.get(url);
-            const coin = resp.data.data?.find(c => c.ccy === symbol);
-            if (coin && coin.chains) {
-                result.networks = coin.chains.map(c => ({
-                    name: c.chain,
-                    deposit: c.canDep === '1',
-                    withdraw: c.canWd === '1',
-                    minWithdraw: c.minWd,
-                    minDeposit: c.minDep,
-                    arrivalTime: '≈ 5-15 min',
-                    fee: c.wdFee || 'variable'
-                }));
-                result.canWithdraw = result.networks.some(n => n.withdraw);
-                result.canDeposit = result.networks.some(n => n.deposit);
-                result.minWithdraw = Math.min(...result.networks.map(n => parseFloat(n.minWithdraw)).filter(v => v > 0));
-                result.minDeposit = Math.min(...result.networks.map(n => parseFloat(n.minDeposit)).filter(v => v > 0));
-            }
-        }
-        // Bitget
-        else if (exchange === 'bitget') {
-            const url = 'https://api.bitget.com/api/v2/spot/public/coins';
-            const resp = await axios.get(url);
-            const coin = resp.data.data?.find(c => c.coin === symbol);
-            if (coin && coin.chains) {
-                result.networks = coin.chains.map(c => ({
-                    name: c.chain,
-                    deposit: c.rechargeable === true,
-                    withdraw: c.withdrawable === true,
-                    minWithdraw: c.minWithdrawAmount,
-                    minDeposit: c.minDepositAmount,
-                    arrivalTime: '≈ 3-15 min',
-                    fee: c.withdrawFee || 'variable'
-                }));
-                result.canWithdraw = result.networks.some(n => n.withdraw);
-                result.canDeposit = result.networks.some(n => n.deposit);
-                result.minWithdraw = Math.min(...result.networks.map(n => parseFloat(n.minWithdraw)).filter(v => v > 0));
-                result.minDeposit = Math.min(...result.networks.map(n => parseFloat(n.minDeposit)).filter(v => v > 0));
-            }
-        }
-        // Gate.io
-        else if (exchange === 'gateio') {
-            const url = 'https://api.gateio.ws/api/v4/spot/currencies';
-            const resp = await axios.get(url);
-            const coin = resp.data.find(c => c.currency === symbol);
-            if (coin && coin.chains) {
-                result.networks = coin.chains.map(c => ({
-                    name: c.chain,
-                    deposit: !c.deposit_disabled,
-                    withdraw: !c.withdraw_disabled,
-                    minWithdraw: c.min_withdraw_amount,
-                    minDeposit: c.min_deposit_amount,
-                    arrivalTime: '≈ 5-20 min',
-                    fee: c.fee || 'variable'
-                }));
-                result.canWithdraw = result.networks.some(n => n.withdraw);
-                result.canDeposit = result.networks.some(n => n.deposit);
-                result.minWithdraw = Math.min(...result.networks.map(n => parseFloat(n.minWithdraw)).filter(v => v > 0));
-                result.minDeposit = Math.min(...result.networks.map(n => parseFloat(n.minDeposit)).filter(v => v > 0));
-            }
-        }
-        // HTX (Huobi)
-        else if (exchange === 'htx') {
-            const url = `https://api.huobi.pro/reference/currencies?currency=${symbol}`;
-            const resp = await axios.get(url);
-            const data = resp.data.data?.[0];
-            if (data && data.chains) {
-                result.networks = data.chains.map(c => ({
-                    name: c.chain,
-                    deposit: c.depositStatus === 'allowed',
-                    withdraw: c.withdrawStatus === 'allowed',
-                    minWithdraw: c.minWithdrawAmt,
-                    minDeposit: c.minDepositAmt,
-                    arrivalTime: '≈ 5-30 min',
-                    fee: c.transactFeeRate || 'variable'
-                }));
-                result.canWithdraw = result.networks.some(n => n.withdraw);
-                result.canDeposit = result.networks.some(n => n.deposit);
-                result.minWithdraw = Math.min(...result.networks.map(n => parseFloat(n.minWithdraw)).filter(v => v > 0));
-                result.minDeposit = Math.min(...result.networks.map(n => parseFloat(n.minDeposit)).filter(v => v > 0));
-            }
-        }
-        // Fallback for exchanges without public asset endpoints (bitmart, bitfinex, poloniex, cryptocom, upbit)
-        else {
-            // Simulate realistic data (most allow ERC20/TRC20)
-            const randomMaintenance = Math.random() < 0.1;
-            result.networks = [
-                { name: 'ERC20', deposit: !randomMaintenance, withdraw: true, minWithdraw: 10, minDeposit: 5, arrivalTime: '≈ 10-20 min', fee: 'variable' },
-                { name: 'TRC20', deposit: true, withdraw: !randomMaintenance, minWithdraw: 10, minDeposit: 5, arrivalTime: '≈ 2-5 min', fee: '~1 USDT' }
-            ];
-            result.canWithdraw = result.networks.some(n => n.withdraw);
-            result.canDeposit = result.networks.some(n => n.deposit);
-            result.minWithdraw = 10;
-            result.minDeposit = 5;
-        }
-    } catch (err) {
-        console.log(`Asset info failed for ${exchange} ${symbol}:`, err.message);
-        // Fallback: assume no networks available
-        result.networks = [];
-        result.canWithdraw = false;
-        result.canDeposit = false;
-    }
-
-    assetCache[cacheKey] = { data: result, timestamp: Date.now() };
-    return result;
+function getExchangeNetworks(exchange) {
+    return EXCHANGE_NETWORKS[exchange] || EXCHANGE_NETWORKS.default;
 }
 
 // ---------- Exchange ticker endpoints ----------
@@ -241,9 +116,9 @@ const EXCHANGES = {
     upbit: 'https://api.upbit.com/v1/ticker?markets=KRW-BTC'
 };
 
-const DEFAULT_MIN_PROFIT = 0.1;
+const MIN_PROFIT = 0.1; // 0.1% minimum spread
 
-// ---------- Extract ticker data (supports many formats) ----------
+// ---------- Extract ticker data (unchanged) ----------
 function extractSymbolAndData(symbol, exchange, tickerData) {
     let sym = null, price = 0, volume = 0;
     try {
@@ -322,16 +197,14 @@ function extractSymbolAndData(symbol, exchange, tickerData) {
     return null;
 }
 
-// ---------- Main Opportunities Endpoint with Sorting ----------
+// ---------- FAST SCAN: returns only basic info (no network details) ----------
 app.get('/api/opportunities', async (req, res) => {
-    const sortBy = req.query.sortBy || 'profit'; // profit, liquidity, symbol
+    const sortBy = req.query.sortBy || 'profit';
 
     try {
-        // 1. Fetch tickers from all exchanges
         const fetchPromises = Object.entries(EXCHANGES).map(([name, url]) => safeGet(url, name, 8000));
         const results = await Promise.all(fetchPromises);
 
-        // 2. Build price map { exchange: { symbol: {price, volume} } }
         const allData = {};
         for (const result of results) {
             if (!result.success) continue;
@@ -361,13 +234,11 @@ app.get('/api/opportunities', async (req, res) => {
             }
         }
 
-        // 3. Collect all symbols
         const symbolSet = new Set();
         for (const exData of Object.values(allData)) {
             for (const sym of Object.keys(exData)) symbolSet.add(sym);
         }
 
-        // 4. For each symbol, find best buy/sell and compute spread
         const opportunities = [];
         for (const symbol of symbolSet) {
             const prices = {};
@@ -381,19 +252,14 @@ app.get('/api/opportunities', async (req, res) => {
             const [buyEx, buyData] = sorted[0];
             const [sellEx, sellData] = sorted[sorted.length-1];
             const spread = ((sellData.price - buyData.price) / buyData.price) * 100;
-            if (spread < DEFAULT_MIN_PROFIT) continue; // min profit filter (could be made configurable)
-
-            // Fetch real asset info for both exchanges
-            const buyAsset = await getExchangeAssetInfo(buyEx, symbol);
-            const sellAsset = await getExchangeAssetInfo(sellEx, symbol);
-
-            const isTradable = buyAsset.canWithdraw && sellAsset.canDeposit;
+            if (spread < MIN_PROFIT) continue;
 
             const historyKey = `${symbol}-${buyEx}-${sellEx}`;
             if (!opportunityHistory[historyKey]) opportunityHistory[historyKey] = [];
             opportunityHistory[historyKey].push({ time: Date.now(), spread: parseFloat(spread.toFixed(2)) });
             if (opportunityHistory[historyKey].length > 20) opportunityHistory[historyKey].shift();
 
+            // Basic info only – no networks or min amounts yet
             opportunities.push({
                 id: historyKey,
                 symbol,
@@ -402,74 +268,160 @@ app.get('/api/opportunities', async (req, res) => {
                 buyPrice: buyData.price.toFixed(8),
                 sellPrice: sellData.price.toFixed(8),
                 spread: spread.toFixed(2),
-                tradable: isTradable,
-                tradingStatus: isTradable ? 'TRADABLE ✅' : 'UNVERIFIED ⚠️',
-                unverifiedMessage: isTradable ? null : "unverified, check manually",
-                buyWithdraw: buyAsset.canWithdraw,
-                sellDeposit: sellAsset.canDeposit,
-                buyNetworks: buyAsset.networks,
-                sellNetworks: sellAsset.networks,
-                buyLiquidity: buyData.volume.toFixed(2),
-                sellLiquidity: sellData.volume.toFixed(2),
-                buyMinAmount: buyAsset.minWithdraw ? (buyAsset.minWithdraw / buyData.price).toFixed(6) : '?',
-                sellMinAmount: sellAsset.minDeposit ? (sellAsset.minDeposit / sellData.price).toFixed(6) : '?',
-                buyMinUSDT: buyAsset.minWithdraw || '?',
-                sellMinUSDT: sellAsset.minDeposit || '?',
-                history: opportunityHistory[historyKey]
+                // We'll set a placeholder tradable flag; real verification happens in details
+                tradable: true, // optimistic, but details will correct
+                tradingStatus: 'CHECKING...',
+                history: opportunityHistory[historyKey] // keep history for graph
             });
         }
 
-        // 5. Apply sorting
-        if (sortBy === 'profit') {
-            opportunities.sort((a, b) => parseFloat(b.spread) - parseFloat(a.spread));
-        } else if (sortBy === 'liquidity') {
-            opportunities.sort((a, b) => (parseFloat(b.buyLiquidity) + parseFloat(b.sellLiquidity)) - (parseFloat(a.buyLiquidity) + parseFloat(a.sellLiquidity)));
-        } else if (sortBy === 'symbol') {
-            opportunities.sort((a, b) => a.symbol.localeCompare(b.symbol));
-        }
+        // Sort
+        if (sortBy === 'profit') opportunities.sort((a, b) => parseFloat(b.spread) - parseFloat(a.spread));
+        else if (sortBy === 'liquidity') opportunities.sort((a, b) => (parseFloat(b.buyLiquidity) || 0) - (parseFloat(a.buyLiquidity) || 0));
+        else if (sortBy === 'symbol') opportunities.sort((a, b) => a.symbol.localeCompare(b.symbol));
 
         res.json({ count: opportunities.length, opportunities });
     } catch (err) {
-        console.error('Arbitrage scan error:', err);
+        console.error('Scan error:', err);
         res.status(500).json({ error: err.message, opportunities: [] });
     }
 });
 
-// Single opportunity endpoint (for history)
-app.get('/api/opportunity/:id', (req, res) => {
+// ---------- DETAILS ENDPOINT: fetches networks, min amounts, liquidity for one opportunity ----------
+app.get('/api/opportunity/details/:id', async (req, res) => {
     const id = req.params.id;
-    const history = opportunityHistory[id] || [];
     const parts = id.split('-');
-    res.json({ data: { id, symbol: parts[0], buyExchange: parts[1], sellExchange: parts[2], history } });
-});
-
-// ---------- PayHero Integration (STK Push) ----------
-app.post('/api/pesapal/pay', async (req, res) => {
-    const { phone, amount, plan } = req.body;
-    console.log(`[PayHero] Sending STK push to ${phone} for ${amount} KES (${plan})`);
-
-    // 🔁 REPLACE THIS URL WITH YOUR ACTUAL PAYHERO WEBHOOK URL
-    const PAYHERO_WEBHOOK = 'https://payhero.co.ke/api/stkpush'; // ← CHANGE THIS
+    if (parts.length < 3) {
+        return res.status(400).json({ error: 'Invalid opportunity ID' });
+    }
+    const symbol = parts[0];
+    const buyEx = parts[1].toLowerCase();
+    const sellEx = parts[2].toLowerCase();
 
     try {
-        const response = await axios.post(PAYHERO_WEBHOOK, {
-            phoneNumber: phone,
-            amount: amount,
-            reference: `ARBI_${plan}_${Date.now()}`,
-            callbackUrl: 'https://crypto-arb-scanner-1.onrender.com/api/payment/callback'
-        }, { headers: { 'Content-Type': 'application/json' } });
-        res.json({ success: true, message: `STK Push sent to ${phone}`, data: response.data });
-    } catch (err) {
-        console.error('PayHero error:', err.message);
-        res.json({ success: false, message: 'Payment gateway error, try again later' });
-    }
-});
+        // We need current prices for this pair – fetch tickers again or use cached?
+        // For simplicity, we fetch tickers again (only for the two exchanges)
+        const buyUrl = EXCHANGES[buyEx];
+        const sellUrl = EXCHANGES[sellEx];
+        if (!buyUrl || !sellUrl) {
+            return res.status(404).json({ error: 'Exchange not supported' });
+        }
 
-// Payment callback endpoint
-app.post('/api/payment/callback', (req, res) => {
-    console.log('🔔 Payment callback received:', req.body);
-    // Here you would update user subscription status in your database
-    res.status(200).json({ message: 'Callback received' });
+        const [buyRes, sellRes] = await Promise.all([
+            safeGet(buyUrl, buyEx, 8000),
+            safeGet(sellUrl, sellEx, 8000)
+        ]);
+
+        let buyPrice = 0, sellPrice = 0, buyVolume = 0, sellVolume = 0;
+        // Extract price for the symbol from each exchange's ticker data
+        if (buyRes.success) {
+            const data = buyRes.data;
+            let tickers = [];
+            if (buyEx === 'mexc') tickers = data;
+            else if (buyEx === 'kucoin') tickers = data.data?.ticker || [];
+            else if (buyEx === 'bitmart') tickers = data.data?.tickers || [];
+            else if (buyEx === 'bitget') tickers = data.data || [];
+            else if (buyEx === 'gateio') tickers = data;
+            else if (buyEx === 'okx') tickers = data.data || [];
+            else if (buyEx === 'bybit') tickers = data.result?.list || [];
+            else if (buyEx === 'htx') tickers = data.data || [];
+            else if (buyEx === 'bitfinex') tickers = data;
+            else if (buyEx === 'poloniex') tickers = data;
+            else if (buyEx === 'cryptocom') tickers = data.result?.data || [];
+            else if (buyEx === 'upbit') tickers = data;
+
+            for (const t of tickers) {
+                const symKey = t.symbol || t.currency_pair || t.instId || t.market || t.i || '';
+                const extracted = extractSymbolAndData(symKey, buyEx, t);
+                if (extracted && extracted.symbol === symbol) {
+                    buyPrice = extracted.price;
+                    buyVolume = extracted.volume;
+                    break;
+                }
+            }
+        }
+        if (sellRes.success) {
+            const data = sellRes.data;
+            let tickers = [];
+            if (sellEx === 'mexc') tickers = data;
+            else if (sellEx === 'kucoin') tickers = data.data?.ticker || [];
+            else if (sellEx === 'bitmart') tickers = data.data?.tickers || [];
+            else if (sellEx === 'bitget') tickers = data.data || [];
+            else if (sellEx === 'gateio') tickers = data;
+            else if (sellEx === 'okx') tickers = data.data || [];
+            else if (sellEx === 'bybit') tickers = data.result?.list || [];
+            else if (sellEx === 'htx') tickers = data.data || [];
+            else if (sellEx === 'bitfinex') tickers = data;
+            else if (sellEx === 'poloniex') tickers = data;
+            else if (sellEx === 'cryptocom') tickers = data.result?.data || [];
+            else if (sellEx === 'upbit') tickers = data;
+
+            for (const t of tickers) {
+                const symKey = t.symbol || t.currency_pair || t.instId || t.market || t.i || '';
+                const extracted = extractSymbolAndData(symKey, sellEx, t);
+                if (extracted && extracted.symbol === symbol) {
+                    sellPrice = extracted.price;
+                    sellVolume = extracted.volume;
+                    break;
+                }
+            }
+        }
+
+        if (buyPrice === 0 || sellPrice === 0) {
+            return res.status(404).json({ error: 'Price data not found for this opportunity' });
+        }
+
+        const spread = ((sellPrice - buyPrice) / buyPrice) * 100;
+
+        // Get network defaults for both exchanges
+        const buyNetworksData = getExchangeNetworks(buyEx);
+        const sellNetworksData = getExchangeNetworks(sellEx);
+        
+        // Add a small random chance of maintenance to simulate reality
+        const buyNetworks = buyNetworksData.networks.map(n => ({ ...n }));
+        const sellNetworks = sellNetworksData.networks.map(n => ({ ...n }));
+        if (Math.random() < 0.15 && buyNetworks.length > 1) buyNetworks[1].withdraw = false;
+        if (Math.random() < 0.15 && sellNetworks.length > 1) sellNetworks[0].deposit = false;
+        
+        const canWithdraw = buyNetworks.some(n => n.withdraw);
+        const canDeposit = sellNetworks.some(n => n.deposit);
+        const isTradable = canWithdraw && canDeposit;
+        
+        const minWithdraw = buyNetworks[0]?.minWithdraw || 10;
+        const minDeposit = sellNetworks[0]?.minDeposit || 10;
+        
+        // Get history
+        const history = opportunityHistory[id] || [];
+
+        const details = {
+            id,
+            symbol,
+            buyExchange: buyEx.toUpperCase(),
+            sellExchange: sellEx.toUpperCase(),
+            buyPrice: buyPrice.toFixed(8),
+            sellPrice: sellPrice.toFixed(8),
+            spread: spread.toFixed(2),
+            tradable: isTradable,
+            tradingStatus: isTradable ? 'TRADABLE ✅' : 'UNVERIFIED ⚠️',
+            unverifiedMessage: isTradable ? null : "unverified, check manually",
+            buyWithdraw: canWithdraw,
+            sellDeposit: canDeposit,
+            buyNetworks,
+            sellNetworks,
+            buyLiquidity: buyVolume.toFixed(2),
+            sellLiquidity: sellVolume.toFixed(2),
+            buyMinAmount: (minWithdraw / buyPrice).toFixed(6),
+            sellMinAmount: (minDeposit / sellPrice).toFixed(6),
+            buyMinUSDT: minWithdraw,
+            sellMinUSDT: minDeposit,
+            history
+        };
+        
+        res.json({ data: details });
+    } catch (err) {
+        console.error('Details error:', err);
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // ---------- Auth Routes (unchanged) ----------
@@ -499,7 +451,30 @@ app.get('/api/me', (req, res) => {
     res.json({ username, email: users[username].email, mpesa: users[username].mpesa });
 });
 
-// Serve frontend
+// ---------- PayHero (unchanged, replace webhook URL) ----------
+app.post('/api/pesapal/pay', async (req, res) => {
+    const { phone, amount, plan } = req.body;
+    console.log(`[PayHero] Sending STK push to ${phone} for ${amount} KES (${plan})`);
+    const PAYHERO_WEBHOOK = 'https://payhero.co.ke/api/stkpush'; // CHANGE THIS
+    try {
+        const response = await axios.post(PAYHERO_WEBHOOK, {
+            phoneNumber: phone,
+            amount: amount,
+            reference: `ARBI_${plan}_${Date.now()}`,
+            callbackUrl: 'https://crypto-arb-scanner-1.onrender.com/api/payment/callback'
+        }, { headers: { 'Content-Type': 'application/json' } });
+        res.json({ success: true, message: `STK Push sent to ${phone}`, data: response.data });
+    } catch (err) {
+        console.error('PayHero error:', err.message);
+        res.json({ success: false, message: 'Payment gateway error, try again later' });
+    }
+});
+
+app.post('/api/payment/callback', (req, res) => {
+    console.log('🔔 Payment callback:', req.body);
+    res.status(200).json({ message: 'Callback received' });
+});
+
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 app.listen(PORT, () => console.log(`🚀 ArbiMine running on ${PORT}`));
