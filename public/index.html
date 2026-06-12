@@ -3,10 +3,7 @@
 <head>
 
 <meta charset="UTF-8"/>
-
-<meta name="viewport"
-      content="width=device-width, initial-scale=1.0"/>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>ArbiMine</title>
 
 <style>
@@ -24,12 +21,6 @@ body{
     padding-bottom:90px;
 }
 
-/*
-========================================
-HEADER
-========================================
-*/
-
 header{
     background:#facc15;
     color:black;
@@ -39,28 +30,9 @@ header{
     font-weight:bold;
 }
 
-/*
-========================================
-AUTH
-========================================
-*/
-
-.auth-container{
-    padding:20px;
-    min-height:100vh;
-}
-
-.auth-box{
-    background:#111827;
-    padding:30px;
-    border-radius:24px;
-    border:1px solid #1f2937;
-}
-
-.auth-box h1{
-    margin-bottom:25px;
-}
-
+/* AUTH */
+.auth-container{padding:20px;}
+.auth-box{background:#111827;padding:30px;border-radius:24px;}
 .auth-box input{
     width:100%;
     padding:18px;
@@ -69,234 +41,72 @@ AUTH
     border-radius:14px;
     background:black;
     color:white;
-    font-size:16px;
 }
-
 .auth-box button{
     width:100%;
     padding:18px;
     border:none;
     border-radius:14px;
-    font-size:18px;
     font-weight:bold;
-    margin-top:10px;
 }
+.create-btn{background:#facc15;}
+.login-btn{background:#1f2937;color:white;}
 
-.create-btn{
-    background:#facc15;
-    color:black;
-}
+.page{display:none;}
+.page.active{display:block;}
 
-.login-btn{
-    background:#1f2937;
-    color:white;
-}
-
-/*
-========================================
-PAGES
-========================================
-*/
-
-.page{
-    display:none;
-}
-
-.page.active{
-    display:block;
-}
-
-/*
-========================================
-LOADING
-========================================
-*/
-
-.loading-screen{
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-    text-align:center;
-    padding:80px 20px;
-}
-
-.rocket-area{
-    position:relative;
-    width:100%;
-    height:180px;
-    overflow:hidden;
-    margin-bottom:30px;
-}
-
-.rocket{
-    position:absolute;
-    font-size:42px;
-    animation:fly 3s linear infinite;
-}
-
-.rocket:nth-child(1){
-    top:20px;
-    animation-delay:0s;
-}
-
-.rocket:nth-child(2){
-    top:90px;
-    animation-delay:1s;
-}
-
-.rocket:nth-child(3){
-    top:140px;
-    animation-delay:2s;
-}
-
-@keyframes fly{
-
-    from{
-        left:-60px;
-    }
-
-    to{
-        left:110%;
-    }
-}
-
-.loading-text{
-    font-size:28px;
-    font-weight:bold;
-    color:#22c55e;
-}
-
-.loading-sub{
-    margin-top:10px;
-    color:#94a3b8;
-}
-
-/*
-========================================
-OPPORTUNITIES
-========================================
-*/
-
-#opportunities{
-    padding:15px;
-}
+.loading-screen{text-align:center;padding:60px;}
+.rocket{font-size:40px;animation:fly 2s linear infinite;}
+@keyframes fly{from{transform:translateX(-100px);}to{transform:translateX(100vw);}}
 
 .card{
     background:#111827;
+    margin:15px;
+    padding:20px;
+    border-radius:20px;
     border:1px solid #1f2937;
-    border-radius:24px;
-    padding:22px;
-    margin-bottom:20px;
-    cursor:pointer;
 }
 
-.buy{
-    color:#22c55e;
-    font-weight:bold;
-}
+.buy{color:#22c55e;font-weight:bold;}
+.sell{color:#ef4444;font-weight:bold;}
 
-.sell{
-    color:#ef4444;
-    font-weight:bold;
-}
+.symbol{font-size:30px;margin-top:10px;font-weight:bold;}
 
-.symbol{
-    font-size:36px;
-    font-weight:bold;
-    margin-top:15px;
-}
-
-.percent{
-    color:#22c55e;
-    font-size:50px;
-    font-weight:bold;
-    margin-top:10px;
-}
+.percent{font-size:40px;color:#22c55e;margin-top:10px;}
 
 .badge{
+    display:inline-block;
+    padding:6px 12px;
+    border-radius:10px;
+    margin-top:10px;
+    font-size:12px;
+    font-weight:bold;
     background:#f59e0b;
     color:black;
-    padding:8px 14px;
-    border-radius:10px;
-    display:inline-block;
-    font-size:14px;
-    font-weight:bold;
-    margin-top:12px;
 }
 
-.tradable{
-    background:#22c55e;
-}
-
-/*
-========================================
-BOTTOM NAV
-========================================
-*/
+.tradable{background:#22c55e;}
 
 .bottom-nav{
     position:fixed;
     bottom:0;
-    left:0;
     width:100%;
+    display:flex;
     background:#111827;
     border-top:1px solid #1f2937;
-    display:flex;
-    justify-content:space-around;
-    padding:14px 0;
-    z-index:999;
 }
 
 .bottom-nav button{
+    flex:1;
+    padding:15px;
     background:none;
     border:none;
     color:#94a3b8;
-    font-size:14px;
 }
 
-.bottom-nav button.active{
-    color:#22c55e;
-}
+.bottom-nav button.active{color:#22c55e;}
 
-/*
-========================================
-PROFILE
-========================================
-*/
-
-.profile-card{
-    background:#111827;
-    margin:20px;
-    padding:25px;
-    border-radius:24px;
-}
-
-.profile-card h2{
-    margin-bottom:25px;
-}
-
-.profile-item{
-    margin-bottom:20px;
-}
-
-.logout-btn{
-    width:100%;
-    background:#ef4444;
-    color:white;
-    padding:16px;
-    border:none;
-    border-radius:14px;
-    font-weight:bold;
-    margin-top:20px;
-}
-
-/*
-========================================
-DETAILS PAGE
-========================================
-*/
-
+/* DETAILS */
 .details-page{
     position:fixed;
     top:0;
@@ -304,82 +114,32 @@ DETAILS PAGE
     width:100%;
     height:100%;
     background:#0b0f19;
-    z-index:9999;
     overflow:auto;
-    padding:20px;
     display:none;
+    padding:20px;
 }
 
 .back-btn{
     background:#ef4444;
     color:white;
+    padding:12px;
     border:none;
-    padding:14px 18px;
-    border-radius:14px;
-    font-weight:bold;
+    border-radius:10px;
     margin-bottom:20px;
 }
 
 .detail-card{
     background:#111827;
-    border-radius:24px;
-    padding:22px;
+    padding:20px;
+    border-radius:20px;
     margin-bottom:20px;
-    border:1px solid #1f2937;
 }
 
 .network-item{
     background:#1f2937;
-    padding:15px;
-    border-radius:14px;
-    margin-top:12px;
-}
-
-.graph-bar{
-    height:14px;
-    background:#22c55e;
-    border-radius:20px;
-    margin-top:12px;
-}
-
-/*
-========================================
-PRO
-========================================
-*/
-
-.plan{
-    background:#111827;
-    margin:20px;
-    padding:25px;
-    border-radius:24px;
-}
-
-.plan p{
-    color:#22c55e;
-    font-size:36px;
-    font-weight:bold;
-    margin:15px 0;
-}
-
-.plan input{
-    width:100%;
-    padding:16px;
-    border:none;
-    border-radius:14px;
-    background:black;
-    color:white;
-    margin-bottom:15px;
-}
-
-.plan button{
-    width:100%;
-    padding:16px;
-    border:none;
-    border-radius:14px;
-    background:#22c55e;
-    color:black;
-    font-weight:bold;
+    padding:10px;
+    margin-top:10px;
+    border-radius:10px;
 }
 
 </style>
@@ -388,852 +148,209 @@ PRO
 
 <body>
 
-<header>
-
-🚀 ArbiMine
-
-</header>
+<header>🚀 ArbiMine</header>
 
 <!-- AUTH -->
-
-<div id="authPage"
-     class="auth-container">
-
+<div id="authPage" class="auth-container">
     <div class="auth-box">
+        <h2>Login / Register</h2>
 
-        <h1>
-            Welcome to ArbiMine
-        </h1>
+        <input id="username" placeholder="Username"/>
+        <input id="email" placeholder="Email"/>
+        <input id="mpesa" placeholder="M-Pesa"/>
+        <input id="password" placeholder="Password"/>
 
-        <input type="text"
-               id="username"
-               placeholder="Username">
-
-        <input type="email"
-               id="email"
-               placeholder="Email">
-
-        <input type="text"
-               id="mpesa"
-               placeholder="M-Pesa: 2547XXXXXXXX">
-
-        <input type="password"
-               id="password"
-               placeholder="Password">
-
-        <button class="create-btn"
-                onclick="registerUser()">
-
-            Create Account
-
-        </button>
-
-        <button class="login-btn"
-                onclick="loginUser()">
-
-            Login
-
-        </button>
-
+        <button class="create-btn" onclick="loginUser()">Enter</button>
     </div>
-
 </div>
 
-<!-- MAIN APP -->
+<!-- MAIN -->
+<div id="mainApp" style="display:none;">
 
-<div id="mainApp"
-     style="display:none;">
-
-    <!-- HOME -->
-
-    <div id="homePage"
-         class="page active">
-
-        <div id="opportunities">
-
-        </div>
-
+    <div id="homePage" class="page active">
+        <div id="opportunities"></div>
     </div>
 
-    <!-- PRO -->
-
-    <div id="proPage"
-         class="page">
-
-        <div class="plan">
-
-            <h2>
-                Weekly Plan
-            </h2>
-
-            <p>
-                KES 100
-            </p>
-
-            <input type="text"
-                   id="weeklyPhone"
-                   placeholder="2547XXXXXXXX">
-
-            <button onclick="
-                pay(
-                    'weekly',
-                    100,
-                    'weeklyPhone'
-                )
-            ">
-
-                Pay Weekly
-
-            </button>
-
+    <div id="profilePage" class="page">
+        <div class="card">
+            <h2>Profile</h2>
+            <p id="pUsername"></p>
+            <p id="pEmail"></p>
+            <p id="pMpesa"></p>
         </div>
-
-        <div class="plan">
-
-            <h2>
-                Monthly Plan
-            </h2>
-
-            <p>
-                KES 350
-            </p>
-
-            <input type="text"
-                   id="monthlyPhone"
-                   placeholder="2547XXXXXXXX">
-
-            <button onclick="
-                pay(
-                    'monthly',
-                    350,
-                    'monthlyPhone'
-                )
-            ">
-
-                Pay Monthly
-
-            </button>
-
-        </div>
-
     </div>
-
-    <!-- PROFILE -->
-
-    <div id="profilePage"
-         class="page">
-
-        <div class="profile-card">
-
-            <h2>
-                My Profile
-            </h2>
-
-            <div class="profile-item">
-
-                Username:
-
-                <h3 id="pUsername"></h3>
-
-            </div>
-
-            <div class="profile-item">
-
-                Email:
-
-                <h3 id="pEmail"></h3>
-
-            </div>
-
-            <div class="profile-item">
-
-                M-Pesa:
-
-                <h3 id="pMpesa"></h3>
-
-            </div>
-
-            <button class="logout-btn"
-                    onclick="logoutUser()">
-
-                Logout
-
-            </button>
-
-        </div>
-
-    </div>
-
-    <!-- NAV -->
 
     <div class="bottom-nav">
-
-        <button class="active"
-                onclick="
-                switchPage(
-                    'homePage',
-                    this
-                )">
-
-            🏠 Home
-
-        </button>
-
-        <button onclick="
-            switchPage(
-                'proPage',
-                this
-            )">
-
-            💎 Pro
-
-        </button>
-
-        <button onclick="
-            switchPage(
-                'profilePage',
-                this
-            )">
-
-            👤 Profile
-
-        </button>
-
+        <button class="active" onclick="switchPage('homePage',this)">Home</button>
+        <button onclick="switchPage('profilePage',this)">Profile</button>
     </div>
-
 </div>
 
 <!-- DETAILS -->
+<div id="detailsPage" class="details-page">
 
-<div id="detailsPage"
-     class="details-page">
-
-    <button class="back-btn"
-            onclick="closeDetails()">
-
-        ← Back
-
-    </button>
+    <button class="back-btn" onclick="closeDetails()">← Back</button>
 
     <div id="detailsBody"></div>
-
 </div>
 
 <script>
 
-const API =
-'https://crypto-arb-scanner-1.onrender.com';
+const API = "https://crypto-arb-scanner-1.onrender.com";
 
-/*
-========================================
-REGISTER
-========================================
-*/
-
-function registerUser(){
-
-    const user = {
-
-        username:
-            document.getElementById(
-                'username'
-            ).value,
-
-        email:
-            document.getElementById(
-                'email'
-            ).value,
-
-        mpesa:
-            document.getElementById(
-                'mpesa'
-            ).value,
-
-        password:
-            document.getElementById(
-                'password'
-            ).value
-    };
-
-    localStorage.setItem(
-        'arbimine_user',
-        JSON.stringify(user)
-    );
-
-    loginUser();
-}
-
-/*
-========================================
-LOGIN
-========================================
-*/
-
+/* LOGIN */
 function loginUser(){
 
-    const user =
-        JSON.parse(
-            localStorage.getItem(
-                'arbimine_user'
-            )
-        );
+    const user = {
+        username: document.getElementById('username').value,
+        email: document.getElementById('email').value,
+        mpesa: document.getElementById('mpesa').value
+    };
 
-    if(!user){
+    localStorage.setItem("user", JSON.stringify(user));
 
-        alert(
-            'Create account first'
-        );
+    document.getElementById("authPage").style.display="none";
+    document.getElementById("mainApp").style.display="block";
 
-        return;
-    }
-
-    document.getElementById(
-        'authPage'
-    ).style.display = 'none';
-
-    document.getElementById(
-        'mainApp'
-    ).style.display = 'block';
-
-    document.getElementById(
-        'pUsername'
-    ).innerText =
-        user.username;
-
-    document.getElementById(
-        'pEmail'
-    ).innerText =
-        user.email;
-
-    document.getElementById(
-        'pMpesa'
-    ).innerText =
-        user.mpesa;
+    document.getElementById("pUsername").innerText = user.username;
+    document.getElementById("pEmail").innerText = user.email;
+    document.getElementById("pMpesa").innerText = user.mpesa;
 
     loadOpportunities();
 }
 
-/*
-========================================
-AUTO LOGIN
-========================================
-*/
+/* SWITCH PAGE */
+function switchPage(page,btn){
 
-window.onload = ()=>{
+    document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+    document.getElementById(page).classList.add("active");
 
-    if(
-        localStorage.getItem(
-            'arbimine_user'
-        )
-    ){
-        loginUser();
-    }
-};
-
-/*
-========================================
-LOGOUT
-========================================
-*/
-
-function logoutUser(){
-
-    localStorage.removeItem(
-        'arbimine_user'
-    );
-
-    location.reload();
+    document.querySelectorAll(".bottom-nav button").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
 }
 
-/*
-========================================
-SWITCH PAGE
-========================================
-*/
-
-function switchPage(
-    pageId,
-    btn
-){
-
-    document
-    .querySelectorAll('.page')
-    .forEach(page=>{
-
-        page.classList.remove(
-            'active'
-        );
-    });
-
-    document
-    .getElementById(pageId)
-    .classList.add('active');
-
-    document
-    .querySelectorAll(
-        '.bottom-nav button'
-    )
-    .forEach(button=>{
-
-        button.classList.remove(
-            'active'
-        );
-    });
-
-    btn.classList.add('active');
-}
-
-/*
-========================================
-LOAD OPPORTUNITIES
-========================================
-*/
-
+/* LOAD OPPS */
 async function loadOpportunities(){
 
-    const container =
-        document.getElementById(
-            'opportunities'
-        );
+    const box = document.getElementById("opportunities");
 
-    container.innerHTML = `
+    box.innerHTML = `<div class="loading-screen">🚀 Scanning Markets...</div>`;
 
-        <div class="loading-screen">
+    const res = await fetch(API+"/api/opportunities");
+    const data = await res.json();
 
-            <div class="rocket-area">
+    const opps = data.opportunities || [];
 
-                <div class="rocket">
-                    🚀
-                </div>
+    if(opps.length === 0){
+        box.innerHTML = "No opportunities yet";
+        return;
+    }
 
-                <div class="rocket">
-                    🚀
-                </div>
+    box.innerHTML = opps.map(o=>`
 
-                <div class="rocket">
-                    🚀
-                </div>
+        <div class="card" onclick='openDetails(${JSON.stringify(o)})'>
 
+            <div>
+                <span class="buy">BUY</span> ${o.buyExchange} $${o.buyPrice}
             </div>
 
-            <div class="loading-text">
-
-                Scanning Markets...
-
+            <div>
+                <span class="sell">SELL</span> ${o.sellExchange} $${o.sellPrice}
             </div>
 
-            <div class="loading-sub">
+            <div class="symbol">${o.symbol}</div>
 
-                Please wait while
-                ArbiMine finds
-                opportunities
+            <div class="percent">${o.spread}%</div>
 
+            <div style="margin-top:10px;">
+                Liquidity: <b>${o.liquidity}</b>
+            </div>
+
+            <div style="color:${o.risk.color}">
+                Risk: <b>${o.risk.level}</b>
+            </div>
+
+            <div>
+                Trend: <b>${o.trend}</b>
             </div>
 
         </div>
-    `;
 
-    try{
-
-        const res =
-            await fetch(
-                `${API}/api/opportunities`
-            );
-
-        const json =
-            await res.json();
-
-        const opps =
-            json.opportunities || [];
-
-        if(opps.length===0){
-
-            container.innerHTML = `
-
-                <div class="loading-screen">
-
-                    <div class="rocket-area">
-
-                        <div class="rocket">
-                            🚀
-                        </div>
-
-                    </div>
-
-                    <div class="loading-text">
-
-                        Still Scanning...
-
-                    </div>
-
-                </div>
-            `;
-
-            return;
-        }
-
-        container.innerHTML =
-            opps.map(item=>`
-
-            <div class="card"
-                 onclick='openDetails(
-                    ${JSON.stringify(item)}
-                 )'>
-
-                <div>
-
-                    <span class="buy">
-
-                        BUY
-
-                    </span>
-
-                    ${item.buyExchange}
-
-                    $${item.buyPrice}
-
-                </div>
-
-                <div style="
-                    margin-top:8px;
-                ">
-
-                    <span class="sell">
-
-                        SELL
-
-                    </span>
-
-                    ${item.sellExchange}
-
-                    $${item.sellPrice}
-
-                </div>
-
-                <div class="symbol">
-
-                    ${item.symbol}
-
-                </div>
-
-                <div class="
-                    badge
-                    ${
-                        item.tradable
-                        ? 'tradable'
-                        : ''
-                    }
-                ">
-
-                    ${
-                        item.tradable
-                        ? 'TRADABLE'
-                        : 'UNVERIFIED'
-                    }
-
-                </div>
-
-                <div class="percent">
-
-                    ${item.spread}%
-
-                </div>
-
-            </div>
-
-        `).join('');
-
-    }catch(err){
-
-        container.innerHTML = `
-
-            <div class="loading-screen">
-
-                <div class="loading-text">
-
-                    Failed To Load
-
-                </div>
-
-            </div>
-        `;
-    }
+    `).join('');
 }
 
-/*
-========================================
-OPEN DETAILS
-========================================
-*/
-
+/* DETAILS */
 async function openDetails(item){
 
-    const page =
-        document.getElementById(
-            'detailsPage'
-        );
+    document.getElementById("detailsPage").style.display="block";
 
-    const body =
-        document.getElementById(
-            'detailsBody'
-        );
+    const res = await fetch(API+"/api/opportunity/"+item.id);
+    const d = await res.json();
 
-    page.style.display = 'block';
+    const data = d.data;
 
-    body.innerHTML = `
+    document.getElementById("detailsBody").innerHTML = `
 
-        <div class="loading-screen">
+        <div class="detail-card">
 
-            <div class="rocket-area">
+            <h2>${data.symbol}</h2>
 
-                <div class="rocket">
-                    🚀
+            <p>Buy: ${data.buyExchange} - $${data.buyPrice}</p>
+            <p>Sell: ${data.sellExchange} - $${data.sellPrice}</p>
+
+            <p>Arrival Buy: ${data.arrivalTime.buy} min</p>
+            <p>Arrival Sell: ${data.arrivalTime.sell} min</p>
+
+        </div>
+
+        <div class="detail-card">
+
+            <h3>Networks</h3>
+
+            ${data.networks.buy.map(n=>`
+
+                <div class="network-item">
+
+                    <b>${n.network}</b><br/>
+                    Deposit: ${n.deposit ? "Open":"Closed"}<br/>
+                    Withdraw: ${n.withdraw ? "Open":"Closed"}<br/>
+                    ETA: ${n.eta}
+
                 </div>
 
-            </div>
+            `).join('')}
 
-            <div class="loading-text">
+        </div>
 
-                Loading Details...
+        <div class="detail-card">
+
+            <h3>Trend Graph</h3>
+
+            <div style="display:flex;align-items:flex-end;height:120px;gap:3px;">
+
+                ${data.history.map(h=>`
+
+                    <div style="
+                        width:6px;
+                        height:${h.spread * 6}px;
+                        background:${h.spread > 5 ? '#ef4444':'#22c55e'};
+                    "></div>
+
+                `).join('')}
 
             </div>
 
         </div>
+
     `;
-
-    try{
-
-        const res =
-            await fetch(
-                `${API}/api/opportunity/${item.id}`
-            );
-
-        const json =
-            await res.json();
-
-        const data =
-            json.data;
-
-        body.innerHTML = `
-
-            <div class="detail-card">
-
-                <h1>
-
-                    ${data.symbol}
-
-                </h1>
-
-                <div class="
-                    badge
-                    ${
-                        data.tradable
-                        ? 'tradable'
-                        : ''
-                    }
-                ">
-
-                    ${
-                        data.tradable
-                        ? 'TRADABLE'
-                        : 'UNVERIFIED'
-                    }
-
-                </div>
-
-                <h2 style="
-                    margin-top:20px;
-                ">
-
-                    Buy:
-                    ${data.buyExchange}
-
-                </h2>
-
-                <p>
-
-                    Price:
-                    $${data.buyPrice}
-
-                </p>
-
-                <h2 style="
-                    margin-top:20px;
-                ">
-
-                    Sell:
-                    ${data.sellExchange}
-
-                </h2>
-
-                <p>
-
-                    Price:
-                    $${data.sellPrice}
-
-                </p>
-
-            </div>
-
-            <div class="detail-card">
-
-                <h2>
-
-                    Networks
-
-                </h2>
-
-                ${
-                    data.networks.buy.map(net=>`
-
-                    <div class="network-item">
-
-                        <strong>
-
-                            ${net.network}
-
-                        </strong>
-
-                        <p>
-
-                            Deposit:
-                            ${
-                                net.deposit
-                                ? 'Open'
-                                : 'Closed'
-                            }
-
-                        </p>
-
-                        <p>
-
-                            Withdraw:
-                            ${
-                                net.withdraw
-                                ? 'Open'
-                                : 'Closed'
-                            }
-
-                        </p>
-
-                    </div>
-
-                    `).join('')
-                }
-
-            </div>
-
-            <div class="detail-card">
-
-                <h2>
-
-                    Opportunity Trend
-
-                </h2>
-
-                ${
-                    data.history.map(h=>`
-
-                    <div class="graph-bar"
-                         style="
-                         width:
-                         ${
-                            h.spread * 8
-                         }px;
-                         ">
-                    </div>
-
-                    `).join('')
-                }
-
-            </div>
-        `;
-
-    }catch(err){
-
-        body.innerHTML = `
-
-            <div class="loading-screen">
-
-                <div class="loading-text">
-
-                    Failed To Load Details
-
-                </div>
-
-            </div>
-        `;
-    }
 }
 
-/*
-========================================
-CLOSE DETAILS
-========================================
-*/
-
+/* CLOSE */
 function closeDetails(){
-
-    document.getElementById(
-        'detailsPage'
-    ).style.display = 'none';
+    document.getElementById("detailsPage").style.display="none";
 }
 
-/*
-========================================
-PAY
-========================================
-*/
-
-async function pay(
-    plan,
-    amount,
-    inputId
-){
-
-    const phone =
-        document.getElementById(
-            inputId
-        ).value;
-
-    const res =
-        await fetch(
-            `${API}/api/pesapal/pay`,
-            {
-                method:'POST',
-
-                headers:{
-                    'Content-Type':
-                    'application/json'
-                },
-
-                body:JSON.stringify({
-
-                    phone,
-                    amount,
-                    plan
-                })
-            }
-        );
-
-    const data =
-        await res.json();
-
-    alert(
-        data.message
-    );
-}
-
-/*
-========================================
-AUTO REFRESH
-========================================
-*/
-
-setInterval(
-    loadOpportunities,
-    15000
-);
+setInterval(loadOpportunities,15000);
 
 </script>
 
