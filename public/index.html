@@ -24,6 +24,12 @@ body{
     padding-bottom:90px;
 }
 
+/*
+========================================
+HEADER
+========================================
+*/
+
 header{
     background:#facc15;
     color:black;
@@ -33,14 +39,21 @@ header{
     font-weight:bold;
 }
 
+/*
+========================================
+AUTH
+========================================
+*/
+
 .auth-container{
     padding:20px;
+    min-height:100vh;
 }
 
 .auth-box{
     background:#111827;
     padding:30px;
-    border-radius:20px;
+    border-radius:24px;
     border:1px solid #1f2937;
 }
 
@@ -50,19 +63,20 @@ header{
 
 .auth-box input{
     width:100%;
-    padding:16px;
-    border:none;
-    border-radius:12px;
+    padding:18px;
     margin-bottom:15px;
+    border:none;
+    border-radius:14px;
     background:black;
     color:white;
+    font-size:16px;
 }
 
 .auth-box button{
     width:100%;
-    padding:16px;
+    padding:18px;
     border:none;
-    border-radius:12px;
+    border-radius:14px;
     font-size:18px;
     font-weight:bold;
     margin-top:10px;
@@ -78,6 +92,12 @@ header{
     color:white;
 }
 
+/*
+========================================
+PAGES
+========================================
+*/
+
 .page{
     display:none;
 }
@@ -86,6 +106,78 @@ header{
     display:block;
 }
 
+/*
+========================================
+LOADING
+========================================
+*/
+
+.loading-screen{
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+    padding:80px 20px;
+}
+
+.rocket-area{
+    position:relative;
+    width:100%;
+    height:180px;
+    overflow:hidden;
+    margin-bottom:30px;
+}
+
+.rocket{
+    position:absolute;
+    font-size:42px;
+    animation:fly 3s linear infinite;
+}
+
+.rocket:nth-child(1){
+    top:20px;
+    animation-delay:0s;
+}
+
+.rocket:nth-child(2){
+    top:90px;
+    animation-delay:1s;
+}
+
+.rocket:nth-child(3){
+    top:140px;
+    animation-delay:2s;
+}
+
+@keyframes fly{
+
+    from{
+        left:-60px;
+    }
+
+    to{
+        left:110%;
+    }
+}
+
+.loading-text{
+    font-size:28px;
+    font-weight:bold;
+    color:#22c55e;
+}
+
+.loading-sub{
+    margin-top:10px;
+    color:#94a3b8;
+}
+
+/*
+========================================
+OPPORTUNITIES
+========================================
+*/
+
 #opportunities{
     padding:15px;
 }
@@ -93,9 +185,10 @@ header{
 .card{
     background:#111827;
     border:1px solid #1f2937;
-    border-radius:20px;
-    padding:20px;
+    border-radius:24px;
+    padding:22px;
     margin-bottom:20px;
+    cursor:pointer;
 }
 
 .buy{
@@ -109,14 +202,14 @@ header{
 }
 
 .symbol{
-    font-size:38px;
+    font-size:36px;
     font-weight:bold;
     margin-top:15px;
 }
 
 .percent{
     color:#22c55e;
-    font-size:52px;
+    font-size:50px;
     font-weight:bold;
     margin-top:10px;
 }
@@ -124,27 +217,23 @@ header{
 .badge{
     background:#f59e0b;
     color:black;
-    padding:8px 12px;
-    border-radius:8px;
+    padding:8px 14px;
+    border-radius:10px;
+    display:inline-block;
     font-size:14px;
     font-weight:bold;
-    display:inline-block;
-    margin-top:10px;
+    margin-top:12px;
 }
 
 .tradable{
     background:#22c55e;
 }
 
-.warning{
-    margin-top:15px;
-    background:#f59e0b;
-    color:black;
-    padding:15px;
-    border-radius:12px;
-    font-weight:bold;
-    text-align:center;
-}
+/*
+========================================
+BOTTOM NAV
+========================================
+*/
 
 .bottom-nav{
     position:fixed;
@@ -152,10 +241,11 @@ header{
     left:0;
     width:100%;
     background:#111827;
+    border-top:1px solid #1f2937;
     display:flex;
     justify-content:space-around;
-    padding:15px 0;
-    border-top:1px solid #1f2937;
+    padding:14px 0;
+    z-index:999;
 }
 
 .bottom-nav button{
@@ -169,15 +259,21 @@ header{
     color:#22c55e;
 }
 
+/*
+========================================
+PROFILE
+========================================
+*/
+
 .profile-card{
     background:#111827;
     margin:20px;
     padding:25px;
-    border-radius:20px;
+    border-radius:24px;
 }
 
 .profile-card h2{
-    margin-bottom:20px;
+    margin-bottom:25px;
 }
 
 .profile-item{
@@ -188,83 +284,102 @@ header{
     width:100%;
     background:#ef4444;
     color:white;
-    padding:15px;
+    padding:16px;
     border:none;
-    border-radius:12px;
+    border-radius:14px;
     font-weight:bold;
+    margin-top:20px;
 }
 
-.modal{
-    display:none;
+/*
+========================================
+DETAILS PAGE
+========================================
+*/
+
+.details-page{
     position:fixed;
     top:0;
     left:0;
     width:100%;
     height:100%;
-    background:rgba(0,0,0,0.9);
-    z-index:999;
+    background:#0b0f19;
+    z-index:9999;
     overflow:auto;
     padding:20px;
+    display:none;
 }
 
-.modal-content{
+.back-btn{
+    background:#ef4444;
+    color:white;
+    border:none;
+    padding:14px 18px;
+    border-radius:14px;
+    font-weight:bold;
+    margin-bottom:20px;
+}
+
+.detail-card{
     background:#111827;
-    padding:25px;
-    border-radius:20px;
+    border-radius:24px;
+    padding:22px;
+    margin-bottom:20px;
+    border:1px solid #1f2937;
 }
 
-.close{
-    float:right;
-    font-size:30px;
-    cursor:pointer;
-}
-
-.network{
+.network-item{
     background:#1f2937;
     padding:15px;
-    border-radius:12px;
-    margin-top:10px;
+    border-radius:14px;
+    margin-top:12px;
 }
+
+.graph-bar{
+    height:14px;
+    background:#22c55e;
+    border-radius:20px;
+    margin-top:12px;
+}
+
+/*
+========================================
+PRO
+========================================
+*/
 
 .plan{
     background:#111827;
     margin:20px;
     padding:25px;
-    border-radius:20px;
+    border-radius:24px;
 }
 
 .plan p{
     color:#22c55e;
-    font-size:35px;
+    font-size:36px;
     font-weight:bold;
     margin:15px 0;
 }
 
 .plan input{
     width:100%;
-    padding:15px;
+    padding:16px;
     border:none;
-    border-radius:12px;
-    margin-bottom:15px;
+    border-radius:14px;
     background:black;
     color:white;
+    margin-bottom:15px;
 }
 
 .plan button{
     width:100%;
-    padding:15px;
+    padding:16px;
     border:none;
-    border-radius:12px;
+    border-radius:14px;
     background:#22c55e;
     color:black;
     font-weight:bold;
-}
-
-.graph-bar{
-    height:12px;
-    background:#22c55e;
-    margin-top:10px;
-    border-radius:20px;
 }
 
 </style>
@@ -324,7 +439,7 @@ header{
 
 </div>
 
-<!-- MAIN -->
+<!-- MAIN APP -->
 
 <div id="mainApp"
      style="display:none;">
@@ -460,7 +575,7 @@ header{
                     this
                 )">
 
-            Home
+            🏠 Home
 
         </button>
 
@@ -470,7 +585,7 @@ header{
                 this
             )">
 
-            Pro
+            💎 Pro
 
         </button>
 
@@ -480,7 +595,7 @@ header{
                 this
             )">
 
-            Profile
+            👤 Profile
 
         </button>
 
@@ -490,21 +605,17 @@ header{
 
 <!-- DETAILS -->
 
-<div id="detailsModal"
-     class="modal">
+<div id="detailsPage"
+     class="details-page">
 
-    <div class="modal-content">
+    <button class="back-btn"
+            onclick="closeDetails()">
 
-        <span class="close"
-              onclick="closeModal()">
+        ← Back
 
-            ×
+    </button>
 
-        </span>
-
-        <div id="detailsContent"></div>
-
-    </div>
+    <div id="detailsBody"></div>
 
 </div>
 
@@ -514,9 +625,9 @@ const API =
 'https://crypto-arb-scanner-1.onrender.com';
 
 /*
-==================================================
+========================================
 REGISTER
-==================================================
+========================================
 */
 
 function registerUser(){
@@ -553,9 +664,9 @@ function registerUser(){
 }
 
 /*
-==================================================
+========================================
 LOGIN
-==================================================
+========================================
 */
 
 function loginUser(){
@@ -603,9 +714,9 @@ function loginUser(){
 }
 
 /*
-==================================================
+========================================
 AUTO LOGIN
-==================================================
+========================================
 */
 
 window.onload = ()=>{
@@ -620,9 +731,9 @@ window.onload = ()=>{
 };
 
 /*
-==================================================
+========================================
 LOGOUT
-==================================================
+========================================
 */
 
 function logoutUser(){
@@ -635,9 +746,9 @@ function logoutUser(){
 }
 
 /*
-==================================================
-PAGES
-==================================================
+========================================
+SWITCH PAGE
+========================================
 */
 
 function switchPage(
@@ -673,249 +784,405 @@ function switchPage(
 }
 
 /*
-==================================================
-LOAD OPPS
-==================================================
+========================================
+LOAD OPPORTUNITIES
+========================================
 */
 
 async function loadOpportunities(){
-
-    const res =
-        await fetch(
-            `${API}/api/opportunities`
-        );
-
-    const json =
-        await res.json();
-
-    const opps =
-        json.opportunities || [];
 
     const container =
         document.getElementById(
             'opportunities'
         );
 
-    container.innerHTML =
-        opps.map(item=>`
+    container.innerHTML = `
 
-        <div class="card"
-             onclick='openDetails(
-                ${JSON.stringify(item)}
-             )'>
+        <div class="loading-screen">
 
-            <div>
+            <div class="rocket-area">
 
-                <span class="buy">
+                <div class="rocket">
+                    🚀
+                </div>
 
-                    BUY
+                <div class="rocket">
+                    🚀
+                </div>
 
-                </span>
-
-                ${item.buyExchange}
-
-                $${item.buyPrice}
+                <div class="rocket">
+                    🚀
+                </div>
 
             </div>
 
-            <div style="
-                margin-top:8px;
-            ">
+            <div class="loading-text">
 
-                <span class="sell">
-
-                    SELL
-
-                </span>
-
-                ${item.sellExchange}
-
-                $${item.sellPrice}
+                Scanning Markets...
 
             </div>
 
-            <div class="symbol">
+            <div class="loading-sub">
 
-                ${item.symbol}
-
-            </div>
-
-            <div class="
-                badge
-                ${
-                    item.tradable
-                    ? 'tradable'
-                    : ''
-                }
-            ">
-
-                ${
-                    item.tradable
-                    ? 'TRADABLE'
-                    : 'UNVERIFIED'
-                }
-
-            </div>
-
-            <div class="percent">
-
-                ${item.spread}%
+                Please wait while
+                ArbiMine finds
+                opportunities
 
             </div>
 
         </div>
+    `;
 
-    `).join('');
+    try{
+
+        const res =
+            await fetch(
+                `${API}/api/opportunities`
+            );
+
+        const json =
+            await res.json();
+
+        const opps =
+            json.opportunities || [];
+
+        if(opps.length===0){
+
+            container.innerHTML = `
+
+                <div class="loading-screen">
+
+                    <div class="rocket-area">
+
+                        <div class="rocket">
+                            🚀
+                        </div>
+
+                    </div>
+
+                    <div class="loading-text">
+
+                        Still Scanning...
+
+                    </div>
+
+                </div>
+            `;
+
+            return;
+        }
+
+        container.innerHTML =
+            opps.map(item=>`
+
+            <div class="card"
+                 onclick='openDetails(
+                    ${JSON.stringify(item)}
+                 )'>
+
+                <div>
+
+                    <span class="buy">
+
+                        BUY
+
+                    </span>
+
+                    ${item.buyExchange}
+
+                    $${item.buyPrice}
+
+                </div>
+
+                <div style="
+                    margin-top:8px;
+                ">
+
+                    <span class="sell">
+
+                        SELL
+
+                    </span>
+
+                    ${item.sellExchange}
+
+                    $${item.sellPrice}
+
+                </div>
+
+                <div class="symbol">
+
+                    ${item.symbol}
+
+                </div>
+
+                <div class="
+                    badge
+                    ${
+                        item.tradable
+                        ? 'tradable'
+                        : ''
+                    }
+                ">
+
+                    ${
+                        item.tradable
+                        ? 'TRADABLE'
+                        : 'UNVERIFIED'
+                    }
+
+                </div>
+
+                <div class="percent">
+
+                    ${item.spread}%
+
+                </div>
+
+            </div>
+
+        `).join('');
+
+    }catch(err){
+
+        container.innerHTML = `
+
+            <div class="loading-screen">
+
+                <div class="loading-text">
+
+                    Failed To Load
+
+                </div>
+
+            </div>
+        `;
+    }
 }
 
 /*
-==================================================
-DETAILS
-==================================================
+========================================
+OPEN DETAILS
+========================================
 */
 
 async function openDetails(item){
 
-    const res =
-        await fetch(
-            `${API}/api/opportunity/${item.id}`
+    const page =
+        document.getElementById(
+            'detailsPage'
         );
 
-    const json =
-        await res.json();
+    const body =
+        document.getElementById(
+            'detailsBody'
+        );
 
-    const data =
-        json.data;
+    page.style.display = 'block';
 
-    document.getElementById(
-        'detailsModal'
-    ).style.display = 'block';
+    body.innerHTML = `
 
-    document.getElementById(
-        'detailsContent'
-    ).innerHTML = `
+        <div class="loading-screen">
 
-        <h1>
+            <div class="rocket-area">
 
-            ${data.symbol}
-
-        </h1>
-
-        <div style="
-            margin-top:20px;
-        ">
-
-            <h2>
-                Buy:
-                ${data.buyExchange}
-            </h2>
-
-            <p>
-                Price:
-                $${data.buyPrice}
-            </p>
-
-        </div>
-
-        <div style="
-            margin-top:20px;
-        ">
-
-            <h2>
-                Sell:
-                ${data.sellExchange}
-            </h2>
-
-            <p>
-                Price:
-                $${data.sellPrice}
-            </p>
-
-        </div>
-
-        <div style="
-            margin-top:20px;
-        ">
-
-            <h2>
-                Networks
-            </h2>
-
-            ${
-                data.networks.buy.map(net=>`
-
-                <div class="network">
-
-                    <strong>
-                        ${net.network}
-                    </strong>
-
-                    <p>
-
-                        Deposit:
-                        ${
-                            net.depositEnable
-                            ? 'Open'
-                            : 'Closed'
-                        }
-
-                    </p>
-
-                    <p>
-
-                        Withdraw:
-                        ${
-                            net.withdrawEnable
-                            ? 'Open'
-                            : 'Closed'
-                        }
-
-                    </p>
-
+                <div class="rocket">
+                    🚀
                 </div>
 
-                `).join('')
-            }
+            </div>
+
+            <div class="loading-text">
+
+                Loading Details...
+
+            </div>
 
         </div>
-
-        <div style="
-            margin-top:25px;
-        ">
-
-            <h2>
-                Spread History
-            </h2>
-
-            ${
-                data.history.map(h=>`
-
-                <div class="graph-bar"
-                     style="
-                     width:
-                     ${h.spread * 10}px;
-                     ">
-                </div>
-
-                `).join('')
-            }
-
-        </div>
-
     `;
+
+    try{
+
+        const res =
+            await fetch(
+                `${API}/api/opportunity/${item.id}`
+            );
+
+        const json =
+            await res.json();
+
+        const data =
+            json.data;
+
+        body.innerHTML = `
+
+            <div class="detail-card">
+
+                <h1>
+
+                    ${data.symbol}
+
+                </h1>
+
+                <div class="
+                    badge
+                    ${
+                        data.tradable
+                        ? 'tradable'
+                        : ''
+                    }
+                ">
+
+                    ${
+                        data.tradable
+                        ? 'TRADABLE'
+                        : 'UNVERIFIED'
+                    }
+
+                </div>
+
+                <h2 style="
+                    margin-top:20px;
+                ">
+
+                    Buy:
+                    ${data.buyExchange}
+
+                </h2>
+
+                <p>
+
+                    Price:
+                    $${data.buyPrice}
+
+                </p>
+
+                <h2 style="
+                    margin-top:20px;
+                ">
+
+                    Sell:
+                    ${data.sellExchange}
+
+                </h2>
+
+                <p>
+
+                    Price:
+                    $${data.sellPrice}
+
+                </p>
+
+            </div>
+
+            <div class="detail-card">
+
+                <h2>
+
+                    Networks
+
+                </h2>
+
+                ${
+                    data.networks.buy.map(net=>`
+
+                    <div class="network-item">
+
+                        <strong>
+
+                            ${net.network}
+
+                        </strong>
+
+                        <p>
+
+                            Deposit:
+                            ${
+                                net.deposit
+                                ? 'Open'
+                                : 'Closed'
+                            }
+
+                        </p>
+
+                        <p>
+
+                            Withdraw:
+                            ${
+                                net.withdraw
+                                ? 'Open'
+                                : 'Closed'
+                            }
+
+                        </p>
+
+                    </div>
+
+                    `).join('')
+                }
+
+            </div>
+
+            <div class="detail-card">
+
+                <h2>
+
+                    Opportunity Trend
+
+                </h2>
+
+                ${
+                    data.history.map(h=>`
+
+                    <div class="graph-bar"
+                         style="
+                         width:
+                         ${
+                            h.spread * 8
+                         }px;
+                         ">
+                    </div>
+
+                    `).join('')
+                }
+
+            </div>
+        `;
+
+    }catch(err){
+
+        body.innerHTML = `
+
+            <div class="loading-screen">
+
+                <div class="loading-text">
+
+                    Failed To Load Details
+
+                </div>
+
+            </div>
+        `;
+    }
 }
 
-function closeModal(){
+/*
+========================================
+CLOSE DETAILS
+========================================
+*/
+
+function closeDetails(){
 
     document.getElementById(
-        'detailsModal'
+        'detailsPage'
     ).style.display = 'none';
 }
 
 /*
-==================================================
+========================================
 PAY
-==================================================
+========================================
 */
 
 async function pay(
@@ -957,9 +1224,15 @@ async function pay(
     );
 }
 
+/*
+========================================
+AUTO REFRESH
+========================================
+*/
+
 setInterval(
     loadOpportunities,
-    10000
+    15000
 );
 
 </script>
