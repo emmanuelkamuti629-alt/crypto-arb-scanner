@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -7,305 +7,94 @@
 
 <style>
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:Arial;
+body{background:#0b0f19;color:white;font-family:Arial;margin:0;}
+
+header{background:#facc15;color:black;padding:15px;text-align:center;font-size:26px;font-weight:bold;}
+
+.page{display:none;padding:10px;}
+.page.active{display:block;}
+
+.card{background:#111827;margin:10px;padding:15px;border-radius:15px;}
+
+.buy{color:#22c55e;}
+.sell{color:#ef4444;}
+
+.nav{
+position:fixed;bottom:0;width:100%;display:flex;background:#111827;
 }
 
-body{
-    background:#0b0f19;
-    color:white;
-    padding-bottom:90px;
-}
+.nav button{flex:1;padding:15px;background:none;border:none;color:white;}
 
-header{
-    background:#facc15;
-    color:black;
-    text-align:center;
-    padding:18px;
-    font-size:28px;
-    font-weight:bold;
-}
+.liq-high{color:#22c55e;}
+.liq-medium{color:#f59e0b;}
+.liq-low{color:#ef4444;}
 
-/* LOADING */
-.loading{
-    text-align:center;
-    padding:60px;
-    color:#94a3b8;
-}
-
-/* CARD */
-.card{
-    background:#111827;
-    margin:15px;
-    padding:18px;
-    border-radius:18px;
-    border:1px solid #1f2937;
-}
-
-.buy{color:#22c55e;font-weight:bold;}
-.sell{color:#ef4444;font-weight:bold;}
-
-.symbol{font-size:28px;margin-top:10px;font-weight:bold;}
-
-.percent{font-size:38px;color:#22c55e;margin-top:10px;}
-
-.badge{
-    display:inline-block;
-    padding:6px 10px;
-    border-radius:10px;
-    margin-top:8px;
-    font-size:12px;
-    font-weight:bold;
-    background:#f59e0b;
-    color:black;
-}
-
-/* RISK COLORS */
-.risk-low{color:#22c55e;font-weight:bold;}
-.risk-medium{color:#f59e0b;font-weight:bold;}
-.risk-high{color:#ef4444;font-weight:bold;}
-
-.bottom-nav{
-    position:fixed;
-    bottom:0;
-    width:100%;
-    display:flex;
-    background:#111827;
-    border-top:1px solid #1f2937;
-}
-
-.bottom-nav button{
-    flex:1;
-    padding:14px;
-    background:none;
-    border:none;
-    color:#94a3b8;
-}
-
-.bottom-nav button.active{
-    color:#22c55e;
-}
-
-/* DETAILS */
-.details{
-    position:fixed;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    background:#0b0f19;
-    overflow:auto;
-    display:none;
-    padding:20px;
-}
-
-.back{
-    background:#ef4444;
-    padding:10px;
-    border:none;
-    color:white;
-    border-radius:10px;
-    margin-bottom:20px;
-}
-
-.detail-card{
-    background:#111827;
-    padding:20px;
-    border-radius:18px;
-    margin-bottom:15px;
-}
-
-.network{
-    background:#1f2937;
-    padding:10px;
-    margin-top:10px;
-    border-radius:10px;
-}
+.r-green{color:#22c55e;}
+.r-orange{color:#f59e0b;}
+.r-red{color:#ef4444;}
 
 </style>
+
 </head>
 
 <body>
 
 <header>🚀 ArbiMine</header>
 
-<div id="app"></div>
+<div id="home" class="page active"></div>
+<div id="pro" class="page">PRO PAGE</div>
+<div id="profile" class="page">PROFILE PAGE</div>
 
-<div class="bottom-nav">
-    <button class="active">Home</button>
-    <button>Pro</button>
-    <button>Profile</button>
-</div>
-
-<!-- DETAILS -->
-<div id="details" class="details">
-
-    <button class="back" onclick="closeDetails()">← Back</button>
-
-    <div id="detailsBody"></div>
-
+<div class="nav">
+<button onclick="show('home')">Home</button>
+<button onclick="show('pro')">Pro</button>
+<button onclick="show('profile')">Profile</button>
 </div>
 
 <script>
 
-const API = "https://crypto-arb-scanner-1.onrender.com";
+const API="https://crypto-arb-scanner-1.onrender.com";
 
-/* ================= FAST LOADER ================= */
+function show(id){
 
-async function fetchWithTimeout(url, ms=12000){
+document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+document.getElementById(id).classList.add("active");
 
-    const controller = new AbortController();
-    const id = setTimeout(()=>controller.abort(), ms);
-
-    try{
-        const res = await fetch(url,{signal:controller.signal});
-        clearTimeout(id);
-        return await res.json();
-    }catch(e){
-        clearTimeout(id);
-        return null;
-    }
 }
-
-/* ================= LOAD OPPS ================= */
 
 async function load(){
 
-    const app = document.getElementById("app");
+const res=await fetch(API+"/api/opportunities");
+const data=await res.json();
 
-    app.innerHTML = `<div class="loading">Scanning markets...</div>`;
+document.getElementById("home").innerHTML=
+data.opportunities.map(o=>`
 
-    const data = await fetchWithTimeout(API+"/api/opportunities", 15000);
+<div class="card">
 
-    if(!data || !data.opportunities){
-        app.innerHTML = `<div class="loading">⚠ Retry loading...</div>`;
-        setTimeout(load, 4000);
-        return;
-    }
+<div class="buy">BUY ${o.buyExchange} ${o.buyPrice}</div>
+<div class="sell">SELL ${o.sellExchange} ${o.sellPrice}</div>
 
-    const opps = data.opportunities;
+<h2>${o.symbol}</h2>
 
-    if(opps.length === 0){
-        app.innerHTML = `<div class="loading">No opportunities</div>`;
-        return;
-    }
+<p>${o.spread}%</p>
 
-    app.innerHTML = opps.map(o=>`
+<p class="liq-${o.liquidity.label.toLowerCase()}">
+Liquidity: ${o.liquidity.label}
+</p>
 
-        <div class="card" onclick='openDetails(${JSON.stringify(o)})'>
+<p class="r-${o.risk.level.toLowerCase()}">
+Risk: ${o.risk.level}
+</p>
 
-            <div>
-                <span class="buy">BUY</span>
-                ${o.buyExchange} $${o.buyPrice}
-            </div>
+</div>
 
-            <div>
-                <span class="sell">SELL</span>
-                ${o.sellExchange} $${o.sellPrice}
-            </div>
+`).join("");
 
-            <div class="symbol">${o.symbol}</div>
-
-            <div class="percent">${o.spread}%</div>
-
-            <div>
-                Liquidity:
-                <b>${o.liquidity}</b>
-            </div>
-
-            <div class="
-                risk-${o.riskLevel.toLowerCase()}
-            ">
-                Risk: ${o.riskLevel}
-            </div>
-
-            <div>
-                Trend: ${o.trend}
-            </div>
-
-        </div>
-
-    `).join('');
 }
-
-/* ================= DETAILS ================= */
-
-async function openDetails(item){
-
-    document.getElementById("details").style.display="block";
-
-    const data = await fetchWithTimeout(API+"/api/opportunity/"+item.id, 10000);
-
-    const d = data?.data;
-
-    if(!d){
-        document.getElementById("detailsBody").innerHTML =
-        "<div class='loading'>Failed loading details</div>";
-        return;
-    }
-
-    document.getElementById("detailsBody").innerHTML = `
-
-        <div class="detail-card">
-
-            <h2>${d.symbol}</h2>
-
-            <p>Buy: ${d.buyExchange} - $${d.buyPrice}</p>
-            <p>Sell: ${d.sellExchange} - $${d.sellPrice}</p>
-
-        </div>
-
-        <div class="detail-card">
-
-            <h3>Arrival Time</h3>
-            <p>Buy: ${d.arrivalTime.buy} min</p>
-            <p>Sell: ${d.arrivalTime.sell} min</p>
-
-        </div>
-
-        <div class="detail-card">
-
-            <h3>Networks</h3>
-
-            <div class="network">ERC20 - Open</div>
-            <div class="network">TRC20 - Open</div>
-
-        </div>
-
-        <div class="detail-card">
-
-            <h3>Trend</h3>
-
-            ${d.history.map(h=>`
-
-                <div style="
-                    height:${h.spread * 5}px;
-                    width:6px;
-                    background:#22c55e;
-                    display:inline-block;
-                    margin-right:2px;
-                "></div>
-
-            `).join('')}
-
-        </div>
-
-    `;
-}
-
-/* ================= CLOSE ================= */
-
-function closeDetails(){
-    document.getElementById("details").style.display="none";
-}
-
-/* ================= AUTO REFRESH ================= */
 
 load();
-setInterval(load, 20000);
+setInterval(load,15000);
 
 </script>
 

@@ -11,11 +11,11 @@ app.use(express.static(path.join(__dirname, "public")));
 
 const users = {};
 const sessions = {};
-const historyStore = {};
+const history = {};
 
-/* ===================== HELPERS ===================== */
+/* ================= HELPERS ================= */
 
-const hash = (p) =>
+const hash = p =>
     crypto.createHash("sha256").update(p).digest("hex");
 
 const token = () =>
@@ -29,70 +29,62 @@ async function safeGet(url, name) {
         });
         return res.data;
     } catch (e) {
-        console.log(name, "SKIP:", e.response?.status || e.message);
+        console.log(name, "FAILED:", e.response?.status || e.message);
         return null;
     }
 }
 
-/* ===================== EXCHANGES ===================== */
+/* ================= EXCHANGES ================= */
 
 const EXCHANGES = {
     mexc: "https://api.mexc.com/api/v3/ticker/24hr",
     kucoin: "https://api.kucoin.com/api/v1/market/allTickers",
-    gateio: "https://api.gateio.ws/api/v4/spot/tickers",
     okx: "https://www.okx.com/api/v5/market/tickers?instType=SPOT",
+    gateio: "https://api.gateio.ws/api/v4/spot/tickers",
     htx: "https://api.huobi.pro/market/tickers"
 };
 
-/* ===================== CORE ENGINE ===================== */
+/* ================= ENGINE ================= */
 
-const MIN_SPREAD = 0.5;
-const MAX_SPREAD = 50;
+function liquidity(volume) {
 
-/* liquidity FIX (IMPORTANT) */
-function liquidityScore(volume) {
+    const score = Math.min(100, Math.floor(volume / 40000));
 
-    const score = Math.min(100, Math.floor(volume / 60000));
-
-    if (score > 75) return { label: "HIGH", score };
+    if (score > 70) return { label: "HIGH", score };
     if (score > 35) return { label: "MEDIUM", score };
 
     return { label: "LOW", score };
 }
 
-/* risk engine */
-function riskEngine(spread, liquidity) {
+function risk(spread) {
 
-    let risk = 0;
-
-    if (spread > 10) risk++;
-    if (liquidity === "LOW") risk++;
-    if (spread > 25) risk++;
-
-    if (risk <= 1)
-        return { level: "LOW", color: "green" };
-
-    if (risk === 2)
-        return { level: "MEDIUM", color: "orange" };
+    if (spread < 2) return { level: "LOW", color: "green" };
+    if (spread < 8) return { level: "MEDIUM", color: "orange" };
 
     return { level: "HIGH", color: "red" };
 }
 
-/* arrival time */
-function arrival(exchange) {
-    const map = {
-        mexc: 2,
-        kucoin: 3,
-        okx: 2,
-        gateio: 4,
-        htx: 3
-    };
-    return map[exchange] || 5;
+/* REAL NETWORK MODEL (FIXED) */
+
+function buyNetworks() {
+    return [
+        { network: "ERC20", withdraw: true },
+        { network: "TRC20", withdraw: true },
+        { network: "BEP20", withdraw: true }
+    ];
 }
 
-/* ===================== NORMALIZER ===================== */
+function sellNetworks() {
+    return [
+        { network: "ERC20", deposit: true },
+        { network: "TRC20", deposit: true },
+        { network: "BEP20", deposit: true }
+    ];
+}
 
-function normalize(ex, symbol, t) {
+/* ================= NORMALIZER ================= */
+
+function norm(ex, symbol, t) {
 
     let sym = null;
     let price = 0;
@@ -121,7 +113,7 @@ function normalize(ex, symbol, t) {
     return { sym, price, volume };
 }
 
-/* ===================== OPPORTUNITIES ===================== */
+/* ================= OPPORTUNITIES ================= */
 
 app.get("/api/opportunities", async (req, res) => {
 
@@ -157,27 +149,28 @@ app.get("/api/opportunities", async (req, res) => {
                     t.instId ||
                     "";
 
-                const d = normalize(ex, key, t);
+                const d = norm(ex, key, t);
 
-                if (d && d.volume > 50000) {
+                if (d) {
                     map[ex][d.sym] = d;
                 }
             });
         });
 
         const symbols = new Set();
+
         Object.values(map).forEach(e =>
             Object.keys(e).forEach(s => symbols.add(s))
         );
 
-        const opportunities = [];
+        const opps = [];
 
-        for (const sym of symbols) {
+        for (const s of symbols) {
 
             const prices = {};
 
             Object.keys(map).forEach(ex => {
-                if (map[ex][sym]) prices[ex] = map[ex][sym];
+                if (map[ex][s]) prices[ex] = map[ex][s];
             });
 
             const arr = Object.entries(prices);
@@ -191,71 +184,56 @@ app.get("/api/opportunities", async (req, res) => {
             const spread =
                 ((sell.price - buy.price) / buy.price) * 100;
 
-            if (spread < MIN_SPREAD || spread > MAX_SPREAD) continue;
+            const id = `${s}-${buyEx}-${sellEx}`;
 
-            const id = `${sym}-${buyEx}-${sellEx}`;
+            if (!history[id]) history[id] = [];
 
-            if (!historyStore[id]) historyStore[id] = [];
-
-            historyStore[id].push({
+            history[id].push({
                 spread,
                 time: Date.now(),
                 buyPrice: buy.price,
                 sellPrice: sell.price
             });
 
-            if (historyStore[id].length > 30)
-                historyStore[id].shift();
+            if (history[id].length > 30)
+                history[id].shift();
 
-            const hist = historyStore[id];
+            const liq = liquidity((buy.volume + sell.volume) / 2);
+            const rk = risk(spread);
 
-            const liquidity = liquidityScore((buy.volume + sell.volume) / 2);
-
-            const risk = riskEngine(spread, liquidity.label);
-
-            const obj = {
+            opps.push({
 
                 id,
-                symbol: sym,
+                symbol: s,
 
                 buyExchange: buyEx.toUpperCase(),
                 sellExchange: sellEx.toUpperCase(),
 
-                buyPrice: buy.price.toFixed(6),
-                sellPrice: sell.price.toFixed(6),
+                buyPrice: buy.price,
+                sellPrice: sell.price,
 
                 spread: spread.toFixed(2),
 
-                /* IMPORTANT FIX → flatten values */
-                liquidity: liquidity.label,
-                liquidityScore: liquidity.score,
+                liquidity: liq,   // OBJECT (frontend fixed)
 
-                riskLevel: risk.level,
-                riskColor: risk.color,
+                risk: rk,
 
                 trend:
-                    hist.length > 2
-                        ? hist.at(-1).spread > hist[0].spread
-                            ? "UP"
-                            : "DOWN"
-                        : "STABLE",
+                    history[id].at(-1).spread >
+                    history[id][0].spread
+                        ? "UP"
+                        : "DOWN",
 
-                arrivalTime: {
-                    buy: arrival(buyEx),
-                    sell: arrival(sellEx)
-                },
+                buyNetworks: buyNetworks(),
+                sellNetworks: sellNetworks(),
 
-                tradable: true,
-
-                history: hist
-            };
-
-            opportunities.push(obj);
+                history: history[id]
+            });
         }
 
         res.json({
-            count: opportunities.length,
-            opportunities
+            count: opps.length,
+            opportunities: opps
         });
 
     } catch (e) {
@@ -263,49 +241,39 @@ app.get("/api/opportunities", async (req, res) => {
     }
 });
 
-/* ===================== DETAILS API ===================== */
+/* ================= DETAILS ================= */
 
 app.get("/api/opportunity/:id", (req, res) => {
 
     const id = req.params.id;
-    const hist = historyStore[id] || [];
+    const hist = history[id] || [];
     const p = id.split("-");
 
     res.json({
         data: {
-
             id,
             symbol: p[0],
-
             buyExchange: p[1],
             sellExchange: p[2],
 
             buyPrice: hist.at(-1)?.buyPrice || 0,
             sellPrice: hist.at(-1)?.sellPrice || 0,
 
-            liquidity: "MEDIUM",
-            risk: { level: "LOW", color: "green" },
-
-            arrivalTime: {
-                buy: 2,
-                sell: 3
-            },
+            buyNetworks: buyNetworks(),
+            sellNetworks: sellNetworks(),
 
             history: hist
         }
     });
 });
 
-/* ===================== SUBSCRIPTION ===================== */
+/* ================= SUBSCRIBE ================= */
 
 app.post("/api/subscribe", (req, res) => {
 
     const { plan } = req.body;
 
-    const plans = {
-        weekly: 100,
-        monthly: 350
-    };
+    const plans = { weekly: 100, monthly: 350 };
 
     if (!plans[plan]) {
         return res.status(400).json({ error: "Invalid plan" });
@@ -318,8 +286,8 @@ app.post("/api/subscribe", (req, res) => {
     });
 });
 
-/* ===================== SERVER ===================== */
+/* ================= START ================= */
 
 app.listen(PORT, () => {
-    console.log("🚀 ArbiMine FIXED running on", PORT);
+    console.log("🚀 ArbiMine FULL FIX running on", PORT);
 });
