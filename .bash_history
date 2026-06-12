@@ -1,12 +1,3 @@
-git commit -m "Updated auth page with functional login/register"
-git push origin main
-nano package.json
-nano server.js
-rm server.js
-nano server.js
-rm server.js
-nano server.js
-git add server.js
 git commit -m "Fix proxy binding for Render"
 git push origin main
 rm public/dashboard.html
@@ -498,3 +489,12 @@ cd ~
 git add public/icon-*.png
 git commit -m "Add ArbiMine logo - final version"
 git push
+ls
+pkg install nodejs mongodb -y
+npm install express mongoose bcryptjs jsonwebtoken cors dotenv
+nano.env
+nano env
+node -e "require('dotenv').config(); require('mongoose').connect(process.env.MONGO_URI).then(()=>console.log('MongoDB OK')).catch(e=>console.log(e))"
+cat .env
+nano env
+node -e "require('dotenv').config(); console.log('URI:', process.env.MONGO_URI ? 'Found' : 'Missing'); require('mongoose').connect(process.env.MONGO_URI).then(()=>console.log('MongoDB OK')).catch(e=>console.log('Error:', e.message))"
