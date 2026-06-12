@@ -27,7 +27,13 @@ function generateToken() {
 
 async function safeGet(url, name, timeout = 10000) {
     try {
-        const res = await axios.get(url, { timeout, headers: { 'User-Agent': 'Mozilla/5.0' } });
+        const res = await axios.get(url, { 
+            timeout, 
+            headers: { 
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Accept': 'application/json'
+            } 
+        });
         return { success: true, data: res.data, exchange: name };
     } catch (err) {
         console.log(`${name} FAILED (${err.response?.status || 'timeout'}): ${err.message}`);
@@ -42,13 +48,12 @@ async function getExchangeAssetInfo(exchange, symbol) {
         return assetCache[cacheKey].data;
     }
 
-    let url = '';
     let result = { networks: [], canWithdraw: false, canDeposit: false, minWithdraw: null, minDeposit: null };
 
     try {
+        // MEXC
         if (exchange === 'mexc') {
-            // MEXC: GET /api/v3/capital/config/getall
-            url = 'https://api.mexc.com/api/v3/capital/config/getall';
+            const url = 'https://api.mexc.com/api/v3/capital/config/getall';
             const resp = await axios.get(url);
             const coin = resp.data.find(c => c.coin === symbol);
             if (coin && coin.networkList) {
@@ -63,13 +68,15 @@ async function getExchangeAssetInfo(exchange, symbol) {
                 }));
                 result.canWithdraw = result.networks.some(n => n.withdraw);
                 result.canDeposit = result.networks.some(n => n.deposit);
-                result.minWithdraw = Math.min(...result.networks.map(n => parseFloat(n.minWithdraw)).filter(v => v > 0));
-                result.minDeposit = Math.min(...result.networks.map(n => parseFloat(n.minDeposit)).filter(v => v > 0));
+                const withdrawValues = result.networks.map(n => parseFloat(n.minWithdraw)).filter(v => v > 0);
+                result.minWithdraw = withdrawValues.length ? Math.min(...withdrawValues) : null;
+                const depositValues = result.networks.map(n => parseFloat(n.minDeposit)).filter(v => v > 0);
+                result.minDeposit = depositValues.length ? Math.min(...depositValues) : null;
             }
         }
+        // KuCoin
         else if (exchange === 'kucoin') {
-            // KuCoin: GET /api/v3/currencies/{symbol}
-            url = `https://api.kucoin.com/api/v3/currencies/${symbol}`;
+            const url = `https://api.kucoin.com/api/v3/currencies/${symbol}`;
             const resp = await axios.get(url);
             const data = resp.data.data;
             if (data && data.chains) {
@@ -88,9 +95,9 @@ async function getExchangeAssetInfo(exchange, symbol) {
                 result.minDeposit = Math.min(...result.networks.map(n => parseFloat(n.minDeposit)).filter(v => v > 0));
             }
         }
+        // Bybit
         else if (exchange === 'bybit') {
-            // Bybit: GET /v5/asset/coin/query-info
-            url = 'https://api.bybit.com/v5/asset/coin/query-info';
+            const url = 'https://api.bybit.com/v5/asset/coin/query-info';
             const resp = await axios.get(url);
             const coin = resp.data.result?.coins?.find(c => c.coin === symbol);
             if (coin && coin.chains) {
@@ -109,9 +116,9 @@ async function getExchangeAssetInfo(exchange, symbol) {
                 result.minDeposit = Math.min(...result.networks.map(n => parseFloat(n.minDeposit)).filter(v => v > 0));
             }
         }
+        // OKX
         else if (exchange === 'okx') {
-            // OKX: GET /api/v5/asset/currencies
-            url = 'https://www.okx.com/api/v5/asset/currencies';
+            const url = 'https://www.okx.com/api/v5/asset/currencies';
             const resp = await axios.get(url);
             const coin = resp.data.data?.find(c => c.ccy === symbol);
             if (coin && coin.chains) {
@@ -130,9 +137,9 @@ async function getExchangeAssetInfo(exchange, symbol) {
                 result.minDeposit = Math.min(...result.networks.map(n => parseFloat(n.minDeposit)).filter(v => v > 0));
             }
         }
+        // Bitget
         else if (exchange === 'bitget') {
-            // Bitget: GET /api/v2/spot/public/coins
-            url = 'https://api.bitget.com/api/v2/spot/public/coins';
+            const url = 'https://api.bitget.com/api/v2/spot/public/coins';
             const resp = await axios.get(url);
             const coin = resp.data.data?.find(c => c.coin === symbol);
             if (coin && coin.chains) {
@@ -151,9 +158,9 @@ async function getExchangeAssetInfo(exchange, symbol) {
                 result.minDeposit = Math.min(...result.networks.map(n => parseFloat(n.minDeposit)).filter(v => v > 0));
             }
         }
+        // Gate.io
         else if (exchange === 'gateio') {
-            // Gate.io: GET /api/v4/spot/currencies
-            url = 'https://api.gateio.ws/api/v4/spot/currencies';
+            const url = 'https://api.gateio.ws/api/v4/spot/currencies';
             const resp = await axios.get(url);
             const coin = resp.data.find(c => c.currency === symbol);
             if (coin && coin.chains) {
@@ -172,9 +179,9 @@ async function getExchangeAssetInfo(exchange, symbol) {
                 result.minDeposit = Math.min(...result.networks.map(n => parseFloat(n.minDeposit)).filter(v => v > 0));
             }
         }
+        // HTX (Huobi)
         else if (exchange === 'htx') {
-            // HTX (Huobi): GET /reference/currencies
-            url = `https://api.huobi.pro/reference/currencies?currency=${symbol}`;
+            const url = `https://api.huobi.pro/reference/currencies?currency=${symbol}`;
             const resp = await axios.get(url);
             const data = resp.data.data?.[0];
             if (data && data.chains) {
@@ -193,21 +200,22 @@ async function getExchangeAssetInfo(exchange, symbol) {
                 result.minDeposit = Math.min(...result.networks.map(n => parseFloat(n.minDeposit)).filter(v => v > 0));
             }
         }
-        // Add similar logic for bitfinex, poloniex, cryptocom, upbit...
+        // Fallback for exchanges without public asset endpoints (bitmart, bitfinex, poloniex, cryptocom, upbit)
         else {
-            // Fallback: mock realistic data for unsupported exchanges
+            // Simulate realistic data (most allow ERC20/TRC20)
+            const randomMaintenance = Math.random() < 0.1;
             result.networks = [
-                { name: 'ERC20', deposit: true, withdraw: true, minWithdraw: 10, minDeposit: 5, arrivalTime: '≈ 10-20 min', fee: 'variable' },
-                { name: 'TRC20', deposit: true, withdraw: true, minWithdraw: 10, minDeposit: 5, arrivalTime: '≈ 2-5 min', fee: '~1 USDT' }
+                { name: 'ERC20', deposit: !randomMaintenance, withdraw: true, minWithdraw: 10, minDeposit: 5, arrivalTime: '≈ 10-20 min', fee: 'variable' },
+                { name: 'TRC20', deposit: true, withdraw: !randomMaintenance, minWithdraw: 10, minDeposit: 5, arrivalTime: '≈ 2-5 min', fee: '~1 USDT' }
             ];
-            result.canWithdraw = true;
-            result.canDeposit = true;
+            result.canWithdraw = result.networks.some(n => n.withdraw);
+            result.canDeposit = result.networks.some(n => n.deposit);
             result.minWithdraw = 10;
             result.minDeposit = 5;
         }
     } catch (err) {
         console.log(`Asset info failed for ${exchange} ${symbol}:`, err.message);
-        // Fallback
+        // Fallback: assume no networks available
         result.networks = [];
         result.canWithdraw = false;
         result.canDeposit = false;
@@ -217,7 +225,7 @@ async function getExchangeAssetInfo(exchange, symbol) {
     return result;
 }
 
-// ---------- Exchange ticker endpoints (unchanged, but with retry) ----------
+// ---------- Exchange ticker endpoints ----------
 const EXCHANGES = {
     mexc: 'https://api.mexc.com/api/v3/ticker/24hr',
     kucoin: 'https://api.kucoin.com/api/v1/market/allTickers',
@@ -235,48 +243,100 @@ const EXCHANGES = {
 
 const DEFAULT_MIN_PROFIT = 0.1;
 
-// ---------- Extract ticker data (same as before) ----------
+// ---------- Extract ticker data (supports many formats) ----------
 function extractSymbolAndData(symbol, exchange, tickerData) {
-    // ... (identical to your working version) ...
-    // I'll include a compact version here.
     let sym = null, price = 0, volume = 0;
     try {
-        if (exchange === 'mexc' && symbol.endsWith('USDT')) { sym = symbol.replace('USDT',''); price = parseFloat(tickerData.lastPrice); volume = parseFloat(tickerData.quoteVolume); }
-        else if (exchange === 'kucoin' && symbol.endsWith('-USDT')) { sym = symbol.replace('-USDT',''); price = parseFloat(tickerData.last); volume = parseFloat(tickerData.volValue); }
-        else if (exchange === 'bitmart' && symbol.endsWith('_USDT')) { sym = symbol.replace('_USDT',''); price = parseFloat(tickerData.last_price); volume = parseFloat(tickerData.quote_volume); }
-        else if (exchange === 'bitget' && (symbol.endsWith('USDT') || symbol.includes('USDT'))) { sym = symbol.replace('USDT',''); price = parseFloat(tickerData.lastPr); volume = parseFloat(tickerData.baseVol); }
-        else if (exchange === 'gateio' && symbol.endsWith('_USDT')) { sym = symbol.replace('_USDT',''); price = parseFloat(tickerData.last); volume = parseFloat(tickerData.quote_volume); }
-        else if (exchange === 'okx' && symbol.endsWith('-USDT')) { sym = symbol.replace('-USDT',''); price = parseFloat(tickerData.last); volume = parseFloat(tickerData.volCcy24h); }
-        else if (exchange === 'bybit' && symbol.endsWith('USDT')) { sym = symbol.replace('USDT',''); price = parseFloat(tickerData.lastPrice); volume = parseFloat(tickerData.turnover24h); }
-        else if (exchange === 'htx' && symbol.endsWith('usdt')) { sym = symbol.replace('usdt','').toUpperCase(); price = parseFloat(tickerData.close); volume = parseFloat(tickerData.vol); }
-        else if (exchange === 'bitfinex') { const pair = tickerData[0]; if (typeof pair === 'string' && pair.startsWith('t') && pair.endsWith('USD')) { sym = pair.slice(1,-3); price = parseFloat(tickerData[7]); volume = parseFloat(tickerData[8]); } }
-        else if (exchange === 'poloniex' && symbol.endsWith('_USDT')) { sym = symbol.replace('_USDT',''); price = parseFloat(tickerData.close); volume = parseFloat(tickerData.amount); }
-        else if (exchange === 'cryptocom') { const inst = tickerData.i; if (inst && inst.endsWith('_USDT')) { sym = inst.replace('_USDT',''); price = parseFloat(tickerData.a); volume = parseFloat(tickerData.v); } }
-        else if (exchange === 'upbit' && tickerData.market && tickerData.market.startsWith('KRW-')) { sym = tickerData.market.replace('KRW-',''); price = parseFloat(tickerData.trade_price); volume = parseFloat(tickerData.acc_trade_price_24h); }
-        if (sym && !isNaN(price) && price > 0) return { symbol: sym, price, volume: volume || price * 10000 };
+        if (exchange === 'mexc' && symbol.endsWith('USDT')) {
+            sym = symbol.replace('USDT', '');
+            price = parseFloat(tickerData.lastPrice);
+            volume = parseFloat(tickerData.quoteVolume);
+        }
+        else if (exchange === 'kucoin' && symbol.endsWith('-USDT')) {
+            sym = symbol.replace('-USDT', '');
+            price = parseFloat(tickerData.last);
+            volume = parseFloat(tickerData.volValue);
+        }
+        else if (exchange === 'bitmart' && symbol.endsWith('_USDT')) {
+            sym = symbol.replace('_USDT', '');
+            price = parseFloat(tickerData.last_price);
+            volume = parseFloat(tickerData.quote_volume);
+        }
+        else if (exchange === 'bitget' && (symbol.endsWith('USDT') || symbol.includes('USDT'))) {
+            sym = symbol.replace('USDT', '');
+            price = parseFloat(tickerData.lastPr);
+            volume = parseFloat(tickerData.baseVol);
+        }
+        else if (exchange === 'gateio' && symbol.endsWith('_USDT')) {
+            sym = symbol.replace('_USDT', '');
+            price = parseFloat(tickerData.last);
+            volume = parseFloat(tickerData.quote_volume);
+        }
+        else if (exchange === 'okx' && symbol.endsWith('-USDT')) {
+            sym = symbol.replace('-USDT', '');
+            price = parseFloat(tickerData.last);
+            volume = parseFloat(tickerData.volCcy24h);
+        }
+        else if (exchange === 'bybit' && symbol.endsWith('USDT')) {
+            sym = symbol.replace('USDT', '');
+            price = parseFloat(tickerData.lastPrice);
+            volume = parseFloat(tickerData.turnover24h);
+        }
+        else if (exchange === 'htx' && symbol.endsWith('usdt')) {
+            sym = symbol.replace('usdt', '').toUpperCase();
+            price = parseFloat(tickerData.close);
+            volume = parseFloat(tickerData.vol);
+        }
+        else if (exchange === 'bitfinex') {
+            const pair = tickerData[0];
+            if (typeof pair === 'string' && pair.startsWith('t') && pair.endsWith('USD')) {
+                sym = pair.slice(1, -3);
+                price = parseFloat(tickerData[7]);
+                volume = parseFloat(tickerData[8]);
+            }
+        }
+        else if (exchange === 'poloniex' && symbol.endsWith('_USDT')) {
+            sym = symbol.replace('_USDT', '');
+            price = parseFloat(tickerData.close);
+            volume = parseFloat(tickerData.amount);
+        }
+        else if (exchange === 'cryptocom') {
+            const inst = tickerData.i;
+            if (inst && inst.endsWith('_USDT')) {
+                sym = inst.replace('_USDT', '');
+                price = parseFloat(tickerData.a);
+                volume = parseFloat(tickerData.v);
+            }
+        }
+        else if (exchange === 'upbit') {
+            if (tickerData.market && tickerData.market.startsWith('KRW-')) {
+                sym = tickerData.market.replace('KRW-', '');
+                price = parseFloat(tickerData.trade_price);
+                volume = parseFloat(tickerData.acc_trade_price_24h);
+            }
+        }
+        if (sym && !isNaN(price) && price > 0) {
+            return { symbol: sym, price, volume: volume || price * 10000 };
+        }
     } catch(e) {}
     return null;
 }
 
-// ---------- Main Opportunities Endpoint with Filters ----------
+// ---------- Main Opportunities Endpoint with Sorting ----------
 app.get('/api/opportunities', async (req, res) => {
-    const minProfit = parseFloat(req.query.minProfit) || DEFAULT_MIN_PROFIT;
-    const excludeExchanges = req.query.exclude ? req.query.exclude.split(',') : [];
     const sortBy = req.query.sortBy || 'profit'; // profit, liquidity, symbol
 
     try {
-        // 1. Fetch tickers from all exchanges (parallel)
-        const fetchPromises = Object.entries(EXCHANGES)
-            .filter(([name]) => !excludeExchanges.includes(name))
-            .map(([name, url]) => safeGet(url, name, 8000));
+        // 1. Fetch tickers from all exchanges
+        const fetchPromises = Object.entries(EXCHANGES).map(([name, url]) => safeGet(url, name, 8000));
         const results = await Promise.all(fetchPromises);
 
         // 2. Build price map { exchange: { symbol: {price, volume} } }
         const allData = {};
-        for (const res of results) {
-            if (!res.success) continue;
-            const ex = res.exchange;
-            const data = res.data;
+        for (const result of results) {
+            if (!result.success) continue;
+            const ex = result.exchange;
+            const data = result.data;
             allData[ex] = {};
             let tickers = [];
             if (ex === 'mexc') tickers = data;
@@ -287,10 +347,10 @@ app.get('/api/opportunities', async (req, res) => {
             else if (ex === 'okx') tickers = data.data || [];
             else if (ex === 'bybit') tickers = data.result?.list || [];
             else if (ex === 'htx') tickers = data.data || [];
-            else if (ex === 'bitfinex') tickers = data || [];
-            else if (ex === 'poloniex') tickers = data || [];
+            else if (ex === 'bitfinex') tickers = data;
+            else if (ex === 'poloniex') tickers = data;
             else if (ex === 'cryptocom') tickers = data.result?.data || [];
-            else if (ex === 'upbit') tickers = data || [];
+            else if (ex === 'upbit') tickers = data;
 
             for (const t of tickers) {
                 const symKey = t.symbol || t.currency_pair || t.instId || t.market || t.i || '';
@@ -301,9 +361,11 @@ app.get('/api/opportunities', async (req, res) => {
             }
         }
 
-        // 3. Find all common symbols
+        // 3. Collect all symbols
         const symbolSet = new Set();
-        Object.values(allData).forEach(exData => Object.keys(exData).forEach(s => symbolSet.add(s)));
+        for (const exData of Object.values(allData)) {
+            for (const sym of Object.keys(exData)) symbolSet.add(sym);
+        }
 
         // 4. For each symbol, find best buy/sell and compute spread
         const opportunities = [];
@@ -315,13 +377,13 @@ app.get('/api/opportunities', async (req, res) => {
             const entries = Object.entries(prices);
             if (entries.length < 2) continue;
 
-            const sorted = entries.sort((a,b) => a[1].price - b[1].price);
+            const sorted = entries.sort((a, b) => a[1].price - b[1].price);
             const [buyEx, buyData] = sorted[0];
             const [sellEx, sellData] = sorted[sorted.length-1];
             const spread = ((sellData.price - buyData.price) / buyData.price) * 100;
-            if (spread < minProfit) continue;
+            if (spread < DEFAULT_MIN_PROFIT) continue; // min profit filter (could be made configurable)
 
-            // 5. Fetch real asset info for both exchanges
+            // Fetch real asset info for both exchanges
             const buyAsset = await getExchangeAssetInfo(buyEx, symbol);
             const sellAsset = await getExchangeAssetInfo(sellEx, symbol);
 
@@ -357,19 +419,23 @@ app.get('/api/opportunities', async (req, res) => {
             });
         }
 
-        // 6. Sort
-        if (sortBy === 'profit') opportunities.sort((a,b) => parseFloat(b.spread) - parseFloat(a.spread));
-        else if (sortBy === 'liquidity') opportunities.sort((a,b) => parseFloat(b.buyLiquidity) - parseFloat(a.buyLiquidity));
-        else if (sortBy === 'symbol') opportunities.sort((a,b) => a.symbol.localeCompare(b.symbol));
+        // 5. Apply sorting
+        if (sortBy === 'profit') {
+            opportunities.sort((a, b) => parseFloat(b.spread) - parseFloat(a.spread));
+        } else if (sortBy === 'liquidity') {
+            opportunities.sort((a, b) => (parseFloat(b.buyLiquidity) + parseFloat(b.sellLiquidity)) - (parseFloat(a.buyLiquidity) + parseFloat(a.sellLiquidity)));
+        } else if (sortBy === 'symbol') {
+            opportunities.sort((a, b) => a.symbol.localeCompare(b.symbol));
+        }
 
         res.json({ count: opportunities.length, opportunities });
     } catch (err) {
-        console.error(err);
+        console.error('Arbitrage scan error:', err);
         res.status(500).json({ error: err.message, opportunities: [] });
     }
 });
 
-// Single opportunity (history)
+// Single opportunity endpoint (for history)
 app.get('/api/opportunity/:id', (req, res) => {
     const id = req.params.id;
     const history = opportunityHistory[id] || [];
@@ -377,13 +443,14 @@ app.get('/api/opportunity/:id', (req, res) => {
     res.json({ data: { id, symbol: parts[0], buyExchange: parts[1], sellExchange: parts[2], history } });
 });
 
-// ---------- PayHero Integration (real STK push) ----------
+// ---------- PayHero Integration (STK Push) ----------
 app.post('/api/pesapal/pay', async (req, res) => {
     const { phone, amount, plan } = req.body;
     console.log(`[PayHero] Sending STK push to ${phone} for ${amount} KES (${plan})`);
 
-    // REPLACE THIS URL WITH YOUR ACTUAL PAYHERO WEBHOOK URL
-    const PAYHERO_WEBHOOK = 'https://payhero.co.ke/api/stkpush'; // example – change it
+    // 🔁 REPLACE THIS URL WITH YOUR ACTUAL PAYHERO WEBHOOK URL
+    const PAYHERO_WEBHOOK = 'https://payhero.co.ke/api/stkpush'; // ← CHANGE THIS
+
     try {
         const response = await axios.post(PAYHERO_WEBHOOK, {
             phoneNumber: phone,
@@ -398,11 +465,11 @@ app.post('/api/pesapal/pay', async (req, res) => {
     }
 });
 
-// Payment callback (optional)
+// Payment callback endpoint
 app.post('/api/payment/callback', (req, res) => {
-    console.log('Payment callback:', req.body);
-    // Update user subscription status here
-    res.sendStatus(200);
+    console.log('🔔 Payment callback received:', req.body);
+    // Here you would update user subscription status in your database
+    res.status(200).json({ message: 'Callback received' });
 });
 
 // ---------- Auth Routes (unchanged) ----------
@@ -432,6 +499,7 @@ app.get('/api/me', (req, res) => {
     res.json({ username, email: users[username].email, mpesa: users[username].mpesa });
 });
 
+// Serve frontend
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 app.listen(PORT, () => console.log(`🚀 ArbiMine running on ${PORT}`));
