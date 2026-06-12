@@ -1,121 +1,382 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>ArbiMine – Crypto Arbitrage Scanner</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
-        body { background: #0b0f19; color: white; padding-bottom: 90px; }
-        header { background: #facc15; color: black; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
-        header h1 { font-size: 24px; }
-        .refresh-btn { background: black; color: #facc15; border: none; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-weight: bold; }
-        .controls { background: #111827; margin: 15px; padding: 15px; border-radius: 20px; border: 1px solid #1f2937; }
-        .control-row { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 15px; align-items: center; }
-        .control-group { display: flex; flex-direction: column; gap: 5px; }
-        .control-group label { font-size: 12px; color: #94a3b8; }
-        select, input[type="range"] { padding: 8px; border-radius: 12px; background: black; color: white; border: 1px solid #1f2937; }
-        .exchange-checkboxes { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; }
-        .exchange-checkboxes label { display: flex; align-items: center; gap: 5px; font-size: 12px; }
-        .auth-container, .page { /* same as before */ }
-        /* reuse your existing styles for cards, etc. */
-        .card { background: #111827; border: 1px solid #1f2937; border-radius: 24px; padding: 22px; margin-bottom: 20px; cursor: pointer; }
-        .buy { color: #22c55e; }
-        .sell { color: #ef4444; }
-        .symbol { font-size: 36px; font-weight: bold; margin: 10px 0; }
-        .percent { font-size: 40px; font-weight: bold; color: #22c55e; }
-        .badge { display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
-        .tradable { background: #22c55e; color: black; }
-        .unverified { background: #f97316; color: black; }
-        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #111827; display: flex; justify-content: space-around; padding: 12px; }
-        .bottom-nav button { background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 16px; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+        body {
+            background: #0b0f19;
+            color: white;
+            padding-bottom: 90px;
+        }
+        header {
+            background: #facc15;
+            color: black;
+            padding: 18px;
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-left: 20px;
+            padding-right: 20px;
+        }
+        .header-left {
+            flex: 1;
+            text-align: left;
+        }
+        .header-title {
+            flex: 2;
+            text-align: center;
+        }
+        .header-right {
+            flex: 1;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .refresh-btn, .sort-select {
+            background: black;
+            color: #facc15;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .sort-select {
+            background: #1f2937;
+            color: white;
+        }
+        /* Auth */
+        .auth-container {
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .auth-box {
+            background: #111827;
+            padding: 30px;
+            border-radius: 24px;
+            border: 1px solid #1f2937;
+        }
+        .auth-box h1 { margin-bottom: 25px; }
+        .auth-box input {
+            width: 100%;
+            padding: 18px;
+            margin-bottom: 15px;
+            border: none;
+            border-radius: 14px;
+            background: black;
+            color: white;
+            font-size: 16px;
+        }
+        .auth-box button {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 14px;
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .create-btn { background: #facc15; color: black; }
+        .login-btn { background: #1f2937; color: white; }
+        /* Pages */
+        .page { display: none; }
+        .page.active { display: block; }
+        /* Loading */
+        .loading-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 80px 20px;
+        }
+        .rocket-area {
+            position: relative;
+            width: 100%;
+            height: 180px;
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+        .rocket {
+            position: absolute;
+            font-size: 42px;
+            animation: fly 3s linear infinite;
+        }
+        .rocket:nth-child(1) { top: 20px; animation-delay: 0s; }
+        .rocket:nth-child(2) { top: 90px; animation-delay: 1s; }
+        .rocket:nth-child(3) { top: 140px; animation-delay: 2s; }
+        @keyframes fly {
+            from { left: -60px; }
+            to { left: 110%; }
+        }
+        .loading-text {
+            font-size: 28px;
+            font-weight: bold;
+            color: #22c55e;
+        }
+        .loading-sub {
+            margin-top: 10px;
+            color: #94a3b8;
+        }
+        /* Opportunity cards */
+        #opportunities {
+            padding: 15px;
+        }
+        .card {
+            background: #111827;
+            border: 1px solid #1f2937;
+            border-radius: 24px;
+            padding: 22px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+        .card:active { transform: scale(0.98); }
+        .buy { color: #22c55e; font-weight: bold; }
+        .sell { color: #ef4444; font-weight: bold; }
+        .symbol {
+            font-size: 36px;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+        .percent {
+            color: #22c55e;
+            font-size: 50px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .badge {
+            background: #f59e0b;
+            color: black;
+            padding: 8px 14px;
+            border-radius: 10px;
+            display: inline-block;
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 12px;
+        }
+        .tradable { background: #22c55e; }
+        .unverified { background: #f97316; }
+        /* Bottom navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #111827;
+            border-top: 1px solid #1f2937;
+            display: flex;
+            justify-content: space-around;
+            padding: 14px 0;
+            z-index: 999;
+        }
+        .bottom-nav button {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 8px 16px;
+        }
         .bottom-nav button.active { color: #22c55e; }
-        .details-page { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0b0f19; z-index: 9999; overflow: auto; padding: 20px; display: none; }
-        .back-btn { background: #ef4444; border: none; padding: 12px 20px; border-radius: 30px; color: white; margin-bottom: 20px; cursor: pointer; }
-        .network-item { background: #1f2937; padding: 12px; border-radius: 16px; margin-top: 10px; }
-        .graph-bar-container { display: flex; align-items: center; gap: 8px; margin: 5px 0; }
-        .graph-bar { height: 10px; background: #22c55e; border-radius: 10px; }
-        .loading-screen { text-align: center; padding: 60px 20px; }
+        /* Profile */
+        .profile-card {
+            background: #111827;
+            margin: 20px;
+            padding: 25px;
+            border-radius: 24px;
+        }
+        .profile-card h2 { margin-bottom: 25px; }
+        .profile-item { margin-bottom: 20px; }
+        .logout-btn {
+            width: 100%;
+            background: #ef4444;
+            color: white;
+            padding: 16px;
+            border: none;
+            border-radius: 14px;
+            font-weight: bold;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+        /* Details page */
+        .details-page {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0b0f19;
+            z-index: 9999;
+            overflow: auto;
+            padding: 20px;
+            display: none;
+        }
+        .back-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 14px 18px;
+            border-radius: 14px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+        .detail-card {
+            background: #111827;
+            border-radius: 24px;
+            padding: 22px;
+            margin-bottom: 20px;
+            border: 1px solid #1f2937;
+        }
+        .network-item {
+            background: #1f2937;
+            padding: 15px;
+            border-radius: 14px;
+            margin-top: 12px;
+        }
+        .graph-bar-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 8px 0;
+        }
+        .graph-bar {
+            height: 14px;
+            background: #22c55e;
+            border-radius: 20px;
+            transition: width 0.2s;
+        }
+        .graph-label {
+            font-size: 12px;
+            color: #94a3b8;
+            min-width: 60px;
+        }
+        .trend-up { color: #22c55e; }
+        .trend-down { color: #ef4444; }
+        .warning-text {
+            background: #451e03;
+            padding: 10px;
+            border-radius: 12px;
+            margin-top: 15px;
+            color: #facc15;
+            font-size: 14px;
+            text-align: center;
+        }
+        /* Pro plans */
+        .plan {
+            background: #111827;
+            margin: 20px;
+            padding: 25px;
+            border-radius: 24px;
+        }
+        .plan p {
+            color: #22c55e;
+            font-size: 36px;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        .plan input {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 14px;
+            background: black;
+            color: white;
+            margin-bottom: 15px;
+        }
+        .plan button {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 14px;
+            background: #22c55e;
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>🚀 ArbiMine</h1>
-    <button class="refresh-btn" onclick="loadOpportunities()">🔄 Refresh</button>
+    <div class="header-left"></div>
+    <div class="header-title">🚀 ArbiMine</div>
+    <div class="header-right">
+        <select id="sortSelect" class="sort-select" onchange="loadOpportunities()">
+            <option value="profit">Sort by: Highest Profit</option>
+            <option value="liquidity">Sort by: Highest Liquidity</option>
+            <option value="symbol">Sort by: Symbol A-Z</option>
+        </select>
+        <button class="refresh-btn" onclick="loadOpportunities()">🔄 Refresh</button>
+    </div>
 </header>
 
-<!-- AUTH PAGE (simplified, same as before) -->
-<div id="authPage" class="auth-container" style="display: block;">
+<!-- AUTH PAGE -->
+<div id="authPage" class="auth-container">
     <div class="auth-box">
-        <h2>Welcome</h2>
-        <input type="text" id="username" placeholder="Username"><br>
-        <input type="email" id="email" placeholder="Email"><br>
-        <input type="text" id="mpesa" placeholder="M-Pesa: 2547..."><br>
-        <input type="password" id="password" placeholder="Password"><br>
-        <button onclick="registerUser()">Create Account</button>
-        <button onclick="loginUser()">Login</button>
+        <h1>Welcome to ArbiMine</h1>
+        <input type="text" id="username" placeholder="Username">
+        <input type="email" id="email" placeholder="Email">
+        <input type="text" id="mpesa" placeholder="M-Pesa: 2547XXXXXXXX">
+        <input type="password" id="password" placeholder="Password">
+        <button class="create-btn" onclick="registerUser()">Create Account</button>
+        <button class="login-btn" onclick="loginUser()">Login</button>
     </div>
 </div>
 
-<!-- MAIN APP -->
-<div id="mainApp" style="display: none;">
-    <!-- FILTER CONTROLS -->
-    <div class="controls">
-        <div class="control-row">
-            <div class="control-group">
-                <label>Min Profit %</label>
-                <input type="range" id="minProfitSlider" min="0.1" max="20" step="0.1" value="0.5">
-                <span id="profitValue">0.5%</span>
-            </div>
-            <div class="control-group">
-                <label>Sort By</label>
-                <select id="sortBy">
-                    <option value="profit">Highest Profit</option>
-                    <option value="liquidity">Highest Liquidity</option>
-                    <option value="symbol">Symbol A-Z</option>
-                </select>
-            </div>
-        </div>
-        <div class="control-group">
-            <label>Exclude Exchanges</label>
-            <div class="exchange-checkboxes" id="exchangeCheckboxes"></div>
-        </div>
-    </div>
-
-    <!-- OPPORTUNITIES LIST -->
-    <div id="opportunities"></div>
-
-    <!-- BOTTOM NAV -->
-    <div class="bottom-nav">
-        <button class="active" onclick="switchPage('homePage', this)">🏠 Home</button>
-        <button onclick="switchPage('proPage', this)">💎 Pro</button>
-        <button onclick="switchPage('profilePage', this)">👤 Profile</button>
+<!-- MAIN APP (hidden after login) -->
+<div id="mainApp" style="display:none;">
+    <!-- HOME PAGE -->
+    <div id="homePage" class="page active">
+        <div id="opportunities"></div>
     </div>
 
     <!-- PRO PAGE -->
-    <div id="proPage" class="page" style="display: none;">
-        <div class="plan" style="background:#111827; margin:20px; padding:20px; border-radius:24px;">
-            <h3>Weekly Plan – KES 100</h3>
-            <input type="text" id="weeklyPhone" placeholder="2547XXXXXXXX"><br>
+    <div id="proPage" class="page">
+        <div class="plan">
+            <h2>Weekly Plan</h2>
+            <p>KES 100</p>
+            <input type="text" id="weeklyPhone" placeholder="2547XXXXXXXX">
             <button onclick="pay('weekly', 100, 'weeklyPhone')">Pay Weekly</button>
         </div>
-        <div class="plan" style="background:#111827; margin:20px; padding:20px; border-radius:24px;">
-            <h3>Monthly Plan – KES 350</h3>
-            <input type="text" id="monthlyPhone" placeholder="2547XXXXXXXX"><br>
+        <div class="plan">
+            <h2>Monthly Plan</h2>
+            <p>KES 350</p>
+            <input type="text" id="monthlyPhone" placeholder="2547XXXXXXXX">
             <button onclick="pay('monthly', 350, 'monthlyPhone')">Pay Monthly</button>
         </div>
     </div>
 
     <!-- PROFILE PAGE -->
-    <div id="profilePage" class="page" style="display: none;">
-        <div class="profile-card" style="background:#111827; margin:20px; padding:20px;">
-            <h3>My Profile</h3>
-            <p>Username: <strong id="pUsername"></strong></p>
-            <p>Email: <strong id="pEmail"></strong></p>
-            <p>M-Pesa: <strong id="pMpesa"></strong></p>
-            <button onclick="logoutUser()">Logout</button>
+    <div id="profilePage" class="page">
+        <div class="profile-card">
+            <h2>My Profile</h2>
+            <div class="profile-item">Username: <h3 id="pUsername"></h3></div>
+            <div class="profile-item">Email: <h3 id="pEmail"></h3></div>
+            <div class="profile-item">M-Pesa: <h3 id="pMpesa"></h3></div>
+            <button class="logout-btn" onclick="logoutUser()">Logout</button>
         </div>
+    </div>
+
+    <!-- BOTTOM NAVIGATION -->
+    <div class="bottom-nav">
+        <button class="active" onclick="switchPage('homePage', this)">🏠 Home</button>
+        <button onclick="switchPage('proPage', this)">💎 Pro</button>
+        <button onclick="switchPage('profilePage', this)">👤 Profile</button>
     </div>
 </div>
 
@@ -127,9 +388,8 @@
 
 <script>
     const API = 'https://crypto-arb-scanner-1.onrender.com';
-    let allExchanges = [];
 
-    // ----------------------------- AUTH (local) -----------------------------
+    // ----------------------------- AUTH (localStorage) -----------------------------
     function registerUser() {
         const user = {
             username: document.getElementById('username').value,
@@ -137,69 +397,75 @@
             mpesa: document.getElementById('mpesa').value,
             password: document.getElementById('password').value
         };
-        if (!user.username || !user.email || !user.mpesa || !user.password) return alert('Fill all fields');
+        if (!user.username || !user.email || !user.mpesa || !user.password) {
+            alert('Please fill all fields');
+            return;
+        }
         localStorage.setItem('arbimine_user', JSON.stringify(user));
         loginUser();
     }
+
     function loginUser() {
         const user = JSON.parse(localStorage.getItem('arbimine_user'));
-        if (!user) return alert('Create account first');
+        if (!user) {
+            alert('Create account first');
+            return;
+        }
         document.getElementById('authPage').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
         document.getElementById('pUsername').innerText = user.username;
         document.getElementById('pEmail').innerText = user.email;
         document.getElementById('pMpesa').innerText = user.mpesa;
         loadOpportunities();
-        initExchangeCheckboxes();
     }
-    window.onload = () => { if (localStorage.getItem('arbimine_user')) loginUser(); };
-    function logoutUser() { localStorage.removeItem('arbimine_user'); location.reload(); }
+
+    window.onload = () => {
+        if (localStorage.getItem('arbimine_user')) {
+            loginUser();
+        }
+    };
+
+    function logoutUser() {
+        localStorage.removeItem('arbimine_user');
+        location.reload();
+    }
+
     function switchPage(pageId, btn) {
-        document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
-        document.getElementById(pageId).style.display = 'block';
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
         document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
     }
 
-    // ----------------------------- EXCHANGE CHECKBOXES -----------------------------
-    function initExchangeCheckboxes() {
-        const container = document.getElementById('exchangeCheckboxes');
-        const exchanges = ['mexc','kucoin','bitmart','bitget','gateio','okx','bybit','htx','bitfinex','poloniex','cryptocom','upbit'];
-        allExchanges = exchanges;
-        container.innerHTML = exchanges.map(ex => `
-            <label>
-                <input type="checkbox" value="${ex}" class="exchange-exclude"> ${ex.toUpperCase()}
-            </label>
-        `).join('');
-    }
-
-    function getExcludeParam() {
-        const checked = Array.from(document.querySelectorAll('.exchange-exclude:checked')).map(cb => cb.value);
-        return checked.join(',');
-    }
-
-    // ----------------------------- LOAD OPPORTUNITIES with filters -----------------------------
+    // ----------------------------- LOAD OPPORTUNITIES (with sorting) -----------------------------
     async function loadOpportunities() {
-        const minProfit = document.getElementById('minProfitSlider').value;
-        document.getElementById('profitValue').innerText = minProfit + '%';
-        const exclude = getExcludeParam();
-        const sortBy = document.getElementById('sortBy').value;
-        const url = `${API}/api/opportunities?minProfit=${minProfit}&exclude=${exclude}&sortBy=${sortBy}`;
-
         const container = document.getElementById('opportunities');
-        container.innerHTML = `<div class="loading-screen">🚀 Scanning markets...</div>`;
+        const sortBy = document.getElementById('sortSelect').value;
+        container.innerHTML = `
+            <div class="loading-screen">
+                <div class="rocket-area"><div class="rocket">🚀</div><div class="rocket">🚀</div><div class="rocket">🚀</div></div>
+                <div class="loading-text">Scanning Markets...</div>
+                <div class="loading-sub">Please wait while ArbiMine finds opportunities</div>
+            </div>
+        `;
         try {
-            const res = await fetch(url);
+            const res = await fetch(`${API}/api/opportunities?sortBy=${sortBy}`);
             const json = await res.json();
             const opps = json.opportunities || [];
             if (opps.length === 0) {
-                container.innerHTML = `<div class="loading-screen">⚠️ No opportunities with ${minProfit}%+ profit</div>`;
+                container.innerHTML = `
+                    <div class="loading-screen">
+                        <div class="rocket-area"><div class="rocket">🔍</div></div>
+                        <div class="loading-text">No arbitrage opportunities</div>
+                        <div class="loading-sub">Try again later</div>
+                    </div>
+                `;
                 return;
             }
             container.innerHTML = opps.map(item => `
                 <div class="card" onclick='openDetails(${JSON.stringify(item)})'>
                     <div><span class="buy">BUY</span> ${item.buyExchange} $${item.buyPrice}</div>
-                    <div><span class="sell">SELL</span> ${item.sellExchange} $${item.sellPrice}</div>
+                    <div style="margin-top:8px;"><span class="sell">SELL</span> ${item.sellExchange} $${item.sellPrice}</div>
                     <div class="symbol">${item.symbol}</div>
                     <div class="badge ${item.tradable ? 'tradable' : 'unverified'}">
                         ${item.tradable ? 'TRADABLE ✅' : 'UNVERIFIED ⚠️'}
@@ -207,66 +473,126 @@
                     <div class="percent">${item.spread}%</div>
                 </div>
             `).join('');
-        } catch(err) {
-            container.innerHTML = `<div class="loading-screen">❌ Failed to load</div>`;
+        } catch (err) {
+            console.error('Load error:', err);
+            container.innerHTML = `
+                <div class="loading-screen">
+                    <div class="loading-text">❌ Failed To Load</div>
+                    <div class="loading-sub">Check your internet or try again later</div>
+                </div>
+            `;
         }
     }
 
-    // Slider live update
-    document.getElementById('minProfitSlider')?.addEventListener('input', (e) => {
-        document.getElementById('profitValue').innerText = e.target.value + '%';
-    });
-
-    // ----------------------------- DETAILS (unchanged but uses new fields) -----------------------------
+    // ----------------------------- OPEN DETAILS (unchanged) -----------------------------
     function openDetails(item) {
         const page = document.getElementById('detailsPage');
         const body = document.getElementById('detailsBody');
         page.style.display = 'block';
+
         const history = item.history || [];
-        let firstFound = history[0] ? new Date(history[0].time).toLocaleString() : '—';
         let trendHtml = '';
-        if (history.length > 1) {
-            const diff = history[history.length-1].spread - history[0].spread;
-            trendHtml = `<p>Trend: ${diff >=0 ? '📈 increasing' : '📉 decreasing'} (${diff.toFixed(2)}%)</p>`;
+        let firstFound = '—';
+        if (history.length > 0) {
+            const first = history[0];
+            const last = history[history.length - 1];
+            firstFound = new Date(first.time).toLocaleString();
+            const diff = last.spread - first.spread;
+            const trendClass = diff >= 0 ? 'trend-up' : 'trend-down';
+            const trendSymbol = diff >= 0 ? '▲ increasing' : '▼ decreasing';
+            trendHtml = `<p><span class="${trendClass}">Trend: ${trendSymbol} (${diff.toFixed(2)}%)</span></p>`;
         }
+
+        const maxSpread = Math.max(...history.map(h => h.spread), 0.1);
         const graphBars = history.map(h => {
-            const width = Math.min(100, h.spread * 5);
-            return `<div class="graph-bar-container"><span style="width:60px">${new Date(h.time).toLocaleTimeString()}</span><div class="graph-bar" style="width:${width}px"></div><span>${h.spread}%</span></div>`;
+            const widthPercent = (h.spread / maxSpread) * 100;
+            const timeStr = new Date(h.time).toLocaleTimeString();
+            return `
+                <div class="graph-bar-container">
+                    <div class="graph-label">${timeStr}</div>
+                    <div class="graph-bar" style="width: ${widthPercent}%; background: #22c55e;"></div>
+                    <span>${h.spread}%</span>
+                </div>
+            `;
         }).join('');
-        const buyNetworksHtml = (item.buyNetworks || []).map(n => `<div class="network-item"><b>${n.name}</b><br>Deposit: ${n.deposit ? '✅' : '❌'} | Withdraw: ${n.withdraw ? '✅' : '❌'}<br>Min: ${n.minWithdraw || '?'} | Fee: ${n.fee}<br>Arrival: ${n.arrivalTime}</div>`).join('');
-        const sellNetworksHtml = (item.sellNetworks || []).map(n => `<div class="network-item"><b>${n.name}</b><br>Deposit: ${n.deposit ? '✅' : '❌'} | Withdraw: ${n.withdraw ? '✅' : '❌'}<br>Min: ${n.minDeposit || '?'} | Fee: ${n.fee}<br>Arrival: ${n.arrivalTime}</div>`).join('');
+
+        const unverifiedWarning = !item.tradable && item.unverifiedMessage ? `
+            <div class="warning-text">
+                ⚠️ ${item.unverifiedMessage} — manually verify deposit/withdrawal status on each exchange.
+            </div>
+        ` : '';
+
+        const buyNetworksHtml = (item.buyNetworks || []).map(net => `
+            <div class="network-item">
+                <strong>${net.name}</strong>
+                <p>⏱️ Arrival: ${net.arrivalTime || 'unknown'}</p>
+                <p>💰 Fee: ${net.fee || 'variable'}</p>
+                <p>Deposit: ${net.deposit ? '✅ Open' : '❌ Closed'}</p>
+                <p>Withdraw: ${net.withdraw ? '✅ Open' : '❌ Closed'}</p>
+            </div>
+        `).join('') || '<p>No network data available</p>';
+
+        const sellNetworksHtml = (item.sellNetworks || []).map(net => `
+            <div class="network-item">
+                <strong>${net.name}</strong>
+                <p>⏱️ Arrival: ${net.arrivalTime || 'unknown'}</p>
+                <p>💰 Fee: ${net.fee || 'variable'}</p>
+                <p>Deposit: ${net.deposit ? '✅ Open' : '❌ Closed'}</p>
+                <p>Withdraw: ${net.withdraw ? '✅ Open' : '❌ Closed'}</p>
+            </div>
+        `).join('') || '<p>No network data available</p>';
+
         body.innerHTML = `
             <div class="detail-card">
-                <h2>${item.symbol}</h2>
-                <div class="badge ${item.tradable ? 'tradable' : 'unverified'}">${item.tradingStatus}</div>
-                ${!item.tradable ? `<p style="color:#facc15">⚠️ ${item.unverifiedMessage}</p>` : ''}
-                <h3>Buy: ${item.buyExchange}</h3>
-                <p>Price: $${item.buyPrice} | Withdraw: ${item.buyWithdraw ? '✅' : '❌'}</p>
-                <p>Liquidity: $${item.buyLiquidity} | Min Buy: ${item.buyMinAmount} (≈ $${item.buyMinUSDT})</p>
-                <h3>Sell: ${item.sellExchange}</h3>
-                <p>Price: $${item.sellPrice} | Deposit: ${item.sellDeposit ? '✅' : '❌'}</p>
-                <p>Liquidity: $${item.sellLiquidity} | Min Sell: ${item.sellMinAmount} (≈ $${item.sellMinUSDT})</p>
+                <h1>${item.symbol}</h1>
+                <div class="badge ${item.tradable ? 'tradable' : 'unverified'}">
+                    ${item.tradable ? 'TRADABLE ✅' : 'UNVERIFIED ⚠️'}
+                </div>
+                ${unverifiedWarning}
+                
+                <h2 style="margin-top:20px;">Buy: ${item.buyExchange}</h2>
+                <p>Price: $${item.buyPrice}</p>
+                <p>Withdrawal allowed: ${item.buyWithdraw ? '✅ Yes' : '❌ No / Unknown'}</p>
+                <p>💰 Liquidity (24h vol): $${item.buyLiquidity || 'N/A'}</p>
+                <p>📉 Minimum Buy: ${item.buyMinAmount || '?'} ${item.symbol} (≈ $${item.buyMinUSDT || '?'})</p>
+
+                <h2 style="margin-top:20px;">Sell: ${item.sellExchange}</h2>
+                <p>Price: $${item.sellPrice}</p>
+                <p>Deposit allowed: ${item.sellDeposit ? '✅ Yes' : '❌ No / Unknown'}</p>
+                <p>💰 Liquidity (24h vol): $${item.sellLiquidity || 'N/A'}</p>
+                <p>📈 Minimum Sell: ${item.sellMinAmount || '?'} ${item.symbol} (≈ $${item.sellMinUSDT || '?'})</p>
             </div>
+
             <div class="detail-card">
-                <h3>Networks (${item.buyExchange})</h3>
-                ${buyNetworksHtml || '<p>No network data</p>'}
-                <h3>Networks (${item.sellExchange})</h3>
-                ${sellNetworksHtml || '<p>No network data</p>'}
+                <h2>Networks (${item.buyExchange})</h2>
+                ${buyNetworksHtml}
+                
+                <h2 style="margin-top:20px;">Networks (${item.sellExchange})</h2>
+                ${sellNetworksHtml}
             </div>
+
             <div class="detail-card">
-                <h3>History & Trend</h3>
-                <p>First found: ${firstFound}</p>
+                <h2>Opportunity Trend</h2>
+                <p>📅 First found: ${firstFound}</p>
                 ${trendHtml}
-                ${graphBars || '<p>No history yet</p>'}
+                <div style="margin-top:15px;">
+                    ${graphBars || '<p>No history yet</p>'}
+                </div>
             </div>
         `;
     }
-    function closeDetails() { document.getElementById('detailsPage').style.display = 'none'; }
 
-    // ----------------------------- PAYHERO INTEGRATION -----------------------------
+    function closeDetails() {
+        document.getElementById('detailsPage').style.display = 'none';
+    }
+
+    // ----------------------------- PAYMENT (unchanged) -----------------------------
     async function pay(plan, amount, inputId) {
         const phone = document.getElementById(inputId).value;
-        if (!phone) return alert('Enter M-Pesa number');
+        if (!phone) {
+            alert('Enter M-Pesa number');
+            return;
+        }
         try {
             const res = await fetch(`${API}/api/pesapal/pay`, {
                 method: 'POST',
@@ -274,14 +600,15 @@
                 body: JSON.stringify({ phone, amount, plan })
             });
             const data = await res.json();
-            if (data.success) alert(`✅ ${data.message}`);
-            else alert(`❌ ${data.message}`);
-        } catch(err) {
+            alert(data.message);
+        } catch (err) {
             alert('Payment request failed');
         }
     }
 
-    // Auto-refresh removed – manual only
+    // Auto-refresh every 60 seconds (1 minute)
+    setInterval(loadOpportunities, 60000);
 </script>
+
 </body>
 </html>
