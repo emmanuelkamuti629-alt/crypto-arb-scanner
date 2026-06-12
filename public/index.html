@@ -3,17 +3,17 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>ArbiMine - Crypto Arbitrage Scanner</title>
+<title>ArbiMine</title>
 
 <style>
 body{
   margin:0;
-  font-family:Arial, sans-serif;
+  font-family:Arial;
   background:#0b1220;
   color:#fff;
 }
 
-/* TOP NAV */
+/* NAV */
 .nav{
   display:flex;
   justify-content:space-around;
@@ -28,7 +28,6 @@ body{
   border:none;
   color:#aaa;
   font-size:14px;
-  padding:10px;
   cursor:pointer;
 }
 
@@ -47,17 +46,17 @@ body{
   display:block;
 }
 
-/* CARDS */
+/* CARD */
 .card{
   background:#121c33;
-  padding:15px;
+  padding:12px;
   border-radius:10px;
   margin-bottom:10px;
   cursor:pointer;
 }
 
 .symbol{
-  font-size:18px;
+  font-size:16px;
   font-weight:bold;
   color:#00ff99;
 }
@@ -65,14 +64,14 @@ body{
 .row{
   display:flex;
   justify-content:space-between;
-  margin-top:8px;
   font-size:13px;
+  margin-top:6px;
   color:#ccc;
 }
 
 .badge{
-  padding:4px 8px;
-  border-radius:6px;
+  padding:3px 6px;
+  border-radius:5px;
   font-size:12px;
 }
 
@@ -80,18 +79,16 @@ body{
 .red{background:#5a1a1a;color:#ff5c5c;}
 .blue{background:#1a2a5a;color:#5cb3ff;}
 
-/* LOADING */
-.loading{
-  text-align:center;
-  padding:20px;
-  color:#888;
+.networks{
+  font-size:11px;
+  color:#aaa;
+  margin-top:8px;
 }
 
-/* NETWORKS */
-.networks{
-  margin-top:8px;
-  font-size:12px;
-  color:#aaa;
+.loading{
+  text-align:center;
+  color:#777;
+  padding:20px;
 }
 </style>
 </head>
@@ -99,16 +96,16 @@ body{
 <body>
 
 <div class="nav">
-  <button class="active" onclick="showTab('home')">Home</button>
-  <button onclick="showTab('opps')">Opportunities</button>
-  <button onclick="showTab('pro')">Pro</button>
-  <button onclick="showTab('profile')">Profile</button>
+  <button class="active" onclick="tab('home',event)">Home</button>
+  <button onclick="tab('opps',event)">Opportunities</button>
+  <button onclick="tab('pro',event)">Pro</button>
+  <button onclick="tab('profile',event)">Profile</button>
 </div>
 
 <!-- HOME -->
 <div id="home" class="section active">
-  <h3>ArbiMine Dashboard</h3>
-  <p>Live crypto arbitrage scanner across exchanges.</p>
+  <h3>ArbiMine Scanner</h3>
+  <p>Live crypto arbitrage opportunities across exchanges.</p>
 </div>
 
 <!-- OPPORTUNITIES -->
@@ -120,32 +117,32 @@ body{
 <!-- PRO -->
 <div id="pro" class="section">
   <h3>Pro Plan</h3>
-  <p>Unlock faster scanning & premium signals.</p>
+  <p>Upgrade for faster scans & premium alerts.</p>
 </div>
 
 <!-- PROFILE -->
 <div id="profile" class="section">
   <h3>Profile</h3>
-  <div id="userBox">Loading user...</div>
+  <div id="user">Loading...</div>
 </div>
 
 <script>
 
-function showTab(tab){
+function tab(id,e){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
 
-  document.getElementById(tab).classList.add('active');
-  event.target.classList.add('active');
+  document.getElementById(id).classList.add('active');
+  e.target.classList.add('active');
 
-  if(tab === 'opps') loadOpps();
-  if(tab === 'profile') loadUser();
+  if(id === 'opps') loadOpps();
+  if(id === 'profile') loadUser();
 }
 
 /*
-========================================
+========================
 LOAD OPPORTUNITIES
-========================================
+========================
 */
 async function loadOpps(){
   const box = document.getElementById('list');
@@ -164,13 +161,13 @@ async function loadOpps(){
 
     data.opportunities.forEach(op => {
 
-      const networksBuy = (op.buyNetworks || [])
-        .map(n => n.name + (n.withdraw ? "✔" : "❌"))
-        .join(", ");
+      const buyN = (op.buyNetworks || [])
+        .map(n => `${n.name}:${n.withdraw ? "✔" : "❌"}`)
+        .join(" | ");
 
-      const networksSell = (op.sellNetworks || [])
-        .map(n => n.name + (n.deposit ? "✔" : "❌"))
-        .join(", ");
+      const sellN = (op.sellNetworks || [])
+        .map(n => `${n.name}:${n.deposit ? "✔" : "❌"}`)
+        .join(" | ");
 
       const card = document.createElement('div');
       card.className = "card";
@@ -179,12 +176,12 @@ async function loadOpps(){
         <div class="symbol">${op.symbol}</div>
 
         <div class="row">
-          <span>Buy: ${op.buyExchange}</span>
+          <span>${op.buyExchange}</span>
           <span>${op.buyPrice}</span>
         </div>
 
         <div class="row">
-          <span>Sell: ${op.sellExchange}</span>
+          <span>${op.sellExchange}</span>
           <span>${op.sellPrice}</span>
         </div>
 
@@ -196,13 +193,13 @@ async function loadOpps(){
         <div class="row">
           <span>Tradable</span>
           <span class="${op.tradable ? 'green' : 'red'} badge">
-            ${op.tradable ? "YES" : "NO"}
+            ${op.tradable ? 'YES' : 'NO'}
           </span>
         </div>
 
         <div class="networks">
-          <div>Buy Networks: ${networksBuy || "N/A"}</div>
-          <div>Sell Networks: ${networksSell || "N/A"}</div>
+          Buy: ${buyN || "N/A"}<br/>
+          Sell: ${sellN || "N/A"}
         </div>
       `;
 
@@ -215,26 +212,24 @@ async function loadOpps(){
       box.appendChild(card);
     });
 
-  } catch(err){
-    box.innerHTML = "Failed to load opportunities";
+  } catch(e){
+    box.innerHTML = "Failed to load data";
   }
 }
 
 /*
-========================================
-USER PROFILE
-========================================
+========================
+PROFILE
+========================
 */
 async function loadUser(){
-  const box = document.getElementById('userBox');
+  const box = document.getElementById('user');
 
   try{
     const token = localStorage.getItem('token');
 
-    const res = await fetch('/api/me', {
-      headers:{
-        Authorization: token
-      }
+    const res = await fetch('/api/me',{
+      headers:{ Authorization: token }
     });
 
     const data = await res.json();
@@ -245,15 +240,16 @@ async function loadUser(){
     }
 
     box.innerHTML = `
-      <p><b>Username:</b> ${data.username}</p>
+      <p><b>User:</b> ${data.username}</p>
       <p><b>Email:</b> ${data.email}</p>
       <p><b>M-Pesa:</b> ${data.mpesa}</p>
     `;
 
-  } catch(e){
+  }catch(e){
     box.innerHTML = "Error loading profile";
   }
 }
+
 </script>
 
 </body>
