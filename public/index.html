@@ -1,1241 +1,615 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>ArbiMine – Crypto Arbitrage Scanner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
 
-<meta charset="UTF-8"/>
+        body {
+            background: #0b0f19;
+            color: white;
+            padding-bottom: 90px;
+        }
 
-<meta name="viewport"
-      content="width=device-width, initial-scale=1.0"/>
+        /* HEADER */
+        header {
+            background: #facc15;
+            color: black;
+            padding: 18px;
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+        }
 
-<title>ArbiMine</title>
+        /* AUTH */
+        .auth-container {
+            padding: 20px;
+            min-height: 100vh;
+        }
 
-<style>
+        .auth-box {
+            background: #111827;
+            padding: 30px;
+            border-radius: 24px;
+            border: 1px solid #1f2937;
+        }
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:Arial,sans-serif;
-}
+        .auth-box h1 {
+            margin-bottom: 25px;
+        }
 
-body{
-    background:#0b0f19;
-    color:white;
-    padding-bottom:90px;
-}
+        .auth-box input {
+            width: 100%;
+            padding: 18px;
+            margin-bottom: 15px;
+            border: none;
+            border-radius: 14px;
+            background: black;
+            color: white;
+            font-size: 16px;
+        }
 
-/*
-========================================
-HEADER
-========================================
-*/
+        .auth-box button {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 14px;
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
 
-header{
-    background:#facc15;
-    color:black;
-    padding:18px;
-    text-align:center;
-    font-size:28px;
-    font-weight:bold;
-}
+        .create-btn {
+            background: #facc15;
+            color: black;
+        }
 
-/*
-========================================
-AUTH
-========================================
-*/
+        .login-btn {
+            background: #1f2937;
+            color: white;
+        }
 
-.auth-container{
-    padding:20px;
-    min-height:100vh;
-}
+        /* PAGES */
+        .page {
+            display: none;
+        }
 
-.auth-box{
-    background:#111827;
-    padding:30px;
-    border-radius:24px;
-    border:1px solid #1f2937;
-}
+        .page.active {
+            display: block;
+        }
 
-.auth-box h1{
-    margin-bottom:25px;
-}
+        /* LOADING SCREEN */
+        .loading-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 80px 20px;
+        }
 
-.auth-box input{
-    width:100%;
-    padding:18px;
-    margin-bottom:15px;
-    border:none;
-    border-radius:14px;
-    background:black;
-    color:white;
-    font-size:16px;
-}
+        .rocket-area {
+            position: relative;
+            width: 100%;
+            height: 180px;
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
 
-.auth-box button{
-    width:100%;
-    padding:18px;
-    border:none;
-    border-radius:14px;
-    font-size:18px;
-    font-weight:bold;
-    margin-top:10px;
-}
+        .rocket {
+            position: absolute;
+            font-size: 42px;
+            animation: fly 3s linear infinite;
+        }
 
-.create-btn{
-    background:#facc15;
-    color:black;
-}
+        .rocket:nth-child(1) { top: 20px; animation-delay: 0s; }
+        .rocket:nth-child(2) { top: 90px; animation-delay: 1s; }
+        .rocket:nth-child(3) { top: 140px; animation-delay: 2s; }
 
-.login-btn{
-    background:#1f2937;
-    color:white;
-}
+        @keyframes fly {
+            from { left: -60px; }
+            to { left: 110%; }
+        }
 
-/*
-========================================
-PAGES
-========================================
-*/
+        .loading-text {
+            font-size: 28px;
+            font-weight: bold;
+            color: #22c55e;
+        }
 
-.page{
-    display:none;
-}
+        .loading-sub {
+            margin-top: 10px;
+            color: #94a3b8;
+        }
 
-.page.active{
-    display:block;
-}
+        /* OPPORTUNITY CARD */
+        #opportunities {
+            padding: 15px;
+        }
 
-/*
-========================================
-LOADING
-========================================
-*/
+        .card {
+            background: #111827;
+            border: 1px solid #1f2937;
+            border-radius: 24px;
+            padding: 22px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+        .card:active { transform: scale(0.98); }
 
-.loading-screen{
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-    text-align:center;
-    padding:80px 20px;
-}
+        .buy { color: #22c55e; font-weight: bold; }
+        .sell { color: #ef4444; font-weight: bold; }
 
-.rocket-area{
-    position:relative;
-    width:100%;
-    height:180px;
-    overflow:hidden;
-    margin-bottom:30px;
-}
+        .symbol {
+            font-size: 36px;
+            font-weight: bold;
+            margin-top: 15px;
+        }
 
-.rocket{
-    position:absolute;
-    font-size:42px;
-    animation:fly 3s linear infinite;
-}
+        .percent {
+            color: #22c55e;
+            font-size: 50px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
 
-.rocket:nth-child(1){
-    top:20px;
-    animation-delay:0s;
-}
+        .badge {
+            background: #f59e0b;
+            color: black;
+            padding: 8px 14px;
+            border-radius: 10px;
+            display: inline-block;
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 12px;
+        }
 
-.rocket:nth-child(2){
-    top:90px;
-    animation-delay:1s;
-}
+        .tradable {
+            background: #22c55e;
+        }
 
-.rocket:nth-child(3){
-    top:140px;
-    animation-delay:2s;
-}
+        .unverified {
+            background: #f97316;
+        }
 
-@keyframes fly{
+        /* BOTTOM NAV */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #111827;
+            border-top: 1px solid #1f2937;
+            display: flex;
+            justify-content: space-around;
+            padding: 14px 0;
+            z-index: 999;
+        }
 
-    from{
-        left:-60px;
-    }
+        .bottom-nav button {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 8px 16px;
+        }
 
-    to{
-        left:110%;
-    }
-}
+        .bottom-nav button.active {
+            color: #22c55e;
+        }
 
-.loading-text{
-    font-size:28px;
-    font-weight:bold;
-    color:#22c55e;
-}
+        /* PROFILE */
+        .profile-card {
+            background: #111827;
+            margin: 20px;
+            padding: 25px;
+            border-radius: 24px;
+        }
 
-.loading-sub{
-    margin-top:10px;
-    color:#94a3b8;
-}
+        .profile-card h2 {
+            margin-bottom: 25px;
+        }
 
-/*
-========================================
-OPPORTUNITIES
-========================================
-*/
+        .profile-item {
+            margin-bottom: 20px;
+        }
 
-#opportunities{
-    padding:15px;
-}
+        .logout-btn {
+            width: 100%;
+            background: #ef4444;
+            color: white;
+            padding: 16px;
+            border: none;
+            border-radius: 14px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
 
-.card{
-    background:#111827;
-    border:1px solid #1f2937;
-    border-radius:24px;
-    padding:22px;
-    margin-bottom:20px;
-    cursor:pointer;
-}
+        /* DETAILS PAGE */
+        .details-page {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0b0f19;
+            z-index: 9999;
+            overflow: auto;
+            padding: 20px;
+            display: none;
+        }
 
-.buy{
-    color:#22c55e;
-    font-weight:bold;
-}
+        .back-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 14px 18px;
+            border-radius: 14px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
 
-.sell{
-    color:#ef4444;
-    font-weight:bold;
-}
+        .detail-card {
+            background: #111827;
+            border-radius: 24px;
+            padding: 22px;
+            margin-bottom: 20px;
+            border: 1px solid #1f2937;
+        }
 
-.symbol{
-    font-size:36px;
-    font-weight:bold;
-    margin-top:15px;
-}
+        .network-item {
+            background: #1f2937;
+            padding: 15px;
+            border-radius: 14px;
+            margin-top: 12px;
+        }
 
-.percent{
-    color:#22c55e;
-    font-size:50px;
-    font-weight:bold;
-    margin-top:10px;
-}
+        .graph-bar-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 8px 0;
+        }
+        .graph-bar {
+            height: 14px;
+            background: #22c55e;
+            border-radius: 20px;
+            transition: width 0.2s;
+        }
+        .graph-label {
+            font-size: 12px;
+            color: #94a3b8;
+            min-width: 60px;
+        }
+        .trend-up { color: #22c55e; }
+        .trend-down { color: #ef4444; }
 
-.badge{
-    background:#f59e0b;
-    color:black;
-    padding:8px 14px;
-    border-radius:10px;
-    display:inline-block;
-    font-size:14px;
-    font-weight:bold;
-    margin-top:12px;
-}
+        .warning-text {
+            background: #451e03;
+            padding: 10px;
+            border-radius: 12px;
+            margin-top: 15px;
+            color: #facc15;
+            font-size: 14px;
+            text-align: center;
+        }
 
-.tradable{
-    background:#22c55e;
-}
+        /* PRO PLANS */
+        .plan {
+            background: #111827;
+            margin: 20px;
+            padding: 25px;
+            border-radius: 24px;
+        }
 
-/*
-========================================
-BOTTOM NAV
-========================================
-*/
+        .plan p {
+            color: #22c55e;
+            font-size: 36px;
+            font-weight: bold;
+            margin: 15px 0;
+        }
 
-.bottom-nav{
-    position:fixed;
-    bottom:0;
-    left:0;
-    width:100%;
-    background:#111827;
-    border-top:1px solid #1f2937;
-    display:flex;
-    justify-content:space-around;
-    padding:14px 0;
-    z-index:999;
-}
+        .plan input {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 14px;
+            background: black;
+            color: white;
+            margin-bottom: 15px;
+        }
 
-.bottom-nav button{
-    background:none;
-    border:none;
-    color:#94a3b8;
-    font-size:14px;
-}
-
-.bottom-nav button.active{
-    color:#22c55e;
-}
-
-/*
-========================================
-PROFILE
-========================================
-*/
-
-.profile-card{
-    background:#111827;
-    margin:20px;
-    padding:25px;
-    border-radius:24px;
-}
-
-.profile-card h2{
-    margin-bottom:25px;
-}
-
-.profile-item{
-    margin-bottom:20px;
-}
-
-.logout-btn{
-    width:100%;
-    background:#ef4444;
-    color:white;
-    padding:16px;
-    border:none;
-    border-radius:14px;
-    font-weight:bold;
-    margin-top:20px;
-}
-
-/*
-========================================
-DETAILS PAGE
-========================================
-*/
-
-.details-page{
-    position:fixed;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    background:#0b0f19;
-    z-index:9999;
-    overflow:auto;
-    padding:20px;
-    display:none;
-}
-
-.back-btn{
-    background:#ef4444;
-    color:white;
-    border:none;
-    padding:14px 18px;
-    border-radius:14px;
-    font-weight:bold;
-    margin-bottom:20px;
-}
-
-.detail-card{
-    background:#111827;
-    border-radius:24px;
-    padding:22px;
-    margin-bottom:20px;
-    border:1px solid #1f2937;
-}
-
-.network-item{
-    background:#1f2937;
-    padding:15px;
-    border-radius:14px;
-    margin-top:12px;
-}
-
-.graph-bar{
-    height:14px;
-    background:#22c55e;
-    border-radius:20px;
-    margin-top:12px;
-}
-
-/*
-========================================
-PRO
-========================================
-*/
-
-.plan{
-    background:#111827;
-    margin:20px;
-    padding:25px;
-    border-radius:24px;
-}
-
-.plan p{
-    color:#22c55e;
-    font-size:36px;
-    font-weight:bold;
-    margin:15px 0;
-}
-
-.plan input{
-    width:100%;
-    padding:16px;
-    border:none;
-    border-radius:14px;
-    background:black;
-    color:white;
-    margin-bottom:15px;
-}
-
-.plan button{
-    width:100%;
-    padding:16px;
-    border:none;
-    border-radius:14px;
-    background:#22c55e;
-    color:black;
-    font-weight:bold;
-}
-
-</style>
-
+        .plan button {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 14px;
+            background: #22c55e;
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
 </head>
-
 <body>
 
-<header>
+<header>🚀 ArbiMine</header>
 
-🚀 ArbiMine
-
-</header>
-
-<!-- AUTH -->
-
-<div id="authPage"
-     class="auth-container">
-
+<!-- AUTH PAGE -->
+<div id="authPage" class="auth-container">
     <div class="auth-box">
-
-        <h1>
-            Welcome to ArbiMine
-        </h1>
-
-        <input type="text"
-               id="username"
-               placeholder="Username">
-
-        <input type="email"
-               id="email"
-               placeholder="Email">
-
-        <input type="text"
-               id="mpesa"
-               placeholder="M-Pesa: 2547XXXXXXXX">
-
-        <input type="password"
-               id="password"
-               placeholder="Password">
-
-        <button class="create-btn"
-                onclick="registerUser()">
-
-            Create Account
-
-        </button>
-
-        <button class="login-btn"
-                onclick="loginUser()">
-
-            Login
-
-        </button>
-
+        <h1>Welcome to ArbiMine</h1>
+        <input type="text" id="username" placeholder="Username">
+        <input type="email" id="email" placeholder="Email">
+        <input type="text" id="mpesa" placeholder="M-Pesa: 2547XXXXXXXX">
+        <input type="password" id="password" placeholder="Password">
+        <button class="create-btn" onclick="registerUser()">Create Account</button>
+        <button class="login-btn" onclick="loginUser()">Login</button>
     </div>
-
 </div>
 
-<!-- MAIN APP -->
+<!-- MAIN APP (hidden until login) -->
+<div id="mainApp" style="display:none;">
 
-<div id="mainApp"
-     style="display:none;">
-
-    <!-- HOME -->
-
-    <div id="homePage"
-         class="page active">
-
-        <div id="opportunities">
-
-        </div>
-
+    <!-- HOME PAGE -->
+    <div id="homePage" class="page active">
+        <div id="opportunities"></div>
     </div>
 
-    <!-- PRO -->
-
-    <div id="proPage"
-         class="page">
-
+    <!-- PRO PAGE -->
+    <div id="proPage" class="page">
         <div class="plan">
-
-            <h2>
-                Weekly Plan
-            </h2>
-
-            <p>
-                KES 100
-            </p>
-
-            <input type="text"
-                   id="weeklyPhone"
-                   placeholder="2547XXXXXXXX">
-
-            <button onclick="
-                pay(
-                    'weekly',
-                    100,
-                    'weeklyPhone'
-                )
-            ">
-
-                Pay Weekly
-
-            </button>
-
+            <h2>Weekly Plan</h2>
+            <p>KES 100</p>
+            <input type="text" id="weeklyPhone" placeholder="2547XXXXXXXX">
+            <button onclick="pay('weekly', 100, 'weeklyPhone')">Pay Weekly</button>
         </div>
-
         <div class="plan">
-
-            <h2>
-                Monthly Plan
-            </h2>
-
-            <p>
-                KES 350
-            </p>
-
-            <input type="text"
-                   id="monthlyPhone"
-                   placeholder="2547XXXXXXXX">
-
-            <button onclick="
-                pay(
-                    'monthly',
-                    350,
-                    'monthlyPhone'
-                )
-            ">
-
-                Pay Monthly
-
-            </button>
-
+            <h2>Monthly Plan</h2>
+            <p>KES 350</p>
+            <input type="text" id="monthlyPhone" placeholder="2547XXXXXXXX">
+            <button onclick="pay('monthly', 350, 'monthlyPhone')">Pay Monthly</button>
         </div>
-
     </div>
 
-    <!-- PROFILE -->
-
-    <div id="profilePage"
-         class="page">
-
+    <!-- PROFILE PAGE -->
+    <div id="profilePage" class="page">
         <div class="profile-card">
-
-            <h2>
-                My Profile
-            </h2>
-
-            <div class="profile-item">
-
-                Username:
-
-                <h3 id="pUsername"></h3>
-
-            </div>
-
-            <div class="profile-item">
-
-                Email:
-
-                <h3 id="pEmail"></h3>
-
-            </div>
-
-            <div class="profile-item">
-
-                M-Pesa:
-
-                <h3 id="pMpesa"></h3>
-
-            </div>
-
-            <button class="logout-btn"
-                    onclick="logoutUser()">
-
-                Logout
-
-            </button>
-
+            <h2>My Profile</h2>
+            <div class="profile-item">Username: <h3 id="pUsername"></h3></div>
+            <div class="profile-item">Email: <h3 id="pEmail"></h3></div>
+            <div class="profile-item">M-Pesa: <h3 id="pMpesa"></h3></div>
+            <button class="logout-btn" onclick="logoutUser()">Logout</button>
         </div>
-
     </div>
 
-    <!-- NAV -->
-
+    <!-- BOTTOM NAVIGATION -->
     <div class="bottom-nav">
-
-        <button class="active"
-                onclick="
-                switchPage(
-                    'homePage',
-                    this
-                )">
-
-            🏠 Home
-
-        </button>
-
-        <button onclick="
-            switchPage(
-                'proPage',
-                this
-            )">
-
-            💎 Pro
-
-        </button>
-
-        <button onclick="
-            switchPage(
-                'profilePage',
-                this
-            )">
-
-            👤 Profile
-
-        </button>
-
+        <button class="active" onclick="switchPage('homePage', this)">🏠 Home</button>
+        <button onclick="switchPage('proPage', this)">💎 Pro</button>
+        <button onclick="switchPage('profilePage', this)">👤 Profile</button>
     </div>
-
 </div>
 
-<!-- DETAILS -->
-
-<div id="detailsPage"
-     class="details-page">
-
-    <button class="back-btn"
-            onclick="closeDetails()">
-
-        ← Back
-
-    </button>
-
+<!-- DETAILS OVERLAY -->
+<div id="detailsPage" class="details-page">
+    <button class="back-btn" onclick="closeDetails()">← Back</button>
     <div id="detailsBody"></div>
-
 </div>
 
 <script>
-
-const API =
-'https://crypto-arb-scanner-1.onrender.com';
-
-/*
-========================================
-REGISTER
-========================================
-*/
-
-function registerUser(){
-
-    const user = {
-
-        username:
-            document.getElementById(
-                'username'
-            ).value,
-
-        email:
-            document.getElementById(
-                'email'
-            ).value,
-
-        mpesa:
-            document.getElementById(
-                'mpesa'
-            ).value,
-
-        password:
-            document.getElementById(
-                'password'
-            ).value
-    };
-
-    localStorage.setItem(
-        'arbimine_user',
-        JSON.stringify(user)
-    );
-
-    loginUser();
-}
-
-/*
-========================================
-LOGIN
-========================================
-*/
-
-function loginUser(){
-
-    const user =
-        JSON.parse(
-            localStorage.getItem(
-                'arbimine_user'
-            )
-        );
-
-    if(!user){
-
-        alert(
-            'Create account first'
-        );
-
-        return;
-    }
-
-    document.getElementById(
-        'authPage'
-    ).style.display = 'none';
-
-    document.getElementById(
-        'mainApp'
-    ).style.display = 'block';
-
-    document.getElementById(
-        'pUsername'
-    ).innerText =
-        user.username;
-
-    document.getElementById(
-        'pEmail'
-    ).innerText =
-        user.email;
-
-    document.getElementById(
-        'pMpesa'
-    ).innerText =
-        user.mpesa;
-
-    loadOpportunities();
-}
-
-/*
-========================================
-AUTO LOGIN
-========================================
-*/
-
-window.onload = ()=>{
-
-    if(
-        localStorage.getItem(
-            'arbimine_user'
-        )
-    ){
-        loginUser();
-    }
-};
-
-/*
-========================================
-LOGOUT
-========================================
-*/
-
-function logoutUser(){
-
-    localStorage.removeItem(
-        'arbimine_user'
-    );
-
-    location.reload();
-}
-
-/*
-========================================
-SWITCH PAGE
-========================================
-*/
-
-function switchPage(
-    pageId,
-    btn
-){
-
-    document
-    .querySelectorAll('.page')
-    .forEach(page=>{
-
-        page.classList.remove(
-            'active'
-        );
-    });
-
-    document
-    .getElementById(pageId)
-    .classList.add('active');
-
-    document
-    .querySelectorAll(
-        '.bottom-nav button'
-    )
-    .forEach(button=>{
-
-        button.classList.remove(
-            'active'
-        );
-    });
-
-    btn.classList.add('active');
-}
-
-/*
-========================================
-LOAD OPPORTUNITIES
-========================================
-*/
-
-async function loadOpportunities(){
-
-    const container =
-        document.getElementById(
-            'opportunities'
-        );
-
-    container.innerHTML = `
-
-        <div class="loading-screen">
-
-            <div class="rocket-area">
-
-                <div class="rocket">
-                    🚀
-                </div>
-
-                <div class="rocket">
-                    🚀
-                </div>
-
-                <div class="rocket">
-                    🚀
-                </div>
-
-            </div>
-
-            <div class="loading-text">
-
-                Scanning Markets...
-
-            </div>
-
-            <div class="loading-sub">
-
-                Please wait while
-                ArbiMine finds
-                opportunities
-
-            </div>
-
-        </div>
-    `;
-
-    try{
-
-        const res =
-            await fetch(
-                `${API}/api/opportunities`
-            );
-
-        const json =
-            await res.json();
-
-        const opps =
-            json.opportunities || [];
-
-        if(opps.length===0){
-
-            container.innerHTML = `
-
-                <div class="loading-screen">
-
-                    <div class="rocket-area">
-
-                        <div class="rocket">
-                            🚀
-                        </div>
-
-                    </div>
-
-                    <div class="loading-text">
-
-                        Still Scanning...
-
-                    </div>
-
-                </div>
-            `;
-
+    const API = 'https://crypto-arb-scanner-1.onrender.com';
+
+    // ----------------------------- AUTH (local storage mock) -----------------------------
+    function registerUser() {
+        const user = {
+            username: document.getElementById('username').value,
+            email: document.getElementById('email').value,
+            mpesa: document.getElementById('mpesa').value,
+            password: document.getElementById('password').value
+        };
+        if (!user.username || !user.email || !user.mpesa || !user.password) {
+            alert('Please fill all fields');
             return;
         }
+        localStorage.setItem('arbimine_user', JSON.stringify(user));
+        loginUser();
+    }
 
-        container.innerHTML =
-            opps.map(item=>`
+    function loginUser() {
+        const user = JSON.parse(localStorage.getItem('arbimine_user'));
+        if (!user) {
+            alert('Create account first');
+            return;
+        }
+        document.getElementById('authPage').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        document.getElementById('pUsername').innerText = user.username;
+        document.getElementById('pEmail').innerText = user.email;
+        document.getElementById('pMpesa').innerText = user.mpesa;
+        loadOpportunities();
+    }
 
-            <div class="card"
-                 onclick='openDetails(
-                    ${JSON.stringify(item)}
-                 )'>
+    window.onload = () => {
+        if (localStorage.getItem('arbimine_user')) {
+            loginUser();
+        }
+    };
 
-                <div>
+    function logoutUser() {
+        localStorage.removeItem('arbimine_user');
+        location.reload();
+    }
 
-                    <span class="buy">
+    function switchPage(pageId, btn) {
+        document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        document.querySelectorAll('.bottom-nav button').forEach(button => button.classList.remove('active'));
+        btn.classList.add('active');
+    }
 
-                        BUY
-
-                    </span>
-
-                    ${item.buyExchange}
-
-                    $${item.buyPrice}
-
-                </div>
-
-                <div style="
-                    margin-top:8px;
-                ">
-
-                    <span class="sell">
-
-                        SELL
-
-                    </span>
-
-                    ${item.sellExchange}
-
-                    $${item.sellPrice}
-
-                </div>
-
-                <div class="symbol">
-
-                    ${item.symbol}
-
-                </div>
-
-                <div class="
-                    badge
-                    ${
-                        item.tradable
-                        ? 'tradable'
-                        : ''
-                    }
-                ">
-
-                    ${
-                        item.tradable
-                        ? 'TRADABLE'
-                        : 'UNVERIFIED'
-                    }
-
-                </div>
-
-                <div class="percent">
-
-                    ${item.spread}%
-
-                </div>
-
+    // ----------------------------- LOAD OPPORTUNITIES (all, with tradable/unverified badges) -----------------------------
+    async function loadOpportunities() {
+        const container = document.getElementById('opportunities');
+        container.innerHTML = `
+            <div class="loading-screen">
+                <div class="rocket-area"><div class="rocket">🚀</div><div class="rocket">🚀</div><div class="rocket">🚀</div></div>
+                <div class="loading-text">Scanning Markets...</div>
+                <div class="loading-sub">Please wait while ArbiMine finds opportunities</div>
             </div>
+        `;
+        try {
+            const res = await fetch(`${API}/api/opportunities`);
+            const json = await res.json();
+            const opps = json.opportunities || [];
+            if (opps.length === 0) {
+                container.innerHTML = `<div class="loading-screen"><div class="rocket-area"><div class="rocket">🚀</div></div><div class="loading-text">Still Scanning...</div></div>`;
+                return;
+            }
+            container.innerHTML = opps.map(item => `
+                <div class="card" onclick='openDetails(${JSON.stringify(item)})'>
+                    <div><span class="buy">BUY</span> ${item.buyExchange} $${item.buyPrice}</div>
+                    <div style="margin-top:8px;"><span class="sell">SELL</span> ${item.sellExchange} $${item.sellPrice}</div>
+                    <div class="symbol">${item.symbol}</div>
+                    <div class="badge ${item.tradable ? 'tradable' : 'unverified'}">
+                        ${item.tradable ? 'TRADABLE ✅' : 'UNVERIFIED ⚠️'}
+                    </div>
+                    <div class="percent">${item.spread}%</div>
+                </div>
+            `).join('');
+        } catch (err) {
+            container.innerHTML = `<div class="loading-screen"><div class="loading-text">Failed To Load</div></div>`;
+        }
+    }
 
+    // ----------------------------- DETAILS (using full data from the clicked item) -----------------------------
+    function openDetails(item) {
+        const page = document.getElementById('detailsPage');
+        const body = document.getElementById('detailsBody');
+        page.style.display = 'block';
+
+        // Helper: calculate trend from history
+        const history = item.history || [];
+        let trendHtml = '';
+        let firstFound = '—';
+        if (history.length > 0) {
+            const first = history[0];
+            const last = history[history.length - 1];
+            firstFound = new Date(first.time).toLocaleString();
+            const diff = last.spread - first.spread;
+            const trendClass = diff >= 0 ? 'trend-up' : 'trend-down';
+            const trendSymbol = diff >= 0 ? '▲ increasing' : '▼ decreasing';
+            trendHtml = `<p><span class="${trendClass}">Trend: ${trendSymbol} (${diff.toFixed(2)}%)</span></p>`;
+        }
+
+        // Build network blocks for both buy and sell exchanges
+        const buyNetworks = item.buyNetworks || [];
+        const sellNetworks = item.sellNetworks || [];
+
+        const buyNetworksHtml = buyNetworks.map(net => `
+            <div class="network-item">
+                <strong>${net.name}</strong>
+                <p>Deposit: ${net.deposit ? 'Open ✅' : 'Closed ❌'}</p>
+                <p>Withdraw: ${net.withdraw ? 'Open ✅' : 'Closed ❌'}</p>
+            </div>
+        `).join('');
+        const sellNetworksHtml = sellNetworks.map(net => `
+            <div class="network-item">
+                <strong>${net.name}</strong>
+                <p>Deposit: ${net.deposit ? 'Open ✅' : 'Closed ❌'}</p>
+                <p>Withdraw: ${net.withdraw ? 'Open ✅' : 'Closed ❌'}</p>
+            </div>
         `).join('');
 
-    }catch(err){
-
-        container.innerHTML = `
-
-            <div class="loading-screen">
-
-                <div class="loading-text">
-
-                    Failed To Load
-
+        // Graph: use relative width (max spread in history as 100%)
+        const maxSpread = Math.max(...history.map(h => h.spread), 0.1);
+        const graphBars = history.map(h => {
+            const widthPercent = (h.spread / maxSpread) * 100;
+            const timeStr = new Date(h.time).toLocaleTimeString();
+            return `
+                <div class="graph-bar-container">
+                    <div class="graph-label">${timeStr}</div>
+                    <div class="graph-bar" style="width: ${widthPercent}%; background: #22c55e;"></div>
+                    <span>${h.spread}%</span>
                 </div>
+            `;
+        }).join('');
 
+        const unverifiedWarning = !item.tradable && item.unverifiedMessage ? `
+            <div class="warning-text">
+                ⚠️ ${item.unverifiedMessage} — manually verify deposit/withdrawal status on each exchange.
+            </div>
+        ` : '';
+
+        body.innerHTML = `
+            <div class="detail-card">
+                <h1>${item.symbol}</h1>
+                <div class="badge ${item.tradable ? 'tradable' : 'unverified'}">
+                    ${item.tradable ? 'TRADABLE ✅' : 'UNVERIFIED ⚠️'}
+                </div>
+                ${unverifiedWarning}
+                <h2 style="margin-top:20px;">Buy: ${item.buyExchange}</h2>
+                <p>Price: $${item.buyPrice}</p>
+                <p>Withdrawal allowed: ${item.buyWithdraw ? '✅ Yes' : '❌ No / Unknown'}</p>
+                <h2 style="margin-top:20px;">Sell: ${item.sellExchange}</h2>
+                <p>Price: $${item.sellPrice}</p>
+                <p>Deposit allowed: ${item.sellDeposit ? '✅ Yes' : '❌ No / Unknown'}</p>
+            </div>
+
+            <div class="detail-card">
+                <h2>Networks (${item.buyExchange})</h2>
+                ${buyNetworksHtml || '<p>No network data</p>'}
+                <h2 style="margin-top:20px;">Networks (${item.sellExchange})</h2>
+                ${sellNetworksHtml || '<p>No network data</p>'}
+            </div>
+
+            <div class="detail-card">
+                <h2>Opportunity Trend</h2>
+                <p>First found: ${firstFound}</p>
+                ${trendHtml}
+                <div style="margin-top:15px;">
+                    ${graphBars || '<p>No history yet</p>'}
+                </div>
             </div>
         `;
     }
-}
 
-/*
-========================================
-OPEN DETAILS
-========================================
-*/
-
-async function openDetails(item){
-
-    const page =
-        document.getElementById(
-            'detailsPage'
-        );
-
-    const body =
-        document.getElementById(
-            'detailsBody'
-        );
-
-    page.style.display = 'block';
-
-    body.innerHTML = `
-
-        <div class="loading-screen">
-
-            <div class="rocket-area">
-
-                <div class="rocket">
-                    🚀
-                </div>
-
-            </div>
-
-            <div class="loading-text">
-
-                Loading Details...
-
-            </div>
-
-        </div>
-    `;
-
-    try{
-
-        const res =
-            await fetch(
-                `${API}/api/opportunity/${item.id}`
-            );
-
-        const json =
-            await res.json();
-
-        const data =
-            json.data;
-
-        body.innerHTML = `
-
-            <div class="detail-card">
-
-                <h1>
-
-                    ${data.symbol}
-
-                </h1>
-
-                <div class="
-                    badge
-                    ${
-                        data.tradable
-                        ? 'tradable'
-                        : ''
-                    }
-                ">
-
-                    ${
-                        data.tradable
-                        ? 'TRADABLE'
-                        : 'UNVERIFIED'
-                    }
-
-                </div>
-
-                <h2 style="
-                    margin-top:20px;
-                ">
-
-                    Buy:
-                    ${data.buyExchange}
-
-                </h2>
-
-                <p>
-
-                    Price:
-                    $${data.buyPrice}
-
-                </p>
-
-                <h2 style="
-                    margin-top:20px;
-                ">
-
-                    Sell:
-                    ${data.sellExchange}
-
-                </h2>
-
-                <p>
-
-                    Price:
-                    $${data.sellPrice}
-
-                </p>
-
-            </div>
-
-            <div class="detail-card">
-
-                <h2>
-
-                    Networks
-
-                </h2>
-
-                ${
-                    data.networks.buy.map(net=>`
-
-                    <div class="network-item">
-
-                        <strong>
-
-                            ${net.network}
-
-                        </strong>
-
-                        <p>
-
-                            Deposit:
-                            ${
-                                net.deposit
-                                ? 'Open'
-                                : 'Closed'
-                            }
-
-                        </p>
-
-                        <p>
-
-                            Withdraw:
-                            ${
-                                net.withdraw
-                                ? 'Open'
-                                : 'Closed'
-                            }
-
-                        </p>
-
-                    </div>
-
-                    `).join('')
-                }
-
-            </div>
-
-            <div class="detail-card">
-
-                <h2>
-
-                    Opportunity Trend
-
-                </h2>
-
-                ${
-                    data.history.map(h=>`
-
-                    <div class="graph-bar"
-                         style="
-                         width:
-                         ${
-                            h.spread * 8
-                         }px;
-                         ">
-                    </div>
-
-                    `).join('')
-                }
-
-            </div>
-        `;
-
-    }catch(err){
-
-        body.innerHTML = `
-
-            <div class="loading-screen">
-
-                <div class="loading-text">
-
-                    Failed To Load Details
-
-                </div>
-
-            </div>
-        `;
+    function closeDetails() {
+        document.getElementById('detailsPage').style.display = 'none';
     }
-}
 
-/*
-========================================
-CLOSE DETAILS
-========================================
-*/
+    // ----------------------------- PAYMENT (mock) -----------------------------
+    async function pay(plan, amount, inputId) {
+        const phone = document.getElementById(inputId).value;
+        if (!phone) {
+            alert('Enter M-Pesa number');
+            return;
+        }
+        try {
+            const res = await fetch(`${API}/api/pesapal/pay`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone, amount, plan })
+            });
+            const data = await res.json();
+            alert(data.message);
+        } catch (err) {
+            alert('Payment request failed');
+        }
+    }
 
-function closeDetails(){
-
-    document.getElementById(
-        'detailsPage'
-    ).style.display = 'none';
-}
-
-/*
-========================================
-PAY
-========================================
-*/
-
-async function pay(
-    plan,
-    amount,
-    inputId
-){
-
-    const phone =
-        document.getElementById(
-            inputId
-        ).value;
-
-    const res =
-        await fetch(
-            `${API}/api/pesapal/pay`,
-            {
-                method:'POST',
-
-                headers:{
-                    'Content-Type':
-                    'application/json'
-                },
-
-                body:JSON.stringify({
-
-                    phone,
-                    amount,
-                    plan
-                })
-            }
-        );
-
-    const data =
-        await res.json();
-
-    alert(
-        data.message
-    );
-}
-
-/*
-========================================
-AUTO REFRESH
-========================================
-*/
-
-setInterval(
-    loadOpportunities,
-    15000
-);
-
+    // Auto-refresh every 15 seconds
+    setInterval(loadOpportunities, 15000);
 </script>
-
 </body>
 </html>
