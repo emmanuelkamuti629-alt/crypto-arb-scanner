@@ -392,7 +392,7 @@
         btn.classList.add('active');
     }
 
-    // ----------------------------- LOAD OPPORTUNITIES (all, with tradable/unverified badges) -----------------------------
+    // ----------------------------- LOAD OPPORTUNITIES (all, with caching and empty message) -----------------------------
     async function loadOpportunities() {
         const container = document.getElementById('opportunities');
         container.innerHTML = `
@@ -407,7 +407,13 @@
             const json = await res.json();
             const opps = json.opportunities || [];
             if (opps.length === 0) {
-                container.innerHTML = `<div class="loading-screen"><div class="rocket-area"><div class="rocket">🚀</div></div><div class="loading-text">Still Scanning...</div></div>`;
+                container.innerHTML = `
+                    <div class="loading-screen">
+                        <div class="rocket-area"><div class="rocket">🔍</div></div>
+                        <div class="loading-text">No arbitrage opportunities</div>
+                        <div class="loading-sub">Spreads below 0.1% or exchanges unreachable</div>
+                    </div>
+                `;
                 return;
             }
             container.innerHTML = opps.map(item => `
@@ -422,17 +428,23 @@
                 </div>
             `).join('');
         } catch (err) {
-            container.innerHTML = `<div class="loading-screen"><div class="loading-text">Failed To Load</div></div>`;
+            console.error('Load error:', err);
+            container.innerHTML = `
+                <div class="loading-screen">
+                    <div class="loading-text">❌ Failed To Load</div>
+                    <div class="loading-sub">Check your internet or try again later</div>
+                </div>
+            `;
         }
     }
 
-    // ----------------------------- OPEN DETAILS (shows networks, liquidity, min amounts, graph) -----------------------------
+    // ----------------------------- OPEN DETAILS (full data: networks, liquidity, min amounts, graph) -----------------------------
     function openDetails(item) {
         const page = document.getElementById('detailsPage');
         const body = document.getElementById('detailsBody');
         page.style.display = 'block';
 
-        // History & trend calculation
+        // History & trend
         const history = item.history || [];
         let trendHtml = '';
         let firstFound = '—';
@@ -446,7 +458,7 @@
             trendHtml = `<p><span class="${trendClass}">Trend: ${trendSymbol} (${diff.toFixed(2)}%)</span></p>`;
         }
 
-        // Graph bars (relative width)
+        // Graph bars (relative to max spread)
         const maxSpread = Math.max(...history.map(h => h.spread), 0.1);
         const graphBars = history.map(h => {
             const widthPercent = (h.spread / maxSpread) * 100;
@@ -466,7 +478,7 @@
             </div>
         ` : '';
 
-        // Build networks HTML for buy and sell
+        // Networks (buy & sell)
         const buyNetworksHtml = (item.buyNetworks || []).map(net => `
             <div class="network-item">
                 <strong>${net.name}</strong>

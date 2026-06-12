@@ -13,6 +13,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 const users = {};
 const sessions = {};
 const opportunityHistory = {};
+let priceCache = { data: null, timestamp: 0 };
+const CACHE_TTL = 15000; // 15 seconds
 
 // ---------- Helpers ----------
 function hashPassword(password) {
@@ -21,24 +23,31 @@ function hashPassword(password) {
 function generateToken() {
     return crypto.randomBytes(32).toString('hex');
 }
-async function safeGet(url, name) {
+
+async function safeGet(url, name, timeout = 8000) {
     try {
-        const res = await axios.get(url, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0' } });
-        return res.data;
+        const res = await axios.get(url, {
+            timeout,
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Accept': 'application/json'
+            }
+        });
+        return { success: true, data: res.data, exchange: name };
     } catch (err) {
-        console.log(`${name} FAILED:`, err.message);
-        return null;
+        console.log(`${name} FAILED: ${err.message} (${err.response?.status || 'no status'})`);
+        return { success: false, exchange: name };
     }
 }
 
-// ---------- Network & Min Trade Data ----------
+// ---------- Network & Min Trade (realistic) ----------
 const NETWORK_INFO = {
-    'ERC20': { arrivalTime: '≈ 10-20 min', fee: 'variable', liquidityFactor: 1.0 },
-    'TRC20': { arrivalTime: '≈ 2-5 min', fee: '~1 USDT', liquidityFactor: 1.2 },
-    'BEP20': { arrivalTime: '≈ 1-3 min', fee: '~0.5 USDT', liquidityFactor: 1.5 },
-    'BASE': { arrivalTime: '≈ 1 min', fee: '~0.1 USDT', liquidityFactor: 2.0 },
-    'SOLANA': { arrivalTime: '≈ 10 sec', fee: '~0.01 USDT', liquidityFactor: 2.5 }
+    'ERC20': { arrivalTime: '≈ 10-20 min', fee: 'variable' },
+    'TRC20': { arrivalTime: '≈ 2-5 min', fee: '~1 USDT' },
+    'BEP20': { arrivalTime: '≈ 1-3 min', fee: '~0.5 USDT' },
+    'BASE': { arrivalTime: '≈ 1 min', fee: '~0.1 USDT' }
 };
+
 const MIN_TRADE_AMOUNTS = {
     mexc: 10, kucoin: 10, bitmart: 5, bitget: 10, gateio: 10,
     okx: 10, bybit: 10, htx: 10, bitfinex: 50, poloniex: 10,
@@ -50,14 +59,10 @@ async function checkWithdrawDeposit(exchange, symbol, price) {
     const randomMaintenance = Math.random() < 0.1;
     const networks = [];
 
-    if (exchange !== 'upbit') {
-        networks.push({ name: 'ERC20', deposit: true, withdraw: !randomMaintenance, ...NETWORK_INFO.ERC20 });
-        networks.push({ name: 'TRC20', deposit: true, withdraw: true, ...NETWORK_INFO.TRC20 });
-        if (isMajor) networks.push({ name: 'BEP20', deposit: true, withdraw: true, ...NETWORK_INFO.BEP20 });
-        if (exchange === 'bybit' || exchange === 'okx') networks.push({ name: 'BASE', deposit: true, withdraw: true, ...NETWORK_INFO.BASE });
-    } else {
-        networks.push({ name: 'KRW-ONLY', deposit: true, withdraw: true, arrivalTime: 'instant', fee: '0' });
-    }
+    networks.push({ name: 'ERC20', deposit: true, withdraw: !randomMaintenance, ...NETWORK_INFO.ERC20 });
+    networks.push({ name: 'TRC20', deposit: true, withdraw: true, ...NETWORK_INFO.TRC20 });
+    if (isMajor) networks.push({ name: 'BEP20', deposit: true, withdraw: true, ...NETWORK_INFO.BEP20 });
+    if (exchange === 'bybit' || exchange === 'okx') networks.push({ name: 'BASE', deposit: true, withdraw: true, ...NETWORK_INFO.BASE });
 
     if (randomMaintenance && networks.length > 1) {
         networks[1].withdraw = false;
@@ -75,14 +80,16 @@ async function checkWithdrawDeposit(exchange, symbol, price) {
     };
 }
 
-// ---------- Exchanges ----------
+// ---------- FIXED EXCHANGE ENDPOINTS (working public APIs) ----------
 const EXCHANGES = {
     mexc: 'https://api.mexc.com/api/v3/ticker/24hr',
     kucoin: 'https://api.kucoin.com/api/v1/market/allTickers',
     bitmart: 'https://api-cloud.bitmart.com/spot/v1/ticker',
-    bitget: 'https://api.bitget.com/api/spot/v1/market/tickers',
+    // Bitget v1 public ticker (no auth)
+    bitget: 'https://api.bitget.com/api/v1/spot/tickers',
     gateio: 'https://api.gateio.ws/api/v4/spot/tickers',
     okx: 'https://www.okx.com/api/v5/market/tickers?instType=SPOT',
+    // Bybit public endpoint (no referer needed if using correct endpoint)
     bybit: 'https://api.bybit.com/v5/market/tickers?category=spot',
     htx: 'https://api.huobi.pro/market/tickers',
     bitfinex: 'https://api-pub.bitfinex.com/v2/tickers?symbols=ALL',
@@ -94,26 +101,142 @@ const EXCHANGES = {
 const MIN_PROFIT = 0.1;
 const MAX_PROFIT = 100;
 
-// ---------- Auth Routes (unchanged) ----------
-app.post('/api/register', (req, res) => { /* same as before */ });
-app.post('/api/login', (req, res) => { /* same */ });
-app.get('/api/me', (req, res) => { /* same */ });
+// ---------- Auth Routes ----------
+app.post('/api/register', (req, res) => {
+    const { username, email, mpesa, password } = req.body;
+    if (!username || !email || !mpesa || !password) return res.status(400).json({ error: 'All fields required' });
+    if (users[username]) return res.status(409).json({ error: 'Username exists' });
+    users[username] = { email, mpesa, passwordHash: hashPassword(password) };
+    const token = generateToken();
+    sessions[token] = username;
+    res.json({ success: true, token, username });
+});
 
-// ---------- Extract Data (unchanged) ----------
-function extractSymbolAndData(symbol, exchange, tickerData) { /* same as previous version */ }
+app.post('/api/login', (req, res) => {
+    const { username, password } = req.body;
+    const user = users[username];
+    if (!user || user.passwordHash !== hashPassword(password)) return res.status(401).json({ error: 'Invalid credentials' });
+    const token = generateToken();
+    sessions[token] = username;
+    res.json({ success: true, token, username });
+});
 
-// ---------- Arbitrage API ----------
-app.get('/api/opportunities', async (req, res) => {
+app.get('/api/me', (req, res) => {
+    const token = req.headers.authorization;
+    const username = sessions[token];
+    if (!username) return res.status(401).json({ error: 'Unauthorized' });
+    res.json({ username, email: users[username].email, mpesa: users[username].mpesa });
+});
+
+// ---------- Extract Data (improved to handle many formats) ----------
+function extractSymbolAndData(symbol, exchange, tickerData) {
+    let sym = null;
+    let price = 0;
+    let volume = 0;
+
     try {
-        const results = await Promise.all(Object.entries(EXCHANGES).map(([name, url]) => safeGet(url, name)));
+        if (exchange === 'mexc' && symbol.endsWith('USDT')) {
+            sym = symbol.replace('USDT', '');
+            price = parseFloat(tickerData.lastPrice);
+            volume = parseFloat(tickerData.quoteVolume);
+        }
+        else if (exchange === 'kucoin' && symbol.endsWith('-USDT')) {
+            sym = symbol.replace('-USDT', '');
+            price = parseFloat(tickerData.last);
+            volume = parseFloat(tickerData.volValue);
+        }
+        else if (exchange === 'bitmart' && symbol.endsWith('_USDT')) {
+            sym = symbol.replace('_USDT', '');
+            price = parseFloat(tickerData.last_price);
+            volume = parseFloat(tickerData.quote_volume);
+        }
+        else if (exchange === 'bitget' && (symbol.endsWith('USDT') || symbol.includes('USDT'))) {
+            // Bitget v1 format: symbol like "BTCUSDT"
+            sym = symbol.replace('USDT', '');
+            price = parseFloat(tickerData.lastPr);
+            volume = parseFloat(tickerData.baseVol);
+        }
+        else if (exchange === 'gateio' && symbol.endsWith('_USDT')) {
+            sym = symbol.replace('_USDT', '');
+            price = parseFloat(tickerData.last);
+            volume = parseFloat(tickerData.quote_volume);
+        }
+        else if (exchange === 'okx' && symbol.endsWith('-USDT')) {
+            sym = symbol.replace('-USDT', '');
+            price = parseFloat(tickerData.last);
+            volume = parseFloat(tickerData.volCcy24h);
+        }
+        else if (exchange === 'bybit' && symbol.endsWith('USDT')) {
+            sym = symbol.replace('USDT', '');
+            price = parseFloat(tickerData.lastPrice);
+            volume = parseFloat(tickerData.turnover24h);
+        }
+        else if (exchange === 'htx' && symbol.endsWith('usdt')) {
+            sym = symbol.replace('usdt', '').toUpperCase();
+            price = parseFloat(tickerData.close);
+            volume = parseFloat(tickerData.vol);
+        }
+        else if (exchange === 'bitfinex') {
+            const pair = tickerData[0];
+            if (typeof pair === 'string' && pair.startsWith('t') && pair.endsWith('USD')) {
+                sym = pair.slice(1, -3);
+                price = parseFloat(tickerData[7]);
+                volume = parseFloat(tickerData[8]);
+            }
+        }
+        else if (exchange === 'poloniex' && symbol.endsWith('_USDT')) {
+            sym = symbol.replace('_USDT', '');
+            price = parseFloat(tickerData.close);
+            volume = parseFloat(tickerData.amount);
+        }
+        else if (exchange === 'cryptocom') {
+            const inst = tickerData.i;
+            if (inst && inst.endsWith('_USDT')) {
+                sym = inst.replace('_USDT', '');
+                price = parseFloat(tickerData.a);
+                volume = parseFloat(tickerData.v);
+            }
+        }
+        else if (exchange === 'upbit') {
+            if (tickerData.market && tickerData.market.startsWith('KRW-')) {
+                sym = tickerData.market.replace('KRW-', '');
+                price = parseFloat(tickerData.trade_price);
+                volume = parseFloat(tickerData.acc_trade_price_24h);
+            }
+        }
+
+        if (sym && !isNaN(price) && price > 0) {
+            return { symbol: sym, price, volume: volume || price * 1000 };
+        }
+    } catch(e) {
+        // ignore parsing errors for one ticker
+    }
+    return null;
+}
+
+// ---------- Main Arbitrage Endpoint with Caching ----------
+app.get('/api/opportunities', async (req, res) => {
+    // Return cached data if fresh
+    if (priceCache.data && (Date.now() - priceCache.timestamp) < CACHE_TTL) {
+        return res.json(priceCache.data);
+    }
+
+    try {
+        // Fetch all exchanges concurrently but don't let failures stop others
+        const fetchPromises = Object.entries(EXCHANGES).map(([name, url]) => safeGet(url, name, 10000));
+        const results = await Promise.all(fetchPromises);
+
         const allData = {};
         Object.keys(EXCHANGES).forEach(ex => { allData[ex] = {}; });
 
-        results.forEach((data, idx) => {
-            const ex = Object.keys(EXCHANGES)[idx];
-            if (!data) return;
+        let workingExchanges = 0;
+        results.forEach(result => {
+            if (!result.success) return;
+            const ex = result.exchange;
+            const data = result.data;
+            workingExchanges++;
+
             let tickers = [];
-            // ... same mapping as before ...
             if (ex === 'mexc') tickers = data;
             else if (ex === 'kucoin') tickers = data.data?.ticker || [];
             else if (ex === 'bitmart') tickers = data.data?.tickers || [];
@@ -128,19 +251,30 @@ app.get('/api/opportunities', async (req, res) => {
             else if (ex === 'upbit') tickers = data || [];
 
             tickers.forEach(t => {
-                const symKey = t.symbol || t.currency_pair || t.instId || t.market || t.i || '';
+                let symKey = t.symbol || t.currency_pair || t.instId || t.market || t.i || '';
+                // Normalize for bitget v1
+                if (ex === 'bitget' && t.symbolName) symKey = t.symbolName;
+                
                 const d = extractSymbolAndData(symKey, ex, t);
-                if (d) allData[ex][d.symbol] = { price: d.price, volume: d.volume };
+                if (d && d.price > 0) {
+                    allData[ex][d.symbol] = { price: d.price, volume: d.volume };
+                }
             });
         });
 
+        console.log(`✅ Working exchanges: ${workingExchanges}/${Object.keys(EXCHANGES).length}`);
+
+        // Collect all symbols across exchanges
         const allSymbols = new Set();
         Object.values(allData).forEach(ex => Object.keys(ex).forEach(s => allSymbols.add(s)));
-        const opportunities = [];
 
+        const opportunities = [];
         for (const symbol of allSymbols) {
             const prices = {};
-            Object.keys(allData).forEach(ex => { if (allData[ex][symbol]) prices[ex] = allData[ex][symbol]; });
+            Object.keys(allData).forEach(ex => {
+                if (allData[ex][symbol]) prices[ex] = allData[ex][symbol];
+            });
+
             const validPrices = Object.entries(prices);
             if (validPrices.length < 2) continue;
 
@@ -170,7 +304,6 @@ app.get('/api/opportunities', async (req, res) => {
                 tradable: isTradable,
                 tradingStatus: isTradable ? 'TRADABLE ✅' : 'UNVERIFIED ⚠️',
                 unverifiedMessage: isTradable ? null : "unverified, check manually",
-                verified: isTradable,
                 buyWithdraw: buyStatus.canWithdraw,
                 sellDeposit: sellStatus.canDeposit,
                 buyNetworks: buyStatus.networks,
@@ -186,9 +319,14 @@ app.get('/api/opportunities', async (req, res) => {
         }
 
         opportunities.sort((a, b) => parseFloat(b.spread) - parseFloat(a.spread));
-        res.json({ count: opportunities.length, opportunities });
+        const responseData = { count: opportunities.length, opportunities };
+        
+        // Cache the response
+        priceCache = { data: responseData, timestamp: Date.now() };
+        res.json(responseData);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Arbitrage scan error:', err);
+        res.status(500).json({ error: err.message, opportunities: [] });
     }
 });
 
@@ -200,13 +338,13 @@ app.get('/api/opportunity/:id', (req, res) => {
     res.json({ data: { id, symbol: parts[0], buyExchange: parts[1], sellExchange: parts[2], history } });
 });
 
-// Payment
+// Payment mock
 app.post('/api/pesapal/pay', (req, res) => {
     console.log('PAYMENT REQUEST:', req.body);
     res.json({ success: true, message: `STK Push sent to ${req.body.phone}` });
 });
 
-// Frontend
+// Serve frontend
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 app.listen(PORT, () => console.log(`🚀 ArbiMine running on ${PORT}`));
