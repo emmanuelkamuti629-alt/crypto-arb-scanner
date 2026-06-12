@@ -13,95 +13,145 @@ app.use(express.json());
 const PORT = process.env.PORT || 3000;
 
 /*
-====================================================
+==================================================
 MEMORY STORE
-====================================================
+==================================================
 */
 
 const historyStore = {};
 const cachedOpportunities = [];
 
 /*
-====================================================
+==================================================
 HELPERS
-====================================================
+==================================================
 */
 
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+function normalizeSymbol(symbol){
+
+    return symbol
+        .replace(/[-_]/g,'')
+        .toUpperCase();
 }
 
-function createId(symbol, buyExchange, sellExchange) {
+function createId(
+    symbol,
+    buyExchange,
+    sellExchange
+){
 
     return crypto
         .createHash('md5')
-        .update(`${symbol}_${buyExchange}_${sellExchange}`)
+        .update(
+            `${symbol}_${buyExchange}_${sellExchange}`
+        )
         .digest('hex');
 }
 
-function saveHistory(id, spread) {
+function saveHistory(id, spread){
 
-    if (!historyStore[id]) {
+    if(!historyStore[id]){
         historyStore[id] = [];
     }
 
     historyStore[id].push({
+
         time: Date.now(),
-        spread: Number(spread.toFixed(2))
+
+        spread: Number(
+            spread.toFixed(2)
+        )
     });
 
-    // Keep last 200 points
-    if (historyStore[id].length > 200) {
+    /*
+    KEEP LAST 200 POINTS
+    */
+
+    if(historyStore[id].length > 200){
         historyStore[id].shift();
     }
 }
 
-function normalizeSymbol(symbol) {
+function sendToMonitor(opportunity){
 
-    return symbol
-        .replace('-', '')
-        .replace('_', '')
-        .toUpperCase();
+    try{
+
+        const py = spawn(
+            'python',
+            ['monitor.py']
+        );
+
+        py.stdin.write(
+            JSON.stringify(opportunity)
+        );
+
+        py.stdin.end();
+
+    }catch(err){
+
+        console.log(
+            'monitor.py failed'
+        );
+    }
 }
+
+/*
+==================================================
+VERIFICATION
+==================================================
+*/
 
 function getVerificationStatus(
     buyNetworks,
     sellNetworks
-) {
+){
 
     let tradable = false;
 
     const matchedNetworks = [];
 
-    for (const buyNet of buyNetworks) {
+    for(const buyNet of buyNetworks){
 
-        for (const sellNet of sellNetworks) {
+        for(const sellNet of sellNetworks){
 
-            if (
-                buyNet.network.toUpperCase() ===
-                sellNet.network.toUpperCase()
-            ) {
+            const buyName =
+                String(
+                    buyNet.network || ''
+                ).toUpperCase();
+
+            const sellName =
+                String(
+                    sellNet.network || ''
+                ).toUpperCase();
+
+            if(buyName === sellName){
 
                 matchedNetworks.push({
-                    network: buyNet.network,
 
-                    buyWithdraw:
-                        buyNet.withdrawEnable,
+                    network:
+                        buyNet.network,
 
                     buyDeposit:
                         buyNet.depositEnable,
 
-                    sellWithdraw:
-                        sellNet.withdrawEnable,
+                    buyWithdraw:
+                        buyNet.withdrawEnable,
 
                     sellDeposit:
-                        sellNet.depositEnable
+                        sellNet.depositEnable,
+
+                    sellWithdraw:
+                        sellNet.withdrawEnable
                 });
 
-                if (
+                /*
+                TRADABLE CHECK
+                */
+
+                if(
                     buyNet.withdrawEnable === true &&
                     sellNet.depositEnable === true
-                ) {
+                ){
                     tradable = true;
                 }
             }
@@ -109,17 +159,17 @@ function getVerificationStatus(
     }
 
     return {
-        verified: tradable,
-        label: tradable
+
+        tradable,
+
+        status:
+            tradable
             ? 'tradable'
             : 'unverified',
 
-        color: tradable
-            ? 'green'
-            : 'orange',
-
-        message: tradable
-            ? 'Ready for arbitrage'
+        warning:
+            tradable
+            ? ''
             : 'Check manually',
 
         matchedNetworks
@@ -127,19 +177,19 @@ function getVerificationStatus(
 }
 
 /*
-====================================================
+==================================================
 BINANCE
-====================================================
+==================================================
 */
 
-async function fetchBinancePrices() {
+async function fetchBinancePrices(){
 
-    try {
+    try{
 
         const res = await axios.get(
             'https://api.binance.com/api/v3/ticker/bookTicker',
             {
-                timeout: 15000
+                timeout:15000
             }
         );
 
@@ -147,254 +197,64 @@ async function fetchBinancePrices() {
 
         res.data.forEach(item => {
 
-            if (!item.symbol.endsWith('USDT')) return;
+            if(
+                !item.symbol.endsWith('USDT')
+            ) return;
 
-            map[normalizeSymbol(item.symbol)] = {
+            map[
+                normalizeSymbol(item.symbol)
+            ] = {
 
-                symbol: normalizeSymbol(item.symbol),
+                ask: parseFloat(
+                    item.askPrice
+                ),
 
-                ask: parseFloat(item.askPrice),
-
-                bid: parseFloat(item.bidPrice)
+                bid: parseFloat(
+                    item.bidPrice
+                )
             };
         });
 
         return map;
 
-    } catch (err) {
+    }catch(err){
 
-        console.log('Binance prices failed');
+        console.log(
+            'Binance prices failed'
+        );
 
         return {};
     }
 }
 
-async function fetchBinanceNetworks() {
+async function fetchBinanceNetworks(){
 
-    try {
+    try{
 
         const timestamp = Date.now();
 
-        const queryString = `timestamp=${timestamp}`;
+        const query =
+            `timestamp=${timestamp}`;
 
         const signature = crypto
             .createHmac(
                 'sha256',
                 process.env.BINANCE_SECRET
             )
-            .update(queryString)
+            .update(query)
             .digest('hex');
 
         const url =
-            `https://api.binance.com/sapi/v1/capital/config/getall?${queryString}&signature=${signature}`;
+            `https://api.binance.com/sapi/v1/capital/config/getall?${query}&signature=${signature}`;
 
-        const res = await axios.get(url, {
-            headers: {
+        const res = await axios.get(url,{
+
+            headers:{
                 'X-MBX-APIKEY':
-                    process.env.BINANCE_KEY
+                process.env.BINANCE_KEY
             },
-            timeout: 15000
-        });
 
-        const networks = {};
-
-        res.data.forEach(coin => {
-
-            networks[coin.coin] =
-                coin.networkList.map(net => ({
-
-                    network: net.network,
-
-                    withdrawEnable:
-                        net.withdrawEnable,
-
-                    depositEnable:
-                        net.depositEnable,
-
-                    withdrawFee:
-                        net.withdrawFee,
-
-                    withdrawMin:
-                        net.withdrawMin
-                }));
-        });
-
-        return networks;
-
-    } catch (err) {
-
-        console.log(
-            'Binance networks unavailable'
-        );
-
-        return {};
-    }
-}
-
-/*
-====================================================
-BYBIT
-====================================================
-*/
-
-async function fetchBybitPrices() {
-
-    try {
-
-        const res = await axios.get(
-            'https://api.bybit.com/v5/market/tickers?category=spot',
-            {
-                timeout: 15000
-            }
-        );
-
-        const map = {};
-
-        res.data.result.list.forEach(item => {
-
-            if (!item.symbol.endsWith('USDT')) return;
-
-            map[normalizeSymbol(item.symbol)] = {
-
-                symbol: normalizeSymbol(item.symbol),
-
-                ask: parseFloat(item.ask1Price),
-
-                bid: parseFloat(item.bid1Price)
-            };
-        });
-
-        return map;
-
-    } catch (err) {
-
-        console.log('Bybit prices failed');
-
-        return {};
-    }
-}
-
-async function fetchBybitNetworks() {
-
-    try {
-
-        const res = await axios.get(
-            'https://api.bybit.com/v5/asset/coin/query-info',
-            {
-                timeout: 15000
-            }
-        );
-
-        const networks = {};
-
-        if (
-            !res.data.result ||
-            !res.data.result.rows
-        ) {
-            return {};
-        }
-
-        res.data.result.rows.forEach(coin => {
-
-            networks[coin.coin] =
-                coin.chains.map(chain => ({
-
-                    network:
-                        chain.chain,
-
-                    withdrawEnable:
-                        chain.chainWithdraw === '1',
-
-                    depositEnable:
-                        chain.chainDeposit === '1',
-
-                    withdrawFee:
-                        chain.withdrawFee,
-
-                    withdrawMin:
-                        chain.withdrawMin
-                }));
-        });
-
-        return networks;
-
-    } catch (err) {
-
-        console.log('Bybit networks unavailable');
-
-        return {};
-    }
-}
-
-/*
-====================================================
-MEXC
-====================================================
-*/
-
-async function fetchMexcPrices() {
-
-    try {
-
-        const res = await axios.get(
-            'https://api.mexc.com/api/v3/ticker/bookTicker',
-            {
-                timeout: 15000
-            }
-        );
-
-        const map = {};
-
-        res.data.forEach(item => {
-
-            if (!item.symbol.endsWith('USDT')) return;
-
-            map[normalizeSymbol(item.symbol)] = {
-
-                symbol: normalizeSymbol(item.symbol),
-
-                ask: parseFloat(item.askPrice),
-
-                bid: parseFloat(item.bidPrice)
-            };
-        });
-
-        return map;
-
-    } catch (err) {
-
-        console.log('MEXC prices failed');
-
-        return {};
-    }
-}
-
-async function fetchMexcNetworks() {
-
-    try {
-
-        const timestamp = Date.now();
-
-        const queryString =
-            `timestamp=${timestamp}`;
-
-        const signature = crypto
-            .createHmac(
-                'sha256',
-                process.env.MEXC_SECRET
-            )
-            .update(queryString)
-            .digest('hex');
-
-        const url =
-            `https://api.mexc.com/api/v3/capital/config/getall?${queryString}&signature=${signature}`;
-
-        const res = await axios.get(url, {
-            headers: {
-                'X-MEXC-APIKEY':
-                    process.env.MEXC_KEY
-            },
-            timeout: 15000
+            timeout:15000
         });
 
         const networks = {};
@@ -407,11 +267,11 @@ async function fetchMexcNetworks() {
                     network:
                         net.network,
 
-                    withdrawEnable:
-                        net.withdrawEnable,
-
                     depositEnable:
                         net.depositEnable,
+
+                    withdrawEnable:
+                        net.withdrawEnable,
 
                     withdrawFee:
                         net.withdrawFee,
@@ -423,23 +283,253 @@ async function fetchMexcNetworks() {
 
         return networks;
 
-    } catch (err) {
+    }catch(err){
 
-        console.log('MEXC networks unavailable');
+        console.log(
+            'Binance networks unavailable'
+        );
 
         return {};
     }
 }
 
 /*
-====================================================
-LOAD ALL MARKETS
-====================================================
+==================================================
+BYBIT
+==================================================
 */
 
-async function loadAllMarkets() {
+async function fetchBybitPrices(){
+
+    try{
+
+        const res = await axios.get(
+            'https://api.bybit.com/v5/market/tickers?category=spot',
+            {
+                timeout:15000
+            }
+        );
+
+        const map = {};
+
+        res.data.result.list.forEach(item => {
+
+            if(
+                !item.symbol.endsWith('USDT')
+            ) return;
+
+            map[
+                normalizeSymbol(item.symbol)
+            ] = {
+
+                ask: parseFloat(
+                    item.ask1Price
+                ),
+
+                bid: parseFloat(
+                    item.bid1Price
+                )
+            };
+        });
+
+        return map;
+
+    }catch(err){
+
+        console.log(
+            'Bybit prices failed'
+        );
+
+        return {};
+    }
+}
+
+async function fetchBybitNetworks(){
+
+    try{
+
+        const res = await axios.get(
+            'https://api.bybit.com/v5/asset/coin/query-info',
+            {
+                timeout:15000
+            }
+        );
+
+        const networks = {};
+
+        if(
+            !res.data.result ||
+            !res.data.result.rows
+        ){
+            return {};
+        }
+
+        res.data.result.rows.forEach(coin => {
+
+            networks[coin.coin] =
+                coin.chains.map(chain => ({
+
+                    network:
+                        chain.chain,
+
+                    depositEnable:
+                        chain.chainDeposit === '1',
+
+                    withdrawEnable:
+                        chain.chainWithdraw === '1',
+
+                    withdrawFee:
+                        chain.withdrawFee,
+
+                    withdrawMin:
+                        chain.withdrawMin
+                }));
+        });
+
+        return networks;
+
+    }catch(err){
+
+        console.log(
+            'Bybit networks unavailable'
+        );
+
+        return {};
+    }
+}
+
+/*
+==================================================
+MEXC
+==================================================
+*/
+
+async function fetchMexcPrices(){
+
+    try{
+
+        const res = await axios.get(
+            'https://api.mexc.com/api/v3/ticker/bookTicker',
+            {
+                timeout:15000
+            }
+        );
+
+        const map = {};
+
+        res.data.forEach(item => {
+
+            if(
+                !item.symbol.endsWith('USDT')
+            ) return;
+
+            map[
+                normalizeSymbol(item.symbol)
+            ] = {
+
+                ask: parseFloat(
+                    item.askPrice
+                ),
+
+                bid: parseFloat(
+                    item.bidPrice
+                )
+            };
+        });
+
+        return map;
+
+    }catch(err){
+
+        console.log(
+            'MEXC prices failed'
+        );
+
+        return {};
+    }
+}
+
+async function fetchMexcNetworks(){
+
+    /*
+    MEXC NETWORK API
+    NEEDS API KEY
+    */
+
+    try{
+
+        const timestamp = Date.now();
+
+        const query =
+            `timestamp=${timestamp}`;
+
+        const signature = crypto
+            .createHmac(
+                'sha256',
+                process.env.MEXC_SECRET
+            )
+            .update(query)
+            .digest('hex');
+
+        const url =
+            `https://api.mexc.com/api/v3/capital/config/getall?${query}&signature=${signature}`;
+
+        const res = await axios.get(url,{
+
+            headers:{
+                'X-MEXC-APIKEY':
+                process.env.MEXC_KEY
+            },
+
+            timeout:15000
+        });
+
+        const networks = {};
+
+        res.data.forEach(coin => {
+
+            networks[coin.coin] =
+                coin.networkList.map(net => ({
+
+                    network:
+                        net.network,
+
+                    depositEnable:
+                        net.depositEnable,
+
+                    withdrawEnable:
+                        net.withdrawEnable,
+
+                    withdrawFee:
+                        net.withdrawFee,
+
+                    withdrawMin:
+                        net.withdrawMin
+                }));
+        });
+
+        return networks;
+
+    }catch(err){
+
+        console.log(
+            'MEXC networks unavailable'
+        );
+
+        return {};
+    }
+}
+
+/*
+==================================================
+LOAD MARKETS
+==================================================
+*/
+
+async function loadMarkets(){
 
     const [
+
         binancePrices,
         bybitPrices,
         mexcPrices,
@@ -447,6 +537,7 @@ async function loadAllMarkets() {
         binanceNetworks,
         bybitNetworks,
         mexcNetworks
+
     ] = await Promise.all([
 
         fetchBinancePrices(),
@@ -460,81 +551,74 @@ async function loadAllMarkets() {
 
     return {
 
-        Binance: {
-            prices: binancePrices,
-            networks: binanceNetworks
+        Binance:{
+            prices:binancePrices,
+            networks:binanceNetworks
         },
 
-        Bybit: {
-            prices: bybitPrices,
-            networks: bybitNetworks
+        Bybit:{
+            prices:bybitPrices,
+            networks:bybitNetworks
         },
 
-        MEXC: {
-            prices: mexcPrices,
-            networks: mexcNetworks
+        MEXC:{
+            prices:mexcPrices,
+            networks:mexcNetworks
         }
     };
 }
 
 /*
-====================================================
-MONITOR PY SENDER
-====================================================
-*/
-
-function sendToMonitor(opportunity) {
-
-    try {
-
-        const py = spawn('python', ['monitor.py']);
-
-        py.stdin.write(
-            JSON.stringify(opportunity)
-        );
-
-        py.stdin.end();
-
-    } catch (err) {
-
-        console.log(
-            'monitor.py send failed'
-        );
-    }
-}
-
-/*
-====================================================
+==================================================
 SCAN ENGINE
-====================================================
+==================================================
 */
 
-async function scanMarkets() {
+async function scanMarkets(){
 
-    const markets = await loadAllMarkets();
+    const markets =
+        await loadMarkets();
 
     const opportunities = [];
 
-    const exchanges = Object.keys(markets);
+    const exchangeNames =
+        Object.keys(markets);
 
-    for (let i = 0; i < exchanges.length; i++) {
+    for(
+        let i = 0;
+        i < exchangeNames.length;
+        i++
+    ){
 
-        for (let j = 0; j < exchanges.length; j++) {
+        for(
+            let j = 0;
+            j < exchangeNames.length;
+            j++
+        ){
 
-            if (i === j) continue;
+            if(i === j) continue;
 
-            const buyExchange = exchanges[i];
-            const sellExchange = exchanges[j];
+            const buyExchange =
+                exchangeNames[i];
+
+            const sellExchange =
+                exchangeNames[j];
 
             const buyPrices =
-                markets[buyExchange].prices;
+                markets[
+                    buyExchange
+                ].prices;
 
             const sellPrices =
-                markets[sellExchange].prices;
+                markets[
+                    sellExchange
+                ].prices;
 
-            for (const symbol in buyPrices) {
+            for(const symbol in buyPrices){
 
-                if (!sellPrices[symbol]) continue;
+                if(
+                    !sellPrices[symbol]
+                ) continue;
 
                 const buy =
                     buyPrices[symbol];
@@ -542,13 +626,17 @@ async function scanMarkets() {
                 const sell =
                     sellPrices[symbol];
 
-                if (
+                if(
                     !buy.ask ||
                     !sell.bid ||
                     buy.ask <= 0
-                ) {
+                ){
                     continue;
                 }
+
+                /*
+                SPREAD
+                */
 
                 const spread =
                     (
@@ -558,20 +646,33 @@ async function scanMarkets() {
                         ) / buy.ask
                     ) * 100;
 
-                if (spread <= 0.5) continue;
+                /*
+                FILTER LOW SPREAD
+                */
+
+                if(spread <= 0.5){
+                    continue;
+                }
 
                 const coin =
-                    symbol.replace('USDT', '');
+                    symbol.replace(
+                        'USDT',
+                        ''
+                    );
 
                 const buyNetworks =
                     markets[
                         buyExchange
-                    ].networks[coin] || [];
+                    ].networks[
+                        coin
+                    ] || [];
 
                 const sellNetworks =
                     markets[
                         sellExchange
-                    ].networks[coin] || [];
+                    ].networks[
+                        coin
+                    ] || [];
 
                 const verification =
                     getVerificationStatus(
@@ -585,7 +686,18 @@ async function scanMarkets() {
                     sellExchange
                 );
 
-                saveHistory(id, spread);
+                /*
+                HISTORY
+                */
+
+                saveHistory(
+                    id,
+                    spread
+                );
+
+                /*
+                OPPORTUNITY
+                */
 
                 const opportunity = {
 
@@ -599,45 +711,35 @@ async function scanMarkets() {
 
                     sellExchange,
 
-                    buyPrice:
-                        Number(
-                            buy.ask.toFixed(8)
-                        ),
+                    buyPrice:Number(
+                        buy.ask.toFixed(8)
+                    ),
 
-                    sellPrice:
-                        Number(
-                            sell.bid.toFixed(8)
-                        ),
+                    sellPrice:Number(
+                        sell.bid.toFixed(8)
+                    ),
 
-                    spread:
-                        Number(
-                            spread.toFixed(2)
-                        ),
+                    spread:Number(
+                        spread.toFixed(2)
+                    ),
 
-                    estimatedProfit:
-                        Number(
-                            (
-                                (spread / 100) *
-                                1000
-                            ).toFixed(2)
-                        ),
-
-                    status:
-                        verification.label,
-
-                    statusColor:
-                        verification.color,
-
-                    verified:
-                        verification.verified,
-
-                    warning:
-                        verification.message,
+                    estimatedProfit:Number(
+                        (
+                            (spread / 100) *
+                            1000
+                        ).toFixed(2)
+                    ),
 
                     tradable:
-                        verification.verified,
+                        verification.tradable,
 
-                    networks: {
+                    status:
+                        verification.status,
+
+                    warning:
+                        verification.warning,
+
+                    networks:{
 
                         buy:
                             buyNetworks,
@@ -653,8 +755,8 @@ async function scanMarkets() {
                         historyStore[id] || [],
 
                     firstFound:
-                        historyStore[id]?.[0]
-                            ?.time || Date.now(),
+                        historyStore[id]?.[0]?.time
+                        || Date.now(),
 
                     updatedAt:
                         Date.now()
@@ -664,14 +766,28 @@ async function scanMarkets() {
                     opportunity
                 );
 
-                sendToMonitor(opportunity);
+                /*
+                SEND TO MONITOR.PY
+                */
+
+                sendToMonitor(
+                    opportunity
+                );
             }
         }
     }
 
+    /*
+    SORT BY SPREAD
+    */
+
     opportunities.sort(
-        (a, b) => b.spread - a.spread
+        (a,b) => b.spread - a.spread
     );
+
+    /*
+    CACHE
+    */
 
     cachedOpportunities.length = 0;
 
@@ -683,117 +799,121 @@ async function scanMarkets() {
 }
 
 /*
-====================================================
-AUTO SCANNER
-====================================================
+==================================================
+AUTO SCAN
+==================================================
 */
 
-setInterval(async () => {
+setInterval(async ()=>{
 
-    try {
+    try{
 
-        console.log('Running scan...');
+        console.log(
+            'Running scan...'
+        );
 
         await scanMarkets();
 
         console.log(
-            'Scan complete:',
+            'Found:',
             cachedOpportunities.length
         );
 
-    } catch (err) {
+    }catch(err){
 
         console.log(
             'Auto scan failed'
         );
     }
 
-}, 30000);
+},30000);
 
 /*
-====================================================
+==================================================
 ROOT
-====================================================
+==================================================
 */
 
-app.get('/', (req, res) => {
+app.get('/',(req,res)=>{
 
     res.json({
 
-        status: 'ArbiMine API Running',
+        status:
+            'ArbiMine API Running',
 
         totalCached:
             cachedOpportunities.length,
 
-        endpoints: [
-
-            '/api/scan',
+        endpoints:[
 
             '/api/opportunities',
 
-            '/api/opportunity/:id'
+            '/api/opportunity/:id',
+
+            '/api/scan'
         ]
     });
 });
 
 /*
-====================================================
-GET ALL OPPORTUNITIES
-====================================================
+==================================================
+ALL OPPORTUNITIES
+==================================================
 */
 
 app.get(
     '/api/opportunities',
-    async (req, res) => {
+    async(req,res)=>{
 
-        try {
+    try{
 
-            if (
-                cachedOpportunities.length === 0
-            ) {
+        if(
+            cachedOpportunities.length === 0
+        ){
 
-                await scanMarkets();
-            }
-
-            res.json({
-
-                success: true,
-
-                total:
-                    cachedOpportunities.length,
-
-                opportunities:
-                    cachedOpportunities
-            });
-
-        } catch (err) {
-
-            res.status(500).json({
-
-                success: false,
-
-                error: err.message
-            });
+            await scanMarkets();
         }
+
+        res.json({
+
+            success:true,
+
+            total:
+                cachedOpportunities.length,
+
+            opportunities:
+                cachedOpportunities
+        });
+
+    }catch(err){
+
+        res.status(500).json({
+
+            success:false,
+
+            error:err.message
+        });
     }
-);
+});
 
 /*
-====================================================
+==================================================
 MANUAL SCAN
-====================================================
+==================================================
 */
 
-app.get('/api/scan', async (req, res) => {
+app.get(
+    '/api/scan',
+    async(req,res)=>{
 
-    try {
+    try{
 
         const opportunities =
             await scanMarkets();
 
         res.json({
 
-            success: true,
+            success:true,
 
             total:
                 opportunities.length,
@@ -801,101 +921,97 @@ app.get('/api/scan', async (req, res) => {
             opportunities
         });
 
-    } catch (err) {
+    }catch(err){
 
         res.status(500).json({
 
-            success: false,
+            success:false,
 
-            error: err.message
+            error:err.message
         });
     }
 });
 
 /*
-====================================================
+==================================================
 SINGLE OPPORTUNITY
-====================================================
+==================================================
 */
 
 app.get(
     '/api/opportunity/:id',
-    async (req, res) => {
+    async(req,res)=>{
 
-        try {
+    try{
 
-            const id =
-                req.params.id;
+        const id =
+            req.params.id;
 
-            let found =
+        let found =
+            cachedOpportunities.find(
+                item => item.id === id
+            );
+
+        if(!found){
+
+            await scanMarkets();
+
+            found =
                 cachedOpportunities.find(
                     item => item.id === id
                 );
+        }
 
-            if (!found) {
+        if(!found){
 
-                await scanMarkets();
+            return res.status(404).json({
 
-                found =
-                    cachedOpportunities.find(
-                        item =>
-                            item.id === id
-                    );
-            }
+                success:false,
 
-            if (!found) {
-
-                return res
-                    .status(404)
-                    .json({
-
-                        success: false,
-
-                        message:
-                            'Opportunity not found'
-                    });
-            }
-
-            res.json({
-
-                success: true,
-
-                data: found
-            });
-
-        } catch (err) {
-
-            res.status(500).json({
-
-                success: false,
-
-                error: err.message
+                message:
+                    'Opportunity not found'
             });
         }
+
+        res.json({
+
+            success:true,
+
+            data:found
+        });
+
+    }catch(err){
+
+        res.status(500).json({
+
+            success:false,
+
+            error:err.message
+        });
     }
-);
+});
 
 /*
-====================================================
-SERVER START
-====================================================
+==================================================
+START SERVER
+==================================================
 */
 
-app.listen(PORT, async () => {
+app.listen(PORT,async()=>{
 
     console.log(
-        `ArbiMine server running on ${PORT}`
+        `ArbiMine running on ${PORT}`
     );
 
-    try {
+    try{
 
         await scanMarkets();
 
         console.log(
-            'Initial scan completed'
+            'Initial scan complete'
         );
 
-    } catch (err) {
+    }catch(err){
 
         console.log(
             'Initial scan failed'
